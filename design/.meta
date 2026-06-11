@@ -1,0 +1,9 @@
+branch: issue-4-expression-evaluator
+project-sha: 0f2fca3464dd6ab11d19a96866275c868cd5f39b
+date: 2026-06-11
+issue: 4
+issue-repo: mdproctor/melviz
+covers: 4,5
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
