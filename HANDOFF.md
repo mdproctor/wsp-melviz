@@ -1,32 +1,33 @@
-# Melviz Session Handover — 2026-06-10
+# Melviz Session Handover — 2026-06-11
 
 ## Last Session
 
-Completed the filter model — all 13 CoreFunctionType operations, Level 2 discriminated FilterExpression (compile-time column-type enforcement), TimeFrame parser with UTC resolution, bracket-aware LIKE_TO regex, SQL NULL semantics (5 Java bug fixes). 95 tests passing. Branch closed and squashed onto main (14 → 8 commits). Push failed — no write access to `melviz-org/melviz`.
+Completed issue #2: GroupOp, SortOp, and applyOps engine — full Filter→Group→Sort pipeline. Type-safe aggregation (NumericAggregation vs UniversalAggregation), four bucketing strategies (distinct, fixedCalendar, dynamicRange for dates and numbers), SQL null semantics with identity-element principle, deferred materialisation for consecutive GroupOps. 6 Java bugs fixed. 550 tests passing. Branch squashed (23 → 2 commits), pushed to fork, issue closed.
 
-## Immediate Next Step
+Also set up workspace, issue tracking, git hooks, and GitHub labels (first session for this project as a workspace).
 
-Fix push access: either add a fork remote (`git remote add fork <url>`) or get push access to `melviz-org/melviz`. 8 commits on local main are ahead of origin. Then continue Phase 1 with GroupOp + AggregateFunctionType.
+## Branch State
 
-## What's Left
+Both repos on `main`. Branch `issue-2-groupop-aggregate` closed.
 
-- Push blocked — 8 commits on local main ahead of origin, permission denied to `melviz-org/melviz` · XS · Low
+Fork remote (`mdproctor/melviz`) is current. Do NOT push to origin (`melviz-org/melviz`) — no write access, noted in CLAUDE.md.
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| — | Phase 1: GroupOp + AggregateFunctionType (10 types) + interval builders | L | High | Calendar-aware date bucketing, next up |
-| — | Phase 1: DataSetLookup, SortOp, applyOps engine | M | Med | |
-| — | Phase 1: Zod schemas + YAML parser + JSON Schema generation | M | Med | |
-| — | Phase 1: Expression evaluator (JSONata bridge) | S | Low | |
-| — | Phase 1: LocalDataService + IndexedDB | M | Med | |
+| — | DataSetLookup + YAML parser | M | Med | Construct ops from YAML dashboard definitions |
+| — | Zod schemas + JSON Schema generation | M | Med | |
+| — | Expression evaluator (JSONata bridge) | S | Low | |
+| — | LocalDataService + IndexedDB | M | Med | |
 | — | Phase 2-6: See `docs/superpowers/specs/gwt-to-typescript-migration/07-migration-phases.md` | XL | High | |
 
 ## References
 
-- Migration spec: `docs/superpowers/specs/gwt-to-typescript-migration/00-07*.md`
+- Group/sort spec: `docs/superpowers/specs/2026-06-11-group-sort-engine-design.md`
+- Group/sort plan: `plans/attic/issue-2-groupop-aggregate/2026-06-11-group-sort-engine.md` (workspace)
 - Filter spec: `docs/superpowers/specs/2026-06-10-filter-model-design.md`
-- Filter plan: `docs/superpowers/plans/2026-06-10-filter-model.md`
-- Blog: `blog/2026-06-10-mdp01-filter-model-type-safety.md`
-- Tests: 95 passing across `conversion.test.ts`, `timeframe.test.ts`, `filter-eval.test.ts`
+- Migration spec: `docs/superpowers/specs/gwt-to-typescript-migration/00-07*.md`
+- Blog: `blog/2026-06-11-mdp01-grouping-aggregation-null.md`, `blog/2026-06-10-mdp01-filter-model-type-safety.md`
+- Tests: 550 passing across 7 test files in `packages/core/src/dataset/`
+- Epic #1: `mdproctor/melviz#1` (Phase 1 — remaining scope above)
