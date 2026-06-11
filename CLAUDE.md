@@ -261,9 +261,9 @@ filtering or dropping commits that touch these paths.
 
 ## Work Tracking
 
-**Issue tracking:** enabled
-**GitHub repo:** mdproctor/melviz
-**Changelog:** GitHub Releases (run `gh release create --generate-notes` at milestones)
+Issue tracking: enabled
+GitHub repo: mdproctor/melviz
+Changelog: GitHub Releases (run `gh release create --generate-notes` at milestones)
 
 **Automatic behaviours (Claude follows these at all times in this project):**
 - **Before implementation begins** — when the user says "implement", "start coding",
