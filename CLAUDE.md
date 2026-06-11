@@ -4,6 +4,11 @@
 **Project repo:** /Users/mdproctor/claude/melviz
 **Workspace type:** public
 
+## Git Remotes
+
+`origin` = `melviz-org/melviz` (blessed repo — do not push here yet)
+`fork` = `mdproctor/melviz` (fork — all work pushes here)
+
 ## Session Start
 
 Run `add-dir /Users/mdproctor/claude/melviz` and `add-dir /Users/mdproctor/claude/public/melviz` before any other work.
