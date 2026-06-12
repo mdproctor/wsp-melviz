@@ -1,0 +1,9 @@
+branch: issue-7-dataset-manager
+project-sha: 3dc0ee97c2afb53a343604df316f12ae6262cc86
+date: 2026-06-12
+issue: 7
+issue-repo: mdproctor/melviz
+covers: 7
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
