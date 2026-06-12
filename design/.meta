@@ -1,0 +1,9 @@
+branch: issue-6-external-dataset-def
+project-sha: 2288520a954fe2852a9b54f5bdc69bfe0009867c
+date: 2026-06-13
+issue: 6
+issue-repo: mdproctor/melviz
+covers: 6
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
