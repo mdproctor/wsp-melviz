@@ -1,33 +1,37 @@
-# Melviz Session Handover — 2026-06-12
+# Melviz Session Handover — 2026-06-13
 
 ## Last Session
 
-Completed issue #7 (DataSetManager service layer). Registry with `Map<DataSetId, TypedDataSet>`, lookup execution pipeline (validate → resolve dataset → resolve filters → applyOps → paginate), `LookupOptions` for pagination and `referenceDate`. Also fixed `applyOps` to thread `referenceDate` to `applyFilter` for deterministic TIME_FRAME evaluation. 433 tests across 15 files. Branch squashed (7 → 2 commits), pushed to fork, issue closed.
+Completed issue #6 (ExternalDataSetDef + typed data extraction). Pluggable DataProvider SPI (5 implementations), composable extraction pipeline (dataPath → type → expression), 6 built-in presets (prometheus/elasticsearch/graphql-relay/jsonapi/odata/kubernetes-pods), CSV + Prometheus text parsing, join, accumulate. 557 tests across 31 files. Branch squashed (2 commits), pushed to fork, issue closed. Minor review findings filed as #9.
 
 ## Branch State
 
-Both repos on `main`. Branch `issue-7-dataset-manager` closed.
+Both repos on `main`. Branch `issue-6-external-dataset-def` closed.
 
-Fork remote (`mdproctor/melviz`) is current. Do NOT push to origin (`melviz-org/melviz`).
+Fork remote (`mdproctor/melviz`) is current. Origin (`melviz-org/melviz`) is permission-denied — do NOT push there yet.
+
+## What's Left
+
+- Minor improvements from code review (#9) — URL extension detection, Prometheus text dual detection, column inference strategy, CSV parser performance · S · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #6 | ExternalDataSetDef + typed data extraction | M | Med | JSON API → tabular; bridge supports it; can now register into DataSetManager |
-| #8 | Full dashboard YAML schema | M | Med | Pages/components/displayer wrapping lookups |
+| #8 | Full dashboard YAML schema | M | Med | Pages/components/displayer wrapping lookups; can now wire ExternalDataSetDef |
 | — | Zod schemas + JSON Schema generation | M | Med | |
-| — | LocalDataService + IndexedDB | M | Med | Wraps DataSetManager with async fetch/cache |
-| — | Phase 2-6: See `docs/superpowers/specs/gwt-to-typescript-migration/07-migration-phases.md` | XL | High | |
+| — | LocalDataService + IndexedDB | M | Med | Wraps DataSetManager with async fetch/cache; owns refresh loop |
+| — | Panel-only embedding API | S | Med | Data pipeline works standalone; needs embedding surface |
+| — | Phase 2-6: See migration spec `07-migration-phases.md` | XL | High | |
 
 ## References
 
+- ExternalDataSetDef spec: `docs/superpowers/specs/2026-06-13-external-dataset-def-design.md`
 - DataSetManager spec: `docs/superpowers/specs/2026-06-12-dataset-manager-design.md`
 - Expression/lookup spec: `docs/superpowers/specs/2026-06-12-expression-evaluator-lookup-design.md`
-- Group/sort spec: `docs/superpowers/specs/2026-06-11-group-sort-engine-design.md`
-- Filter spec: `docs/superpowers/specs/2026-06-10-filter-model-design.md`
 - Migration spec: `docs/superpowers/specs/gwt-to-typescript-migration/00-07*.md`
-- Blog: `blog/2026-06-12-mdp02-dataset-manager-orchestration.md`, prior entries in INDEX.md
-- Garden: GE-20260612-d561ae (exactOptionalPropertyTypes gotcha), GE-20260612-cd10d7 (JSONata binding), GE-20260612-56fb3d (parameterized tree)
-- Tests: 433 passing across 15 test files in `packages/core/src/dataset/` and `packages/core/src/expression/`
+- Displayer/plugin spec: `docs/superpowers/specs/gwt-to-typescript-migration/03-displayer-and-plugins.md`
+- Blog: `blog/2026-06-13-mdp01-external-dataset-shape-problem.md`, prior entries in INDEX.md
+- Garden: GE-20260613-899303 (JSONata auto-unwrap), GE-20260612-cd10d7 (JSONata binding), GE-20260612-56fb3d (parameterized tree)
+- Tests: 557 passing across 31 test files in `packages/core/src/`
 - Epic #1: `mdproctor/melviz#1` (Phase 1 — remaining scope above)
