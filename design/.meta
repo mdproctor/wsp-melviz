@@ -1,0 +1,9 @@
+branch: issue-8-dashboard-yaml-schema
+project-sha: 5a24b9a480e17ea14bfbc6b96dd25477ea675a66
+date: 2026-06-13
+issue: 8
+issue-repo: mdproctor/melviz
+covers: 8
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
