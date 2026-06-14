@@ -1,0 +1,9 @@
+branch: issue-11-casehub-viz-web-components
+project-sha: c78882f119bb276c7ead89f94d3074dff4d35c7b
+date: 2026-06-14
+issue: 11
+issue-repo: mdproctor/melviz
+covers: 9,10,11
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
