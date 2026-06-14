@@ -161,9 +161,10 @@ yarn workspace @melviz/examples run dev
 
 ### Monorepo Structure
 
-- **`core/`** — Java/Maven GWT webapp; compiles Java to JavaScript
+- **`core/`** — `@casehub/data` (was `@melviz/core`). Java/Maven GWT webapp + TypeScript data engine (datasets, ops, expressions, extraction)
+- **`packages/casehub-ui/`** — `@casehub/ui`. Component model, layout primitives, TypeScript DSL, YAML parser. Depends on `@casehub/data`.
 - **`packages/`** — Shared TypeScript libraries (`@melviz/component-api`, `@melviz/component-echarts-base`, `@melviz/component-dev`, `webpack-base`, `tsconfig`)
-- **`components/`** — Independent React microfrontend visualization components
+- **`components/`** — Independent React microfrontend visualization components (future: Web Components as `@casehub/viz`)
 - **`webapp/`** — Webpack orchestrator; copies GWT output + component bundles into `dist/`
 - **`examples/`** — Interactive dashboard examples gallery; depends on `@melviz/webapp`
 
