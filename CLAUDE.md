@@ -162,8 +162,12 @@ yarn workspace @melviz/examples run dev
 ### Monorepo Structure
 
 - **`core/`** — Java/Maven GWT webapp; compiles Java to JavaScript
-- **`packages/`** — Shared TypeScript libraries (`@melviz/component-api`, `@melviz/component-echarts-base`, `@melviz/component-dev`, `webpack-base`, `tsconfig`)
-- **`components/`** — Independent React microfrontend visualization components
+- **`packages/`** — Shared TypeScript libraries:
+  - `@casehub/data` (`packages/core/`) — Data engine: datasets, ops, expressions, extraction, lookup
+  - `@casehub/ui` (`packages/casehub-ui/`) — Component model, layout primitives, DSL, YAML parser
+  - `@casehub/viz` (`packages/casehub-viz/`) — Web Component visualization wrappers (13 components wrapping ECharts + custom HTML)
+  - `@melviz/component-api`, `@melviz/component-echarts-base`, `@melviz/component-dev`, `webpack-base`, `tsconfig` — Legacy packages
+- **`components/`** — Legacy React microfrontend visualization components (being replaced by `@casehub/viz` Web Components)
 - **`webapp/`** — Webpack orchestrator; copies GWT output + component bundles into `dist/`
 - **`examples/`** — Interactive dashboard examples gallery; depends on `@melviz/webapp`
 
@@ -249,10 +253,12 @@ The `melviz.mode` can be `"EDITOR"` (live editing) or `"CLIENT"` (readonly rende
 - **GWT** — compiles Java client code to JavaScript
 - **Errai** — CDI-style IoC and marshalling for GWT client
 - **Yarn 4.10.3** with workspaces
-- **TypeScript 4.6.2** / **React 17** / **Webpack 5**
-- **Jest + ts-jest** — component unit tests
-- **Apache ECharts** — charting library
-- **JSONata** — data transformation DSL used inside the GWT core
+- **TypeScript 5.6+** / **Webpack 5**
+- **Vitest** — TypeScript package unit tests (`@casehub/data`, `@casehub/ui`, `@casehub/viz`)
+- **Web Components** (Custom Elements v1, Shadow DOM) — `@casehub/viz` visualization layer
+- **Apache ECharts 5.6** — charting library (tree-shaken per component in `@casehub/viz`)
+- **React 17** — legacy iframe components only (`components/`)
+- **JSONata** — data transformation DSL used in `@casehub/data` and the GWT core
 
 ## Project Artifacts
 
