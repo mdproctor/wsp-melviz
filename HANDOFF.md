@@ -1,37 +1,42 @@
-# Melviz Session Handover — 2026-06-13
+# Melviz Session Handover — 2026-06-14
 
 ## Last Session
 
-Completed issue #6 (ExternalDataSetDef + typed data extraction). Pluggable DataProvider SPI (5 implementations), composable extraction pipeline (dataPath → type → expression), 6 built-in presets (prometheus/elasticsearch/graphql-relay/jsonapi/odata/kubernetes-pods), CSV + Prometheus text parsing, join, accumulate. 557 tests across 31 files. Branch squashed (2 commits), pushed to fork, issue closed. Minor review findings filed as #9.
+Completed issue #8 (page model & DSL design + implementation). Designed and built `@casehub/ui` — slot-based component model (Puck-inspired), coordinate grid layout (react-grid-layout-inspired), typed data component settings, TypeScript DSL as primary authoring format, YAML parser with backwards compat for all 35 existing dashboards. Renamed `@melviz/core` → `@casehub/data`. 377 new tests, 936 total passing. Spec went through 4 review passes. Minor review findings filed as #10.
+
+Major architectural decisions this session: pure HTML/TS/vanilla (no React), Web Components, casehub package naming, pages-all-the-way-down (no Dashboard type), interchangeable navigation components, access control with lazy page loading, view state persistence with deep linking.
 
 ## Branch State
 
-Both repos on `main`. Branch `issue-6-external-dataset-def` closed.
+Both repos on `main`. Branch `issue-8-dashboard-yaml-schema` closed (2 squashed commits on main).
 
-Fork remote (`mdproctor/melviz`) is current. Origin (`melviz-org/melviz`) is permission-denied — do NOT push there yet.
+Fork remote (`mdproctor/melviz`) is current. Origin (`melviz-org/melviz`) is permission-denied.
 
 ## What's Left
 
-- Minor improvements from code review (#9) — URL extension detection, Prometheus text dual detection, column inference strategy, CSV parser performance · S · Low
+- Minor improvements from code review (#10) — grid ID determinism, nav resolution rebuild, missing dataset/inlineDataset DSL helpers · S · Low
+- Minor improvements from earlier code review (#9) — URL extension detection, Prometheus text dual detection, column inference · S · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #8 | Full dashboard YAML schema | M | Med | Pages/components/displayer wrapping lookups; can now wire ExternalDataSetDef |
+| — | Web Component implementations (`@casehub/viz`) | L | Med | `<casehub-bar-chart>`, `<casehub-table>`, etc. wrapping ECharts |
+| — | Site runtime — `loadSite()`, page navigation, dataset resolution | M | Med | Connects model to rendering |
+| — | View state persistence — sessionStorage/localStorage/IndexedDB | M | Med | Deep linking, tiny URLs |
+| — | DnD visual builder | XL | High | Pure TS, operates over component model |
+| — | `@casehub/ui` extraction — shared package for DraftHouse | M | Med | Extract types.ts + component-props.ts |
 | — | Zod schemas + JSON Schema generation | M | Med | |
-| — | LocalDataService + IndexedDB | M | Med | Wraps DataSetManager with async fetch/cache; owns refresh loop |
-| — | Panel-only embedding API | S | Med | Data pipeline works standalone; needs embedding surface |
 | — | Phase 2-6: See migration spec `07-migration-phases.md` | XL | High | |
+
+## Cross-Module
+
+**DraftHouse is building against the same Component contract** — confirmed this session. DraftHouse will use `Component`, `GridItem`, slots, and Web Components. When `@casehub/ui` ships `split()` workspace layout primitives, DraftHouse swaps its layout shell.
 
 ## References
 
-- ExternalDataSetDef spec: `docs/superpowers/specs/2026-06-13-external-dataset-def-design.md`
-- DataSetManager spec: `docs/superpowers/specs/2026-06-12-dataset-manager-design.md`
-- Expression/lookup spec: `docs/superpowers/specs/2026-06-12-expression-evaluator-lookup-design.md`
-- Migration spec: `docs/superpowers/specs/gwt-to-typescript-migration/00-07*.md`
-- Displayer/plugin spec: `docs/superpowers/specs/gwt-to-typescript-migration/03-displayer-and-plugins.md`
-- Blog: `blog/2026-06-13-mdp01-external-dataset-shape-problem.md`, prior entries in INDEX.md
-- Garden: GE-20260613-899303 (JSONata auto-unwrap), GE-20260612-cd10d7 (JSONata binding), GE-20260612-56fb3d (parameterized tree)
-- Tests: 557 passing across 31 test files in `packages/core/src/`
-- Epic #1: `mdproctor/melviz#1` (Phase 1 — remaining scope above)
+- Design spec: `docs/superpowers/specs/2026-06-14-dashboard-model-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-06-14-page-model-dsl.md`
+- Previous specs: `docs/superpowers/specs/2026-06-12-expression-evaluator-lookup-design.md`, `2026-06-13-external-dataset-def-design.md`
+- Tests: 377 passing in `packages/casehub-ui/src/`, 559 in `packages/core/src/`
+- Epic #1: `mdproctor/melviz#1` (Phase 1)
