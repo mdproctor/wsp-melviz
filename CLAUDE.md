@@ -110,7 +110,7 @@ yarn build:prod
 ### Targeted Builds
 
 ```bash
-# Shared TypeScript packages only (order matters: @casehub/component → @casehub/data → @casehub/ui → @casehub/viz)
+# Shared TypeScript packages only (order matters: @casehub/component → @casehub/data → @casehub/ui → @casehub/viz → @casehub/runtime)
 yarn build:packages
 
 # Java/GWT core only (skips tests, includes sources profile)
