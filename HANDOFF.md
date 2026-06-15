@@ -2,35 +2,35 @@
 
 ## Last Session
 
-Closed #9, #10, #11 on one branch. Implemented `@casehub/viz` — 13 Web Component visualization wrappers (bar, line, area, pie, scatter, bubble, timeseries, meter, map, table, metric, selector, iframe-plugin). Three-level class hierarchy with four-stage ECharts option pipeline. Design went through 4 review passes. Code review caught 14 findings (6 Important), all fixed. 1,159 tests across the three @casehub packages. Squashed to 2 commits on fork/main.
+Closed #12. Extracted `@casehub/component` — zero-dep package with component primitives (`Component`, `GridItem`, `AccessControl`, props, type guards) and a CSS Grid layout renderer (`renderComponent`). Fixed DSL slot naming (`content` → `default`, `stack()` own type). 672 tests across three @casehub packages. Squashed to 2 commits on fork/main.
 
 ## Branch State
 
-Both repos on `main`. Branch `issue-11-casehub-viz-web-components` closed. Fork remote (`mdproctor/melviz`) is current.
+Both repos on `main`. Branch `issue-12-casehub-component-grid-layout` closed. Fork remote (`mdproctor/melviz`) is current.
 
 ## What's Left
 
-Nothing trailing — all three issues closed, code reviewed and fixed, docs synced.
+Nothing trailing — #12 closed, code reviewed and fixed, docs synced.
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| — | Site runtime — `loadSite()`, page navigation, dataset resolution | M | Med | Connects @casehub/ui model to @casehub/viz rendering; implements the event listener contract from spec §3.7 |
+| — | Site runtime — `loadSite()`, page navigation, dataset resolution | M | Med | Connects @casehub/ui model to @casehub/viz rendering; implements event listener contract from spec §3.7; uses `renderComponent` from @casehub/component |
 | — | View state persistence — sessionStorage/localStorage/IndexedDB | M | Med | Deep linking, tiny URLs |
-| — | DnD visual builder | XL | High | Pure TS, operates over component model; Web Components self-activate on DOM insertion |
-| — | `@casehub/ui` extraction — shared package for DraftHouse | M | Med | Extract types.ts + component-props.ts |
+| — | DnD visual builder | XL | High | Pure TS, operates over component model; reads `data-component-props` from DOM |
+| — | Claudony Web Component port | M | Med | Custom Web Components extending CasehubElement for session cards, mesh panel, terminal |
 | — | Zod schemas + JSON Schema generation | M | Med | |
 | — | Phase 2-6: See migration spec `07-migration-phases.md` | XL | High | |
 
 ## Cross-Module
 
-**DraftHouse is building against the same Component contract** — confirmed prior session. DraftHouse will use `Component`, `GridItem`, slots, and Web Components.
+**DraftHouse and Claudony can now depend on `@casehub/component` directly** — zero-dep component primitives without pulling `@casehub/data`. The site runtime is the next piece that connects the model to rendering.
 
 ## References
 
-- Design spec: `docs/superpowers/specs/2026-06-14-casehub-viz-design.md`
-- Prior specs: `docs/superpowers/specs/2026-06-14-dashboard-model-design.md`, `2026-06-13-external-dataset-def-design.md`
-- Tests: 214 in `packages/casehub-viz/src/`, 568 in `packages/core/src/`, 385 in `packages/casehub-ui/src/`
-- Garden: GE-20260615-d356e6 (HTMLElement.dataset collision)
+- Design spec: `docs/superpowers/specs/2026-06-15-casehub-component-grid-layout-design.md`
+- Prior specs: `docs/superpowers/specs/2026-06-14-dashboard-model-design.md`, `2026-06-14-casehub-viz-design.md`
+- Tests: 104 in `packages/casehub-component/src/`, 354 in `packages/casehub-ui/src/`, 214 in `packages/casehub-viz/src/`
+- Garden: GE-20260615-8cd96f (TypeScript generic function re-export widening), GE-20260615-d356e6 (HTMLElement.dataset collision)
 - Epic #1: `mdproctor/melviz#1` (Phase 1)
