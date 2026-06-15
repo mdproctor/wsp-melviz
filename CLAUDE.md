@@ -110,7 +110,7 @@ yarn build:prod
 ### Targeted Builds
 
 ```bash
-# Shared TypeScript packages only
+# Shared TypeScript packages only (order matters: @casehub/component → @casehub/data → @casehub/ui → @casehub/viz)
 yarn build:packages
 
 # Java/GWT core only (skips tests, includes sources profile)
@@ -162,7 +162,7 @@ yarn workspace @melviz/examples run dev
 ### Monorepo Structure
 
 - **`core/`** — Java/Maven GWT webapp; compiles Java to JavaScript
-- **`packages/`** — Shared TypeScript libraries (`@melviz/component-api`, `@melviz/component-echarts-base`, `@melviz/component-dev`, `webpack-base`, `tsconfig`)
+- **`packages/`** — Shared TypeScript libraries (`@casehub/component`, `@casehub/data`, `@casehub/ui`, `@casehub/viz`, `@melviz/component-api`, `@melviz/component-echarts-base`, `@melviz/component-dev`, `webpack-base`, `tsconfig`)
 - **`components/`** — Independent React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; copies GWT output + component bundles into `dist/`
 - **`examples/`** — Interactive dashboard examples gallery; depends on `@melviz/webapp`
