@@ -91,6 +91,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 type: custom
 
+## Testing Discipline
+
+**Test as you investigate, not just when you fix.** When exploring a potential issue, probing a weak area, or checking whether something works — write a unit test for it. Tests document behaviour and harden the system as you iterate. Don't wait until you find a bug; test the assumption that it's NOT a bug.
+
+**Visual verification is mandatory.** DOM checks (canvas exists, element has data) are not enough. Charts can have a canvas with axes but no visible bars. Tables can have rows but display `[object Object]`. Always take Playwright screenshots and visually inspect what the human would see. The `examples/tests/gallery.spec.ts` tests use `page.evaluate()` to check shadow DOM state AND `page.screenshot()` to verify rendering. Both are required.
+
+**Why this matters:** This session wasted significant time debugging issues that looked fixed in the DOM but were visually broken. The round-trip of "fix → rebuild → check DOM → claim done → user reports still broken → re-investigate" is expensive. One screenshot saves an hour of debugging.
+
+**Build cache warning:** `yarn build:packages` caches `dist/` directories. After editing source files, always `yarn workspace <pkg> run clean && yarn workspace <pkg> run build` to force recompilation. Stale dist caused multiple "fix not taking effect" debugging spirals this session.
+
 ## Build Commands
 
 This is a hybrid Java/Maven + JavaScript/Yarn monorepo. Build order matters: packages → core → components → webapp.
