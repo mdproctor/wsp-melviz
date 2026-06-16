@@ -1,36 +1,39 @@
-# Melviz Session Handover — 2026-06-15
+# Melviz Session Handover — 2026-06-16
 
 ## Last Session
 
-Closed #12. Extracted `@casehub/component` — zero-dep package with component primitives (`Component`, `GridItem`, `AccessControl`, props, type guards) and a CSS Grid layout renderer (`renderComponent`). Fixed DSL slot naming (`content` → `default`, `stack()` own type). 672 tests across three @casehub packages. Squashed to 2 commits on fork/main.
+Closed #13. Implemented `@casehub/runtime` — new package that wires `@casehub/component` (layout renderer), `@casehub/ui` (page model), `@casehub/data` (dataset engine), and `@casehub/viz` (Web Components) into a working site runtime. Prerequisite changes to `@casehub/data` (LookupResult with totalRows, injectable fetch) and `@casehub/component` (onNode callback, sidebar wiring, casehub-slot-change events, activateSlot). Spec went through 3 review rounds. 764 tests across 3 packages. Squashed to 5 commits on fork/main.
 
 ## Branch State
 
-Both repos on `main`. Branch `issue-12-casehub-component-grid-layout` closed. Fork remote (`mdproctor/melviz`) is current.
+Both repos on `main`. Branch `issue-13-site-runtime-navigation` closed. Fork remote (`mdproctor/melviz`) is current. Blessed repo (`melviz-org/melviz`) denied push (403 — no write access).
 
 ## What's Left
 
-Nothing trailing — #12 closed, code reviewed and fixed, docs synced.
+- #16 — Source-level dataset refresh timers (runtime creates timer after first resolution for datasets with `refreshTime`)
+- #17 — Minor runtime improvements (navigate tree-walk, URL encoding, lazy-page activation, accordion test fragility)
+- #18 — Integration tests for casehub-filter, casehub-page, casehub-sort, popstate event handlers
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| — | Site runtime — `loadSite()`, page navigation, dataset resolution | M | Med | Connects @casehub/ui model to @casehub/viz rendering; implements event listener contract from spec §3.7; uses `renderComponent` from @casehub/component |
-| — | View state persistence — sessionStorage/localStorage/IndexedDB | M | Med | Deep linking, tiny URLs |
-| — | DnD visual builder | XL | High | Pure TS, operates over component model; reads `data-component-props` from DOM |
-| — | Claudony Web Component port | M | Med | Custom Web Components extending CasehubElement for session cards, mesh panel, terminal |
+| #16 | Source-level dataset refresh timers | S | Low | Infrastructure in place, just needs setInterval after first resolution |
+| #17 | Minor runtime improvements (4 items) | S | Low | Tree-walk navigate, URL encoding, lazy-page, test fix |
+| #18 | Event handler integration tests | M | Med | Requires real DataSetManager, DOM events, custom event dispatch |
+| #3 | Expression evaluator (JSONata bridge) | M | Med | Part of Phase 1 epic #1 |
+| — | View state persistence (sessionStorage/localStorage/IndexedDB) | M | Med | Follow-up #15 |
+| — | DnD visual builder | XL | High | Pure TS, operates over component model |
 | — | Zod schemas + JSON Schema generation | M | Med | |
-| — | Phase 2-6: See migration spec `07-migration-phases.md` | XL | High | |
 
 ## Cross-Module
 
-**DraftHouse and Claudony can now depend on `@casehub/component` directly** — zero-dep component primitives without pulling `@casehub/data`. The site runtime is the next piece that connects the model to rendering.
+`@casehub/runtime` connects the four @casehub packages into a working pipeline. DraftHouse and Claudony can use `loadSite()` to render dashboard sites. The runtime's event protocol (casehub-data-request, casehub-filter, casehub-slot-change, casehub-page, casehub-sort) is the contract for any host that wants to embed a site.
 
 ## References
 
-- Design spec: `docs/superpowers/specs/2026-06-15-casehub-component-grid-layout-design.md`
-- Prior specs: `docs/superpowers/specs/2026-06-14-dashboard-model-design.md`, `2026-06-14-casehub-viz-design.md`
-- Tests: 104 in `packages/casehub-component/src/`, 354 in `packages/casehub-ui/src/`, 214 in `packages/casehub-viz/src/`
-- Garden: GE-20260615-8cd96f (TypeScript generic function re-export widening), GE-20260615-d356e6 (HTMLElement.dataset collision)
+- Design spec: `docs/superpowers/specs/2026-06-15-site-runtime-design.md`
+- Prior specs: `2026-06-15-casehub-component-grid-layout-design.md`, `2026-06-14-dashboard-model-design.md`, `2026-06-14-casehub-viz-design.md`
+- Tests: 70 in `packages/casehub-runtime/src/`, 125 in `packages/casehub-component/src/`, 569 in `packages/core/src/`
+- Garden: GE-20260616-e268d7 (Yarn workspace stale .d.ts silent parameter dropping)
 - Epic #1: `mdproctor/melviz#1` (Phase 1)
