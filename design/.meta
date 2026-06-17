@@ -3,7 +3,7 @@ project-sha: 6764d1b20d30e0567ed09053d8ffcc1867bc83fc
 date: 2026-06-16
 issue: 19
 issue-repo: mdproctor/melviz
-covers: 19,20,21,14,22,32
+covers: 19,20,21,14,22,32,28,25,26,31
 flyway-next-v: none
 design-repo: workspace
 design-section-hashes: 
