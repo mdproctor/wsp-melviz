@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Work-end for epic #19, then extensive gallery polish on main: navTree page dedup fix (Kitchensink), Prometheus API extraction (#35), pill-styled tabs, enhanced Prometheus/Ansible/Podman/Triton dashboards with mock data, URL config bar (#29), metric card alignment, label key stripping, dataset refresh timers (#16), gallery mock jitter for accumulate dashboards. JVM history pre-loading attempted but has a runtime timing issue.
+Implemented and closed #17 (minor runtime improvements): tree-walk navigation replacing flat DOM query (all 9 interactive types), URL encoding for page path segments, lazy-page activation with three-path fetch/cache/render and full tree integration, accordion explicit initial state. Also closed #29 (gallery URL config — was done in prior session, ARC42 stale). Blessed repo push still 403.
 
 ## Branch State
 
@@ -12,19 +12,20 @@ Both repos on `main`. Fork (`mdproctor/melviz`) current. Blessed repo skipped (4
 
 - JVM history pre-loading timing issue — `history` dataset columns not found in group operations despite correct extraction. Needs focused debugging of async data pipeline resolution order.
 - Quarkus Monitoring timeseries charts empty — same `accumulate` + expression issue as Real Time JVM
+- Initial deep-link through unresolved lazy-page stops at the boundary (known limitation, documented in spec)
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
+| #34 | Type-safe TypeScript audit + linting | M | Med | Next in queue per user instruction |
 | #24 | Move to casehubio org | L | High | Rename, repackage |
-| #17 | Minor runtime improvements | S | Low | |
-| #34 | Type-safe TypeScript audit | M | Med | |
 | #23 | Domain-specific example dashboards | L | Med | Gallery stable now |
 | — | Merge datasetDefaults into datasets | S | Med | Workaround in place |
 | — | History pre-load timing fix | S | Med | Infrastructure done, timing issue only |
 
 ## References
 
-- ARC42STORIES.MD: project root (Chapter 2 complete, #35 closed)
-- Garden: GE-20260618-580486, GE-20260618-9ecfa7, GE-20260618-1bcafc
+- ARC42STORIES.MD: project root (#17, #29 closed this session)
+- Spec: docs/specs/2026-06-18-runtime-improvements-design.md
+- Blog: 2026-06-18-mdp01-runtime-improvements.md
