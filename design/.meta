@@ -1,0 +1,9 @@
+branch: issue-17-runtime-improvements
+project-sha: bf25332e9302771087521ef2f6d924cdbdbf23de
+date: 2026-06-18
+issue: 17
+issue-repo: mdproctor/melviz
+covers: 17
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
