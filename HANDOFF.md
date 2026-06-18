@@ -2,27 +2,29 @@
 
 ## Last Session
 
-Closed epic #19 (work-end: code review, squash 58→6 commits, push to fork, 13 issues closed). Then fixed three bugs found during visual inspection: navTree orphaned page duplication (#32 incomplete fix), Prometheus API extraction (#35), and preset matrix path inconsistency. Added pill-styled tabs, enhanced Prometheus dashboards with 6 chart types each, metric card alignment fix. ARC42STORIES.MD created and synced.
+Work-end for epic #19, then extensive gallery polish on main: navTree page dedup fix (Kitchensink), Prometheus API extraction (#35), pill-styled tabs, enhanced Prometheus/Ansible/Podman/Triton dashboards with mock data, URL config bar (#29), metric card alignment, label key stripping, dataset refresh timers (#16), gallery mock jitter for accumulate dashboards. JVM history pre-loading attempted but has a runtime timing issue.
 
 ## Branch State
 
-Both repos on `main`. Epic `issue-19-dashbuilder-demos` closed. Fork (`mdproctor/melviz`) current with 8 commits ahead of origin. Blessed repo (`melviz-org/melviz`) skipped (no write access — 403).
+Both repos on `main`. Fork (`mdproctor/melviz`) current. Blessed repo skipped (403).
+
+## What's Left
+
+- JVM history pre-loading timing issue — `history` dataset columns not found in group operations despite correct extraction. Needs focused debugging of async data pipeline resolution order.
+- Quarkus Monitoring timeseries charts empty — same `accumulate` + expression issue as Real Time JVM
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #24 | Move to casehubio org | L | High | Rename, repackage |
-| #16 | Dataset refresh timers | S | Low | |
 | #17 | Minor runtime improvements | S | Low | |
-| #18 | Integration tests for event handlers | M | Med | Partially covered by #32 work |
 | #34 | Type-safe TypeScript audit | M | Med | |
-| #23 | Domain-specific example dashboards | L | Med | Gallery is stable now |
-| #29 | Gallery URL configuration form | S | Med | For external-API dashboards |
-| — | Merge `datasetDefaults` into datasets at runtime | S | Med | Workaround in place (auto-detect) but proper merge needed |
+| #23 | Domain-specific example dashboards | L | Med | Gallery stable now |
+| — | Merge datasetDefaults into datasets | S | Med | Workaround in place |
+| — | History pre-load timing fix | S | Med | Infrastructure done, timing issue only |
 
 ## References
 
-- ARC42STORIES.MD: project root (Chapter 2 complete)
-- Validation matrix: `examples/VALIDATION.md`
+- ARC42STORIES.MD: project root (Chapter 2 complete, #35 closed)
 - Garden: GE-20260618-580486, GE-20260618-9ecfa7, GE-20260618-1bcafc
