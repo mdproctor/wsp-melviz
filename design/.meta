@@ -1,0 +1,9 @@
+branch: issue-024-casehub-pages-rename
+project-sha: 92ab867e9be0cd0386a4b6c07cc5d2dbdecdd83b
+date: 2026-06-19
+issue: 24
+issue-repo: mdproctor/melviz
+covers: 24
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
