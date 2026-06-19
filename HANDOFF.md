@@ -1,8 +1,8 @@
-# Melviz Session Handover — 2026-06-18
+# Melviz Session Handover — 2026-06-19
 
 ## Last Session
 
-Implemented and closed #17 (minor runtime improvements): tree-walk navigation replacing flat DOM query (all 9 interactive types), URL encoding for page path segments, lazy-page activation with three-path fetch/cache/render and full tree integration, accordion explicit initial state. Also closed #29 (gallery URL config — was done in prior session, ARC42 stale). Blessed repo push still 403.
+Implemented native form components (#34): six Web Component form inputs (text, number, dropdown, checkbox, date-picker, textarea) with data-bound pages, master-detail via hierarchical filter propagation, pluggable save system (local + REST adapters), auto-save with debounce, and flush-before-switch. Added YAML/TS source toggle for all 35 gallery examples with equivalence smoke test. Extensive debugging of table↔form interaction edge cases — filter isolation, text-filter row index mismatch, save ordering.
 
 ## Branch State
 
@@ -10,22 +10,26 @@ Both repos on `main`. Fork (`mdproctor/melviz`) current. Blessed repo skipped (4
 
 ## What's Left
 
-- JVM history pre-loading timing issue — `history` dataset columns not found in group operations despite correct extraction. Needs focused debugging of async data pipeline resolution order.
-- Quarkus Monitoring timeseries charts empty — same `accumulate` + expression issue as Real Time JVM
-- Initial deep-link through unresolved lazy-page stops at the boundary (known limitation, documented in spec)
+- Lazy on-demand pagination for datasets — needed before forms handle large datasets
+- Cascading dropdown options (reactive to another field's value)
+- Record navigation controls (next/prev within dataset)
+- New record creation (POST for new records)
+- Delete records (SaveAdapter.delete defined but unwired)
+- Form-level error display (adapter failures shown to user)
+- Button trigger "warn if dirty" on page exit
+- DataSetOptions path in dropdown (model supports it, runtime doesn't wire it)
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #34 | Type-safe TypeScript audit + linting | M | Med | Next in queue per user instruction |
+| — | Lazy dataset pagination | M | High | Protocol-level change to datasets |
+| — | Cascading dropdowns | S | Med | Options reactive to other field values |
 | #24 | Move to casehubio org | L | High | Rename, repackage |
-| #23 | Domain-specific example dashboards | L | Med | Gallery stable now |
-| — | Merge datasetDefaults into datasets | S | Med | Workaround in place |
-| — | History pre-load timing fix | S | Med | Infrastructure done, timing issue only |
+| #23 | Domain-specific example dashboards | L | Med | Gallery stable, forms available |
 
 ## References
 
-- ARC42STORIES.MD: project root (#17, #29 closed this session)
-- Spec: docs/specs/2026-06-18-runtime-improvements-design.md
-- Blog: 2026-06-18-mdp01-runtime-improvements.md
+- Spec: docs/superpowers/specs/2026-06-18-native-forms-design.md
+- Plan: docs/superpowers/plans/2026-06-18-native-forms-plan.md
+- Blog: 2026-06-18-mdp02-native-forms.md
