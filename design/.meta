@@ -1,0 +1,9 @@
+branch: issue-1-ts-strict-enforcement
+project-sha: 179171a708af5b179aeccbec0eab3903d1154432
+date: 2026-06-20
+issue: 1
+issue-repo: casehubio/casehub-pages
+covers: 1
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
