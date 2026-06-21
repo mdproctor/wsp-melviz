@@ -134,6 +134,16 @@ yarn workspace @casehub/pages-component-echarts run test
 yarn workspace @casehub/pages-component-echarts run start
 ```
 
+### Type Checking & Linting
+
+```bash
+# Incremental cross-package type check (uses tsc --build with project references)
+yarn typecheck
+
+# ESLint with strict-type-checked rules
+yarn lint
+```
+
 ### Examples Dev Server
 
 ```bash
@@ -186,6 +196,7 @@ YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
 - **Yarn 4.10.3** with workspaces
 - **TypeScript 5** / **React 17** / **Webpack 5**
 - **Vitest / Jest** — testing
+- **ESLint** with `@typescript-eslint/strict-type-checked` — linting
 - **Apache ECharts** — charting
 - **JSONata** — data transformation
 
