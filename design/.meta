@@ -1,0 +1,9 @@
+branch: issue-7-sx-backlog-sweep
+project-sha: ef7c2c09e783df92af0c8577b7aef068bec0f25a
+date: 2026-06-21
+issue: 7
+issue-repo: casehubio/casehub-pages
+covers: 7,5
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
