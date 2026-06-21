@@ -1,0 +1,9 @@
+branch: issue-2-ts-quality-sweep
+project-sha: e2ddcd2693c1deb93c27ae4719041839496c1fd0
+date: 2026-06-21
+issue: 2
+issue-repo: casehubio/casehub-pages
+covers: 2,3,4
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
