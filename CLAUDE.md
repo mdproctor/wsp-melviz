@@ -95,6 +95,9 @@ type: custom
 
 This is a TypeScript monorepo managed with Yarn workspaces. Build order matters: packages → components → webapp.
 
+All packages use maximum strict TypeScript via a shared base tsconfig (`@casehub/pages-tsconfig`).
+Each package has `tsconfig.json` (type checking — includes tests) and `tsconfig.build.json` (emit — excludes tests).
+
 ### Full Build
 
 ```bash
@@ -103,6 +106,9 @@ yarn install && yarn build
 
 # Production build — includes examples gallery
 yarn build:prod
+
+# Type-check all packages (including test files) — runs in CI
+yarn typecheck
 ```
 
 ### Targeted Builds
