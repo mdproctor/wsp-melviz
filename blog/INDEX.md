@@ -2,6 +2,8 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-06-21-mdp02-ts-quality-sweep.md](2026-06-21-mdp02-ts-quality-sweep.md) | 2026-06-21 | Project references (6.6s→0.8s typecheck), ESLint strict-type-checked, branded ID constructors, Component<T,P> constraint |
+| [2026-06-21-mdp01-ts-strict-enforcement.md](2026-06-21-mdp01-ts-strict-enforcement.md) | 2026-06-21 | Maximum TypeScript strict mode — Component<T,P> generics, ComponentTypeRegistry, 143 type casts eliminated |
 | [2026-06-18-mdp01-runtime-improvements.md](2026-06-18-mdp01-runtime-improvements.md) | 2026-06-18 | Tree-walk navigation, URL encoding, lazy-page activation, accordion contract |
 | [2026-06-17-mdp01-lazy-rendering-gallery.md](2026-06-17-mdp01-lazy-rendering-gallery.md) | 2026-06-17 | Lazy tab rendering, three hidden bugs, gallery at 28/31 dashboards |
 | [2026-06-15-mdp01-casehub-component-zero-dep-split.md](2026-06-15-mdp01-casehub-component-zero-dep-split.md) | 2026-06-15 | @casehub/component extraction — zero-dep component primitives, CSS Grid layout renderer, DSL slot fixes |
