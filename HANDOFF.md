@@ -1,12 +1,12 @@
-# casehub-pages Session Handover — 2026-06-20
+# casehub-pages Session Handover — 2026-06-21
 
 ## Last Session
 
-Renamed melviz to casehub-pages (#24). Removed GWT from build (818 Java files → `_legacy/`). Renamed all 16 packages to `@casehub/pages-*` with architectural naming: standalone components get `pages-component-*`, iframe bridge gets `pages-iframe-api`/`pages-iframe-dev`. Wire protocol renamed (`casehub-pages-dataset`). Created `casehubio/casehub-pages` and `mdproctor/casehub-pages` on GitHub. Moved local dirs to `casehub/pages/`. Registered in casehub-parent (build-all.sh, CI workflows, PLATFORM.md, dashboards) and casehub-all (.gitmodules, update-pointers.yml).
+Enforced maximum TypeScript strict mode across all packages (#1). Made Component generic `Component<T,P>`, moved props types from pages-ui to pages-component (breaking the viz→ui dependency), unified ComponentTypeRegistry, eliminated all 143 type casts (22 production + 121 test). Upgraded base tsconfig to maximum strict with CI enforcement. Fixed gallery dashboards (dead URLs, stale nav pages, webpack config rename leftovers). Filed 4 follow-up issues.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`e6b10c2` squash + `b5202b7` ARC42 fix). Old repos (`melviz-org/melviz`, `mdproctor/melviz`) left as-is.
+Both repos on `main`. Fork and blessed current (`e2ddcd2`). Issue #1 closed.
 
 ## What's Left
 
@@ -25,14 +25,15 @@ Both repos on `main`. Fork and blessed current (`e6b10c2` squash + `b5202b7` ARC
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
+| #2 | TypeScript project references | S | Med | Incremental cross-package type checking |
+| #3 | ESLint strict type-checked rules | S | Low | Additional lint-level enforcement |
+| #4 | Post-strict follow-ups | XS | Low | P constraint, internal DataSetId casts, test narrowing |
+| #5 | Navigation components distinct rendering | M | Med | Tree/menu/tiles all render as identical pills |
 | #36 | Audit and remove GWT `_legacy/` | S | Med | Verify TS feature parity first |
-| #37 | TypeScript module conventions protocol | S | Low | Document pages-prefix pattern for future TS modules |
 | #23 | Domain-specific example dashboards | L | Med | Gallery stable, forms available |
-| — | Lazy dataset pagination | M | High | Protocol-level change to datasets |
-| — | Cascading dropdowns | S | Med | Options reactive to other field values |
 
 ## References
 
-- Spec: docs/superpowers/specs/2026-06-19-casehub-pages-rename-design.md
-- Plan: docs/superpowers/plans/2026-06-20-casehub-pages-rename-plan.md
-- Blog: 2026-06-20-mdp01-casehub-pages-rename.md
+- Spec: docs/superpowers/specs/2026-06-20-ts-strict-enforcement-design.md
+- Plan: plans/2026-06-21-ts-strict-enforcement-plan.md
+- Blog: 2026-06-21-mdp01-ts-strict-enforcement.md
