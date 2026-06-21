@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Enforced maximum TypeScript strict mode across all packages (#1). Made Component generic `Component<T,P>`, moved props types from pages-ui to pages-component (breaking the viz→ui dependency), unified ComponentTypeRegistry, eliminated all 143 type casts (22 production + 121 test). Upgraded base tsconfig to maximum strict with CI enforcement. Fixed gallery dashboards (dead URLs, stale nav pages, webpack config rename leftovers). Filed 4 follow-up issues.
+Closed #2, #3, #4 on one branch (issue-2-ts-quality-sweep). TypeScript project references with incremental cross-package type checking (6.6s → 0.8s). ESLint strict-type-checked preset (149 auto-fixed, 653 remaining → #6). Post-strict follow-ups: Component<T, P extends object> constraint, ~400 branded ID casts migrated to constructors, expectAggregateColumn() test helper. Three garden entries submitted (rootDir resolution, emitDeclarationOnly technique, tsc --build --noEmit discrepancy).
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`e2ddcd2`). Issue #1 closed.
+Both repos on `main`. Fork and blessed current (`b982a8d`). Issues #2, #3, #4 closed.
 
 ## What's Left
 
@@ -18,22 +18,20 @@ Both repos on `main`. Fork and blessed current (`e2ddcd2`). Issue #1 closed.
 - Form-level error display · XS · Low
 - "Warn if dirty" on page exit · XS · Med
 - DataSetOptions path in dropdown · XS · Low
-- Audit and remove `_legacy/` (#36) · S · Med
-- PLATFORM.md TypeScript module conventions (#37) · S · Low
+- Pre-existing pages-runtime typecheck errors (Element vs HTMLElement, .dataset) · S · Low
+- Pre-existing pages-viz test failures (CasehubTable filter events, CasehubBubbleChart sizing) · S · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #2 | TypeScript project references | S | Med | Incremental cross-package type checking |
-| #3 | ESLint strict type-checked rules | S | Low | Additional lint-level enforcement |
-| #4 | Post-strict follow-ups | XS | Low | P constraint, internal DataSetId casts, test narrowing |
 | #5 | Navigation components distinct rendering | M | Med | Tree/menu/tiles all render as identical pills |
-| #36 | Audit and remove GWT `_legacy/` | S | Med | Verify TS feature parity first |
+| #6 | Fix remaining ESLint strict-type-checked violations (653 errors) | M | Med | Breakdown by rule in issue body |
+| — | Fix pages-runtime typecheck errors | S | Low | Element → HTMLElement narrowing, .dataset access |
+| — | Fix pages-viz test failures | S | Low | CasehubTable filter event shape, BubbleChart sizing |
 | #23 | Domain-specific example dashboards | L | Med | Gallery stable, forms available |
 
 ## References
 
-- Spec: docs/superpowers/specs/2026-06-20-ts-strict-enforcement-design.md
-- Plan: plans/2026-06-21-ts-strict-enforcement-plan.md
-- Blog: 2026-06-21-mdp01-ts-strict-enforcement.md
+- Blog: 2026-06-21-mdp02-ts-quality-sweep.md
+- Garden: GE-20260621-710dfe, GE-20260621-d5e7d4, GE-20260621-f9970f (web/typescript)
