@@ -2,36 +2,35 @@
 
 ## Last Session
 
-Closed #2, #3, #4 on one branch (issue-2-ts-quality-sweep). TypeScript project references with incremental cross-package type checking (6.6s → 0.8s). ESLint strict-type-checked preset (149 auto-fixed, 653 remaining → #6). Post-strict follow-ups: Component<T, P extends object> constraint, ~400 branded ID casts migrated to constructors, expectAggregateColumn() test helper. Three garden entries submitted (rootDir resolution, emitDeclarationOnly technique, tsc --build --noEmit discrepancy).
+Closed 9 S/XS backlog items and implemented #5 (navigation distinct rendering) on branch `issue-7-sx-backlog-sweep`. 28 commits. Spec went through 5 review rounds. SDD implementation: 6 tasks, all reviewed. Fixed pre-existing Prometheus parser bug and Podman mock data. Four garden entries submitted.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`b982a8d`). Issues #2, #3, #4 closed.
+Branch `issue-7-sx-backlog-sweep` open on both repos. Covers #7 and #5 (`casehubio/casehub-pages`). Ready for `work end`.
+
+**Warning:** Workspace path resolution broken — `ctx.py` reports `WORKSPACE_OK=no` because symlinks aren't configured. The workspace is at `/Users/mdproctor/claude/public/casehub/pages`. The `.meta` is there on the epic branch. `work end` needs the workspace path hardcoded or symlinks fixed.
+
+## Immediate Next Step
+
+Run `/work end` to close the branch. The code review step in work-end is the remaining gate.
 
 ## What's Left
 
 - Lazy on-demand pagination for datasets · M · High
-- Cascading dropdown options · S · Med
-- Record navigation controls (next/prev) · S · Med
-- New record creation (POST) · S · Med
-- Delete records (SaveAdapter.delete unwired) · S · Low
-- Form-level error display · XS · Low
-- "Warn if dirty" on page exit · XS · Med
-- DataSetOptions path in dropdown · XS · Low
-- Pre-existing pages-runtime typecheck errors (Element vs HTMLElement, .dataset) · S · Low
-- Pre-existing pages-viz test failures (CasehubTable filter events, CasehubBubbleChart sizing) · S · Low
+- Pre-existing backwards-compat.test.ts failure (Kitchensink screen component) · XS · Low
+- Gallery smoke test coverage (dashboards load without errors) · S · Med
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #5 | Navigation components distinct rendering | M | Med | Tree/menu/tiles all render as identical pills |
 | #6 | Fix remaining ESLint strict-type-checked violations (653 errors) | M | Med | Breakdown by rule in issue body |
-| — | Fix pages-runtime typecheck errors | S | Low | Element → HTMLElement narrowing, .dataset access |
-| — | Fix pages-viz test failures | S | Low | CasehubTable filter event shape, BubbleChart sizing |
-| #23 | Domain-specific example dashboards | L | Med | Gallery stable, forms available |
+| #23 | Domain-specific example dashboards | L | Med | Gallery stable, forms + nav available |
+| — | Gallery smoke tests for all dashboards | S | Med | Podman, JVM fixed but untested by gallery specs |
 
 ## References
 
-- Blog: 2026-06-21-mdp02-ts-quality-sweep.md
-- Garden: GE-20260621-710dfe, GE-20260621-d5e7d4, GE-20260621-f9970f (web/typescript)
+- Spec: `docs/superpowers/specs/2026-06-21-nav-distinct-rendering-design.md`
+- Plan: `docs/superpowers/plans/2026-06-21-nav-distinct-rendering-plan.md`
+- Blog: `blog/2026-06-21-mdp03-backlog-sweep-and-nav-rendering.md`
+- Garden: GE-20260621-d98bb2, GE-20260621-fe3944, GE-20260621-90ec54, GE-20260621-f0563a (web/)
