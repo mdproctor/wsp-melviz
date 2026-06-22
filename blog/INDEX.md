@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-06-22-mdp01-smoke-tests-eslint-zero.md](2026-06-22-mdp01-smoke-tests-eslint-zero.md) | 2026-06-22 | Data-driven gallery smoke tests (33 dashboards), 700→0 ESLint strict-type-checked violations, ESLint/TSC type resolution conflict |
 | [2026-06-21-mdp02-ts-quality-sweep.md](2026-06-21-mdp02-ts-quality-sweep.md) | 2026-06-21 | Project references (6.6s→0.8s typecheck), ESLint strict-type-checked, branded ID constructors, Component<T,P> constraint |
 | [2026-06-21-mdp01-ts-strict-enforcement.md](2026-06-21-mdp01-ts-strict-enforcement.md) | 2026-06-21 | Maximum TypeScript strict mode — Component<T,P> generics, ComponentTypeRegistry, 143 type casts eliminated |
 | [2026-06-18-mdp01-runtime-improvements.md](2026-06-18-mdp01-runtime-improvements.md) | 2026-06-18 | Tree-walk navigation, URL encoding, lazy-page activation, accordion contract |
