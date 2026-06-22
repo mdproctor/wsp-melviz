@@ -2,27 +2,28 @@
 
 ## Last Session
 
-Two branches closed. Branch `issue-8-backlog-smoke-eslint`: data-driven gallery smoke tests (33 dashboards), all 700 ESLint strict-type-checked violations resolved to zero. Branch `issue-10-ci-workflow`: added ESLint + typecheck + tests to CI, set `build-and-test` as required status check on main with branch protection enabled. Issues #6, #8, #10 closed. Blog entry published.
+Branch `issue-9-eslint-tsc-backlog-sweep` closed. ESLint/TSC type resolution aligned — root cause was `.d.ts` not re-emitted by `tsc --build`; converted to `.ts`, re-enabled `no-unnecessary-type-assertion` for all files. Console error detection added to smoke tests. CI rename (#11) closed. Issues #9, #11, #13 closed. ARC42STORIES.MD stale scan revealed §9 issue numbers are completely misaligned with current GitHub tracker — needs full re-mapping.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`72bd3ff`). Issues #5–#10 closed.
+Both repos on `main`. Fork and blessed current (`0337973`). Issues #5–#13 closed (except #12 open).
 
 ## What's Left
 
-- Lazy on-demand pagination for datasets · M · High
-- Investigate ESLint/TSC type resolution alignment (#9) · S · Med
+- ARC42STORIES.MD §9 issue number re-mapping — all chapter/backlog issue refs are from a previous tracker · M · Med
+- Lazy on-demand pagination for datasets (#12) · M · High
 - Workspace `ctx.py` path resolution (`WORKSPACE_OK=no`) · XS · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #9 | Align ESLint/TSC type resolution to remove test file relaxation | S | Med | Garden: GE-20260622-549a11 |
-| — | Console error detection in smoke tests (`page.on("pageerror")`) | XS | Low | Code review suggestion |
-| — | Domain-specific example dashboards | L | Med | Gallery stable, all nav types and forms complete |
+| #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
+| — | ARC42STORIES.MD §9 re-map to current GitHub issues | M | Med | All issue refs stale |
+| — | Domain-specific example dashboards | L | Med | Gallery stable |
 
 ## References
 
 - Blog: `blog/2026-06-22-mdp01-smoke-tests-eslint-zero.md`
 - Garden: GE-20260622-549a11
+- Design spec: `docs/superpowers/specs/2026-06-22-eslint-tsc-type-resolution-design.md`
