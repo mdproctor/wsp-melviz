@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Closed branch `issue-8-backlog-smoke-eslint`. Data-driven gallery smoke tests covering all 33 dashboards. All 700 ESLint strict-type-checked violations resolved to zero across 131 files in 11 packages. Issues #8 and #6 closed on casehubio. Blog entry published to mdproctor.github.io.
+Two branches closed. Branch `issue-8-backlog-smoke-eslint`: data-driven gallery smoke tests (33 dashboards), all 700 ESLint strict-type-checked violations resolved to zero. Branch `issue-10-ci-workflow`: added ESLint + typecheck + tests to CI, set `build-and-test` as required status check on main with branch protection enabled. Issues #6, #8, #10 closed. Blog entry published.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`8b4cb34`). Issues #5, #6, #7, #8 closed.
+Both repos on `main`. Fork and blessed current (`72bd3ff`). Issues #5–#10 closed.
 
 ## What's Left
 
@@ -18,8 +18,8 @@ Both repos on `main`. Fork and blessed current (`8b4cb34`). Issues #5, #6, #7, #
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #9 | Align ESLint/TSC type resolution to remove test file no-unnecessary-type-assertion relaxation | S | Med | Filed this session; garden entry GE-20260622-549a11 |
-| — | Console error detection in smoke tests (`page.on("pageerror")`) | XS | Low | Reviewer suggestion — catches JS errors that don't produce visible error divs |
+| #9 | Align ESLint/TSC type resolution to remove test file relaxation | S | Med | Garden: GE-20260622-549a11 |
+| — | Console error detection in smoke tests (`page.on("pageerror")`) | XS | Low | Code review suggestion |
 | — | Domain-specific example dashboards | L | Med | Gallery stable, all nav types and forms complete |
 
 ## References
