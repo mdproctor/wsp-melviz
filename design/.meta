@@ -1,0 +1,9 @@
+branch: issue-9-eslint-tsc-backlog-sweep
+project-sha: 986309594791cdf5fddca652ee257d19e18fb22d
+date: 2026-06-22
+issue: 9
+issue-repo: casehubio/casehub-pages
+covers: 9,13,11,12
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
