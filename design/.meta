@@ -1,0 +1,9 @@
+branch: issue-26-quinoa-convention
+project-sha: 39ab6d0f6d74924e352d285f1c971916047b2927
+date: 2026-06-23
+issue: 26
+issue-repo: casehubio/casehub-pages
+covers: 26
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
