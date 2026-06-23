@@ -2,16 +2,15 @@
 
 ## Last Session
 
-Branch `issue-27-arc42-remap` closed. All ARC42STORIES.MD §9 issue references remapped from dead previous tracker to current `casehubio/casehub-pages` GitHub issues (#12–#26). Chapters 1 and 2 converted to milestone tables (complete). §12 risk ref updated #3→#16. Issue #27 closed.
+Branch `issue-26-quinoa-convention` closed. Established the Quinoa convention: renamed npm scope `@casehub` → `@casehubio` (GitHub Packages requirement), removed redundant iframe ECharts (#28), added publishing fields, moved pages-viz side-effect import into pages-runtime, bumped to 0.2.0, created CI publish workflow + reference template + convention doc. Workspace `ctx.py` path resolution fixed (stale melviz symlinks).
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`457cf7c`).
+Both repos on `main`. Fork and blessed current (`a0af1ea`).
 
 ## What's Left
 
-- Lazy on-demand pagination for datasets (#12) · M · High
-- Workspace `ctx.py` path resolution (`WORKSPACE_OK=no`) · XS · Low
+- Workspace `WORKSPACE_OK` fix needs no further action (symlinks corrected this session)
 
 ## What's Next
 
@@ -23,5 +22,8 @@ Both repos on `main`. Fork and blessed current (`457cf7c`).
 
 ## References
 
-- Blog: `blog/2026-06-23-mdp01-arc42-issue-remap.md`
+- Blog: `blog/2026-06-23-mdp02-publishable-quinoa-convention.md`
+- Convention doc: `docs/quinoa-convention.md`
+- Template: `templates/quinoa-host/`
+- Spec: `docs/superpowers/specs/2026-06-23-quinoa-convention-design.md`
 - Previous: `git show HEAD~1:HANDOFF.md`
