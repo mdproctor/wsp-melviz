@@ -1,0 +1,9 @@
+branch: issue-17-small-issues-and-llm-docs
+project-sha: 5be9b6b085d5a162a2203cd32733a694a07b6434
+date: 2026-06-23
+issue: 17
+issue-repo: casehubio/casehub-pages
+covers: 17,18,19,25
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
