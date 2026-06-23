@@ -144,6 +144,20 @@ yarn typecheck
 yarn lint
 ```
 
+### Publishing & Versioning
+
+All `@casehub/pages-*` packages are published to GitHub Packages. Versions are bumped manually — no automation.
+
+```bash
+# Bump all publishable packages to a new version
+node scripts/bump-version.mjs 0.3.0
+
+# Check current versions
+node scripts/bump-version.mjs --check
+```
+
+**Before merging a PR that changes a published package**, bump the patch version across all published packages. The script updates every non-private package.json in one command.
+
 ### Examples Dev Server
 
 ```bash
