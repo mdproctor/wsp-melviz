@@ -1,0 +1,9 @@
+branch: issue-24-view-state-persistence
+project-sha: a261cf394c6273878d027730fab36892eea6ccfc
+date: 2026-06-24
+issue: 24
+issue-repo: casehubio/casehub-pages
+covers: 24
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
