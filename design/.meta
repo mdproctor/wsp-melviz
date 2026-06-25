@@ -1,0 +1,9 @@
+branch: issue-32-fix-ci-and-small-issues
+project-sha: 60d59bc99936ed43958e661dcf114a38a3c14c4f
+date: 2026-06-25
+issue: 32
+issue-repo: casehubio/casehub-pages
+covers: 32,30,31
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
