@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-06-26-mdp01-four-domains-one-gallery.md](2026-06-26-mdp01-four-domains-one-gallery.md) | 2026-06-26 | Four domain dashboards (Sales, IoT, People, Clinical) — coverage matrix for grid, panel, scatter, meter, sidebar, tabs, forms, markdown, groupByCalendar |
 | [2026-06-25-mdp01-three-leftovers-view-state.md](2026-06-25-mdp01-three-leftovers-view-state.md) | 2026-06-25 | CI type fixes, double render elimination, text filter migration to pipeline — three #24 follow-ups in one branch |
 | [2026-06-23-mdp01-arc42-issue-remap.md](2026-06-23-mdp01-arc42-issue-remap.md) | 2026-06-23 | ARC42STORIES.MD §9 issue remap — chapters to milestones, backlog to current tracker (#12–#26), §12 risk ref updated |
 | [2026-06-22-mdp01-smoke-tests-eslint-zero.md](2026-06-22-mdp01-smoke-tests-eslint-zero.md) | 2026-06-22 | Data-driven gallery smoke tests (33 dashboards), 700→0 ESLint strict-type-checked violations, ESLint/TSC type resolution conflict |
