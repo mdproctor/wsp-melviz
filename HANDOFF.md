@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Branch `issue-45-fix-aggregate-on-group-column` closed. Parser priority bug fixed — aggregates on the group column were silently classified as keys, causing three Workforce Analytics charts to render empty. Also fixed meter gauge clipping in Fleet Monitor and strengthened Playwright tests to validate data types, not just canvas existence. Garden entry GE-20260627-9d0123 submitted (parser condition priority gotcha).
+Two branches closed. First (#45): parser priority bug — aggregates on the group column were silently classified as keys, causing three Workforce Analytics charts to render empty. Fixed lookup-parser.ts, datasetToSource positional access, meter gauge radius. Second (#51): gallery reorganized — sidebar reordered (domain first), Kitchensink dissolved into 6 grouped examples, Kepler mock data created from scratch, Quarkus Monitoring extended with history + live pages, label filter fixes for TS parser.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`29b1fe2`).
+Both repos on `main`. Fork and blessed current (`a422c49`).
 
 ## What's Left
 
@@ -21,9 +21,10 @@ Both repos on `main`. Fork and blessed current (`29b1fe2`).
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
 | #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
+| #35 | Fix map chart geo data loading | S | Med | Maps example uses known-error workaround |
 
 ## References
 
-- Blog: `blog/2026-06-27-mdp01-parser-ate-its-aggregates.md`
+- Blog: `blog/2026-06-27-mdp01-parser-ate-its-aggregates.md`, `blog/2026-06-27-mdp02-gallery-triage.md`
 - Garden: `GE-20260627-9d0123` (parser condition priority — silent aggregate loss)
 - Previous: `git show HEAD~1:HANDOFF.md`
