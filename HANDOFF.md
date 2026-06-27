@@ -1,27 +1,22 @@
-*Updated: #14 closed — removed from backlog.*
-
-# casehub-pages Session Handover — 2026-06-25
+# casehub-pages Session Handover — 2026-06-27
 
 ## Last Session
 
-Branch `issue-32-fix-ci-and-small-issues` closed. Three #24 follow-ups resolved: CI type errors fixed (#32), double render from totalRows setter eliminated (#30), text filter migrated from component-local to data pipeline (#31). Text filter now searches all rows across pages, persists in URL via `tf=` param, and composes with pipeline sort/pagination. Stale-closure `rerender()` pattern removed from CasehubTable click handler. Garden entry GE-20260625-2c2539 submitted (JSDOM location.hash test isolation gotcha).
+Branch `issue-45-fix-aggregate-on-group-column` closed. Parser priority bug fixed — aggregates on the group column were silently classified as keys, causing three Workforce Analytics charts to render empty. Also fixed meter gauge clipping in Fleet Monitor and strengthened Playwright tests to validate data types, not just canvas existence. Garden entry GE-20260627-9d0123 submitted (parser condition priority gotcha).
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`d16ee06`).
-
-## Cross-Module
-
-*Unchanged — `git show HEAD~1:HANDOFF.md`*
+Both repos on `main`. Fork and blessed current (`29b1fe2`).
 
 ## What's Left
 
-*None — all trailing obligations from previous session resolved.*
+*None — all trailing obligations resolved.*
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
+| #44 | Minor polish for domain example dashboards | S | Low | Remaining items from #14 review |
 | #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
@@ -29,6 +24,6 @@ Both repos on `main`. Fork and blessed current (`d16ee06`).
 
 ## References
 
-- Blog: `blog/2026-06-25-mdp01-three-leftovers-view-state.md`
-- Garden: `GE-20260625-2c2539` (JSDOM location.hash test isolation)
+- Blog: `blog/2026-06-27-mdp01-parser-ate-its-aggregates.md`
+- Garden: `GE-20260627-9d0123` (parser condition priority — silent aggregate loss)
 - Previous: `git show HEAD~1:HANDOFF.md`
