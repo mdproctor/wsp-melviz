@@ -1,3 +1,5 @@
+*Updated: #14 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-06-25
 
 ## Last Session
@@ -21,7 +23,6 @@ Both repos on `main`. Fork and blessed current (`d16ee06`).
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
-| #14 | Domain-specific example dashboards | L | Med | Gallery stable |
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
 | #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
