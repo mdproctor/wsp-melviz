@@ -1,12 +1,12 @@
-# casehub-pages Session Handover — 2026-06-27
+# casehub-pages Session Handover — 2026-06-28
 
 ## Last Session
 
-Two branches closed. First (#45): parser priority bug — aggregates on the group column were silently classified as keys, causing three Workforce Analytics charts to render empty. Fixed lookup-parser.ts, datasetToSource positional access, meter gauge radius. Second (#51): gallery reorganized — sidebar reordered (domain first), Kitchensink dissolved into 6 grouped examples, Kepler mock data created from scratch, Quarkus Monitoring extended with history + live pages, label filter fixes for TS parser.
+Branch `issue-44-small-issues-polish` closed. Covered #44 (domain dashboard polish — IoT metric miscount, People YAML raw HTML removal, Playwright waitForTimeout elimination, layout model doc) and #35 (map chart geo data — lazy-load world GeoJSON from CDN, call registerMap). Both issues closed. ARC42STORIES.MD updated — #35 and #44 marked done, map risk entry updated.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`a422c49`).
+Both repos on `main`. Fork and blessed current (`c3e695a`).
 
 ## What's Left
 
@@ -16,15 +16,13 @@ Both repos on `main`. Fork and blessed current (`a422c49`).
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #44 | Minor polish for domain example dashboards | S | Low | Remaining items from #14 review |
 | #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
 | #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
-| #35 | Fix map chart geo data loading | S | Med | Maps example uses known-error workaround |
+| #36 | Accumulate + expression for inline datasets | S | Med | |
 
 ## References
 
-- Blog: `blog/2026-06-27-mdp01-parser-ate-its-aggregates.md`, `blog/2026-06-27-mdp02-gallery-triage.md`
-- Garden: `GE-20260627-9d0123` (parser condition priority — silent aggregate loss)
+- Blog: `blog/2026-06-27-mdp03-small-issues-loose-ends.md`
 - Previous: `git show HEAD~1:HANDOFF.md`
