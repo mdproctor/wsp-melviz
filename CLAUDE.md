@@ -188,7 +188,7 @@ yarn workspace @casehub/pages-examples run dev
 ```
 YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
   → @casehub/pages-component (layout) → @casehub/pages-viz (render)
-  → casehub-filter/casehub-sort events → back to data layer
+  → pages-filter/pages-sort events → back to data layer
 ```
 
 ## Key Technologies
