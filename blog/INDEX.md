@@ -1,7 +1,8 @@
-# Melviz Blog Index
+# CaseHub Pages Blog Index
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-06-29-mdp01-the-last-rename.md](2026-06-29-mdp01-the-last-rename.md) | 2026-06-29 | Casehub* → Pages* prefix rename — 6 surfaces, 75 files, substring collision gotcha |
 | [2026-06-27-mdp03-small-issues-loose-ends.md](2026-06-27-mdp03-small-issues-loose-ends.md) | 2026-06-27 | IoT metric fix, YAML panel cleanup, waitForTimeout elimination, map geo data lazy-loading |
 | [2026-06-27-mdp02-gallery-triage.md](2026-06-27-mdp02-gallery-triage.md) | 2026-06-27 | Gallery reorganization — sidebar reordered, Kitchensink dissolved, Kepler mock data, Quarkus history+live pages |
 | [2026-06-27-mdp01-parser-ate-its-aggregates.md](2026-06-27-mdp01-parser-ate-its-aggregates.md) | 2026-06-27 | Parser priority bug — aggregates on group column silently classified as keys, three charts rendered empty, tests strengthened |
