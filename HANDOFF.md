@@ -2,27 +2,34 @@
 
 ## Last Session
 
-Branch `issue-44-small-issues-polish` closed. Covered #44 (domain dashboard polish — IoT metric miscount, People YAML raw HTML removal, Playwright waitForTimeout elimination, layout model doc) and #35 (map chart geo data — lazy-load world GeoJSON from CDN, call registerMap). Both issues closed. ARC42STORIES.MD updated — #35 and #44 marked done, map risk entry updated.
+Designed epic #50 (clinical trial demo — 12 child issues). Spec written, adversarial-reviewed, committed. Then decided to do #55 (Casehub* → Pages* rename) first — clinical confirmed no blockers. Paused #50, created #55 branch.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`c3e695a`).
+Project + workspace on `issue-55-rename-casehub-to-pages`. Branch scaffolded, no implementation yet.
+Pause stack: `issue-50-clinical-trial-demo` (#50) — resume after #55 closes.
+
+## Immediate Next Step
+
+Implement #55: rename `Casehub*` → `Pages*` across all packages. Scope documented on the GitHub issue (#55 comment). Approach: scripted batch replacement of classes, tags, events, CSS properties → verify with `yarn typecheck && yarn test && yarn lint`.
+
+## Cross-Module
+
+**We're blocking:**
+- `casehubio/clinical` — needs renamed packages published before their next dependency bump · S · Low
 
 ## What's Left
 
-*None — all trailing obligations resolved.*
+- Implement #55 rename (current branch) · M · Low
+- Resume #50 after #55 merges — spec done, needs implementation plan · L · High
 
 ## What's Next
 
-| # | Description | Scale | Complexity | Notes |
-|---|-------------|-------|------------|-------|
-| #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
-| #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
-| #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
-| #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
-| #36 | Accumulate + expression for inline datasets | S | Med | |
+*Unchanged — retrieve with: `git show HEAD~1:HANDOFF.md`*
 
 ## References
 
-- Blog: `blog/2026-06-27-mdp03-small-issues-loose-ends.md`
+- Spec: `docs/superpowers/specs/2026-06-28-clinical-trial-demo-capabilities-design.md`
+- Rename scope: `gh issue view 55 --repo casehubio/casehub-pages` (comment details all surfaces)
+- Adversarial review: `~/tmp/adr-clinical-trial-demo-capabilities-20260628-041121/`
 - Previous: `git show HEAD~1:HANDOFF.md`
