@@ -1,0 +1,9 @@
+branch: issue-36-accumulate-websocket-datasets
+project-sha: 7f75b2f2449dc754c910482ca7a9fa2839f762c9
+date: 2026-06-29
+issue: 36
+issue-repo: casehubio/casehub-pages
+covers: 36,52,53
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
