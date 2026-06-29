@@ -168,7 +168,7 @@ yarn workspace @casehub/pages-examples run dev
 
 **Core Packages** (`packages/`):
 - `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata
-- `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
+- `@casehub/pages-ui` — TypeScript DSL builders, YAML parser, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers
 - `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline
@@ -186,7 +186,7 @@ yarn workspace @casehub/pages-examples run dev
 ### Data Flow
 
 ```
-YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
+TypeScript DSL (or YAML) → Component tree → @casehub/pages-data (resolve)
   → @casehub/pages-component (layout) → @casehub/pages-viz (render)
   → pages-filter/pages-sort events → back to data layer
 ```
