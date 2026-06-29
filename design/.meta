@@ -1,0 +1,9 @@
+branch: issue-56-websocket-robustness
+project-sha: f144accdf493336bf754d7ff5409941cca51099e
+date: 2026-06-29
+issue: 56
+issue-repo: casehubio/casehub-pages
+covers: 56,57,58,61,62
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
