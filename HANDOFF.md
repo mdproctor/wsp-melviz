@@ -2,12 +2,13 @@
 
 ## Last Session
 
-Branch `issue-55-rename-casehub-to-pages` closed. Renamed all `Casehub*` class prefixes to `Pages*` across 6 surfaces (classes, tags, events, CSS vars, CSS classes, types) — 75 files, 1,106 insertions/deletions. Also fixed a pre-existing meter test assertion. Issue #55 closed. Pushed to both fork and blessed.
+Closed epic #50 (clinical trial demo capabilities). 12 issues delivered: context resolution model (#{} templates, visibleWhen, parameterised URLs), 7 new components (alert, badge, countdown, timeline, graph, action-button, form submit), table enhancements (row styling, expandable tree-table), HTTP action infrastructure. Squashed to 2 commits, pushed to fork + blessed.
+
+Also closed #55 (Casehub* → Pages* rename) earlier in the session — prerequisite for #50.
 
 ## Branch State
 
-Both repos on `main`. Fork and blessed current (`8167d0b`).
-Pause stack: `issue-50-clinical-trial-demo` (#50) — spec done, needs implementation plan.
+Both repos on `main`. Fork and blessed current.
 
 ## What's Left
 
@@ -17,14 +18,22 @@ Pause stack: `issue-50-clinical-trial-demo` (#50) — spec done, needs implement
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #50 | Clinical trial demo capabilities | L | High | Paused — spec done, needs plan + implementation |
-| #12 | Lazy on-demand pagination for datasets | M | High | Next substantive feature |
+| #12 | Lazy on-demand pagination for datasets | M | High | |
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
 | #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
 | #36 | Accumulate + expression for inline datasets | S | Med | |
+| #52 | WebSocket dataset provider | M | Med | Connectors need |
+| #53 | WebSocket multiplexing | S | Med | Depends on #52 |
+
+## Cross-Module
+
+**We're blocking:**
+- `casehubio/clinical` — can now consume all new components; rename (#55) scope documented on issue
 
 ## References
 
-- Blog: `blog/2026-06-29-mdp01-the-last-rename.md`
+- Spec: `docs/superpowers/specs/2026-06-28-clinical-trial-demo-capabilities-design.md`
+- Blog: `blog/2026-06-29-mdp02-context-resolution-capabilities.md`
+- Adversarial review: `~/adr/casehub-pages/clinical-trial-demo-capabilities-20260628-171706/`
 - Previous: `git show HEAD~1:HANDOFF.md`
