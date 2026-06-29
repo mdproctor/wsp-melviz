@@ -1,3 +1,5 @@
+*Updated: #50, #55 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-06-29
 
 ## Last Session
@@ -29,7 +31,7 @@ Both repos on `main`. Fork and blessed current.
 ## Cross-Module
 
 **We're blocking:**
-- `casehubio/clinical` — can now consume all new components; rename (#55) scope documented on issue
+- `casehubio/clinical` — can now consume all new components; rename scope documented on #55 (closed)
 
 ## References
 
