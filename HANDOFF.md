@@ -1,3 +1,5 @@
+*Updated: #332 (casehubio/parent) closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-06-30
 
 ## Last Session
@@ -8,15 +10,10 @@ Batch of 9 S/XS issues on one branch: PushSource abstraction (shared interface f
 
 Both repos on `main`. Fork and blessed current.
 
-## What's Left
-
-- #332 (casehubio/parent) — Update PLATFORM.md capability entry for workbench primitives · XS · Low
-
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #332 | Update PLATFORM.md for workbench primitives | XS | Low | casehubio/parent |
 | #75 | Drag-and-drop panel rearrangement | L | High | future epic |
 | #76 | Workbench layout serialization | M | Med | save/restore to JSON |
 | #77 | Floating/popout panels | M | High | detach into separate windows |
