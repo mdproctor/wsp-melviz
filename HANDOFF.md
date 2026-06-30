@@ -1,8 +1,8 @@
-# casehub-pages Session Handover — 2026-06-29
+# casehub-pages Session Handover — 2026-06-30
 
 ## Last Session
 
-Closed branch `issue-36-accumulate-websocket-datasets` covering 6 issues: unified DataSetEvent model replacing register/accumulate (#36), WebSocket push source with multiplexing (#52, #53), toLowerCase crash fix (#59), YAML nav type support + navigation gallery (#33), Team Management example with withAccess/JOIN/includes (#34). 12 stale issues from #50 epic also closed retroactively (#37–#49, #54). Squashed to 10 commits, pushed to fork + blessed.
+Closed branch `issue-56-websocket-robustness` covering 5 issues: WebSocket auth via query-param tokens (#58), transparent relay proxy (#57), incremental reconnect via seq/since (#56), single-subscriber fallback routing (#61), duplicate subscribe guard + append column-count validation (#62). Squashed to 6 commits, pushed to fork + blessed. Also corrected README and CLAUDE.md to TypeScript-first positioning (#63 filed for broader web architecture doc).
 
 ## Branch State
 
@@ -16,25 +16,25 @@ Both repos on `main`. Fork and blessed current.
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #61 | WebSocket single-subscriber fallback routing | XS | Low | Messages without `dataset` field |
-| #62 | Duplicate subscribe guard + append schema validation | S | Low | Robustness follow-ups from review |
+| #72 | WebSocket test coverage gaps (auth+reconnect interaction, replace/remove seq, relay query params) | XS | Low | Batch of 5 minor test additions |
+| #73 | Add WebSocket section to CASEHUB-PAGES.md LLM integration guide | S | Low | Document auth, relay, seq, wire protocol |
+| #63 | Web Architecture document (PLATFORM.md equivalent for frontend tier) | S | Med | New doc |
+| #70 | Error propagation for push sources (WebSocket permanent close → component notification) | S | Med | Gap: DataSetEventListener has no error channel |
+| #71 | WebSocket subscription lifecycle — unsubscribe on component unmount | S | Med | Currently all subs live until site disposal |
 | #12 | Lazy on-demand pagination for datasets | M | High | |
 | #15 | Accessibility: ARIA, keyboard, screen reader | L | High | Deployment gate |
 | #16 | CSP compliance: replace new Function() | M | Med | §12 risk |
 | #21 | Optional Quarkus backend MVP | XL | High | Gates #22, #23 |
-| #56 | WebSocket incremental reconnect via `since` | S | Med | |
-| #57 | WebSocket server relay provider | M | Med | |
-| #58 | WebSocket authentication | S | Med | |
 
 ## Cross-Module
 
 **We're blocking:**
-- `casehubio/clinical` — can now consume all new components + fix metric lookups with `groupBy(null, col("field"))` per #59 fix
+- `casehubio/clinical` — can consume all new components + metric lookups with `groupBy(null, col("field"))` per #59 fix
+- `casehubio/aml` — can now build pages app with Quinoa convention; WebSocket auth available if needed
 
 ## References
 
-- Spec: `docs/superpowers/specs/2026-06-29-reactive-dataset-events-design.md`
-- Spec: `docs/superpowers/specs/2026-06-29-examples-and-nav-types-design.md`
-- Blog: `blog/2026-06-29-mdp02-event-model-three-issues.md`
-- Review: `~/adr/casehub-pages/reactive-dataset-events-20260629-180002/`
+- Spec: `docs/superpowers/specs/2026-06-29-websocket-robustness-design.md`
+- Blog: `blog/2026-06-30-mdp01-five-issues-one-connection.md`
+- Review: `~/adr/casehub-pages/websocket-robustness-*/`
 - Previous: `git show HEAD~1:HANDOFF.md`
