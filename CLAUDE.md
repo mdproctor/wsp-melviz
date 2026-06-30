@@ -158,20 +158,20 @@ yarn workspace @casehub/pages-examples run dev
 
 ### Monorepo Structure
 
-- **`packages/`** — Core TypeScript libraries for dashboard rendering
-- **`components/`** — Iframe-isolated React microfrontend visualization components
+- **`packages/`** — Core TypeScript libraries: data engine, component model, layout renderer, DSL builders, runtime orchestrator
+- **`components/`** — Iframe-isolated React microfrontend components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
-- **`examples/`** — Interactive dashboard examples gallery
+- **`examples/`** — Interactive examples gallery
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
 
 **Core Packages** (`packages/`):
-- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata
-- `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
-- `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
-- `@casehub/pages-component` — CSS grid layout renderer, interactive containers
-- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline
+- `@casehub/pages-data` — DataSet model, reactive event engine (snapshot/append/replace/remove), operations, external data extraction, WebSocket sources, JSONata
+- `@casehub/pages-ui` — TypeScript DSL builders, YAML parser, component model
+- `@casehub/pages-viz` — Web Component wrappers for charts, tables, metrics, selectors (ECharts)
+- `@casehub/pages-component` — CSS grid layout renderer, interactive containers (tabs, pills, sidebar, carousel, stack, accordion, split, dock bar)
+- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, event delegation, panel hosting
 
 **Iframe Component API** (`packages/`):
 - `@casehub/pages-iframe-api` — Component controller for iframe-isolated components
@@ -186,9 +186,9 @@ yarn workspace @casehub/pages-examples run dev
 ### Data Flow
 
 ```
-YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
-  → @casehub/pages-component (layout) → @casehub/pages-viz (render)
-  → pages-filter/pages-sort events → back to data layer
+TypeScript DSL (or YAML) → @casehub/pages-ui (parse) → @casehub/pages-data (resolve, apply events)
+  → @casehub/pages-component (layout) → @casehub/pages-viz (render) + hostPanel (custom Web Components)
+  → pages-filter/pages-event/pages-sort events → back to data layer
 ```
 
 ## Key Technologies
