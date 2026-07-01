@@ -171,7 +171,7 @@ yarn workspace @casehub/pages-examples run dev
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers
-- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline
+- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
 - `@casehub/pages-iframe-api` — Component controller for iframe-isolated components
