@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-01-mdp02-layout-as-first-class.md](2026-07-01-mdp02-layout-as-first-class.md) | 2026-07-01 | Layout serialization — observable split resize, LayoutStore contract, auto-persistence, lazy container restore |
 | [2026-07-01-mdp01-the-first-web-component.md](2026-07-01-mdp01-the-first-web-component.md) | 2026-07-01 | Stock terminal component — first Web Component in components/, URL template pattern, close code 4001 for session expiry |
 | [2026-06-30-mdp01-the-abstraction-that-was-missing.md](2026-06-30-mdp01-the-abstraction-that-was-missing.md) | 2026-06-30 | PushSource abstraction — shared interface for WebSocket/SSE, error propagation, MutationObserver lifecycle, pipeline encapsulation |
 | [2026-06-29-mdp01-the-last-rename.md](2026-06-29-mdp01-the-last-rename.md) | 2026-06-29 | Casehub* → Pages* prefix rename — 6 surfaces, 75 files, substring collision gotcha |
