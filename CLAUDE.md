@@ -158,10 +158,10 @@ yarn workspace @casehub/pages-examples run dev
 
 ### Monorepo Structure
 
-- **`packages/`** — Core TypeScript libraries for dashboard rendering
+- **`packages/`** — Core TypeScript libraries for web application framework
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
-- **`examples/`** — Interactive dashboard examples gallery
+- **`examples/`** — Interactive examples gallery
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
