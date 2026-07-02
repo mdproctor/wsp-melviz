@@ -144,6 +144,21 @@ yarn typecheck
 yarn lint
 ```
 
+### Backend (Java/Quarkus)
+
+```bash
+# Build and test all backend modules
+mvn -f backend/pom.xml verify
+
+# Install to local Maven repo
+mvn -f backend/pom.xml clean install
+
+# Build a specific module
+mvn -f backend/pom.xml verify -pl auth
+mvn -f backend/pom.xml verify -pl layout
+mvn -f backend/pom.xml verify -pl layout-sqlite
+```
+
 ### Examples Dev Server
 
 ```bash
@@ -162,6 +177,7 @@ yarn workspace @casehub/pages-examples run dev
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
 - **`examples/`** — Interactive dashboard examples gallery
+- **`backend/`** — Optional Quarkus backend modules (auth, layout persistence, data processing)
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
@@ -171,7 +187,7 @@ yarn workspace @casehub/pages-examples run dev
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers
-- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
+- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`, `createRestLayoutStore`), dev-auth utilities (`createDevAuthTokenFn`, `DevAuthConfig`)
 
 **Iframe Component API** (`packages/`):
 - `@casehub/pages-iframe-api` — Component controller for iframe-isolated components
@@ -199,6 +215,8 @@ YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
 - **ESLint** with `@typescript-eslint/strict-type-checked` — linting
 - **Apache ECharts** — charting
 - **JSONata** — data transformation
+- **Quarkus 3.32.2** / **SmallRye JWT** — optional backend (Java 21)
+- **SQLite** (xerial JDBC + HikariCP + Flyway) — layout persistence backend
 
 ## Project Artifacts
 
