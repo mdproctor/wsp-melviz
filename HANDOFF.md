@@ -1,3 +1,5 @@
+*Updated: #78 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-02
 
 ## Last Session
@@ -11,7 +13,6 @@ Both repos on `main`. Pause stack empty.
 ## What's Left
 
 - PLATFORM.md update — approved wording for layout serialization, needs applying in casehub-parent repo · XS · Low
-- #78 cross-repo scope — casehub-parent, casehub-all, fsitrading, soc, devtown still have stale "dashboard rendering" refs · S · Low
 
 ## What's Next
 
