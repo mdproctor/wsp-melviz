@@ -2,36 +2,35 @@
 
 ## Last Session
 
-Designed, reviewed, and implemented the first Quarkus backend for casehub-pages (#88). Four Maven modules: auth (SmallRye JWT dev-auth), layout (SPI + REST), layout-sqlite (HikariCP + WAL + Flyway), data (scaffold). Plus TypeScript frontend: REST layout store, configurable debounce, login gate and identity widget Web Components. Adversarial design review caught 18 issues including user-scoped persistence flaw and Content-Type mismatch. All landed on main as a single squash commit. #88 closed.
+Completed the backend data module (#21): two new Maven modules — `data` (SPI, REST relay + query, SSRF-protected proxy, DTOs) and `data-sql` (SQL push-down via Quarkus Agroal, parameterized SqlQueryBuilder, ResultSetMapper). 50 tests green. Also cleared four trailing items from #88 (prod-profile exclusion test, layoutSaveDelayMs tests, PLATFORM.md updates). Did a full gap analysis against the original GWT DashBuilder (~80% parity), created 6 new issues for uncovered gaps, and organized all 15 remaining issues under epic #95.
 
 ## Branch State
 
-Both repos on `main`. Pause stack empty.
+Branch `issue-21-data-module-backend` open in both repos. Main has 1 unpushed commit (`e786bc4` — trailing tests from #88). Pause stack empty.
 
 ## What's Left
 
-- PLATFORM.md update — approved wording for layout serialization, needs applying in casehub-parent repo · XS · Low
-- PLATFORM.md update — add backend modules to casehub-pages capability ownership entry · XS · Low
-- Follow-up: prod-profile exclusion test for auth endpoint (minor from final review) · XS · Low
-- Follow-up: layoutSaveDelayMs unit tests (minor from final review) · XS · Low
+- PLATFORM.md update — layout serialization + backend modules applied in casehub-parent (committed, not pushed) · XS · Low
+- Frontend `RemoteDataService` for `/api/dataset/query` (#89) — connects SQL push-down to frontend pipeline · M · Med
+- Named datasource resolution in SqlDataProvider — MVP uses default datasource only · S · Med
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #86 | Publish 0.3.0 with workbench primitives + terminal | S | Low | CI green, distinctJoin + backend included — unblocked |
-| #21 | Optional Quarkus backend MVP — data module full design | M | Med | Backend structure in place; data module needs service boundary design |
-| #75 | Drag-and-drop panel rearrangement | L | High | future epic |
-| #77 | Floating/popout panels | M | High | detach into separate windows |
+| #86 | Publish 0.3.0 with workbench primitives + terminal | S | Low | CI green, unblocked |
+| #89 | Frontend RemoteDataService for /query | M | Med | Blocked by #21 branch close |
+| #90 | Server-side data caching (Caffeine) | S | Low | |
+| #95 | Epic: GWT migration remaining gaps | — | — | Tracks all 15 open issues |
 
 ## Cross-Module
 
 **We're unblocking:**
-- `casehubio/connectors` — chat demo needs `casehub-pages-auth` for user identity (§1 of interactive features spec)
+- `casehubio/connectors` — chat demo needs `casehub-pages-auth` for user identity
 
 ## References
 
-- Design spec: `docs/superpowers/specs/2026-07-02-dev-auth-backend-design.md`
-- Blog: `blog/2026-07-02-mdp01-the-optional-backend.md`
-- Garden: GE-20260702-29cf6c (cross-stack Content-Type mismatch gotcha)
+- Design spec: `docs/superpowers/specs/2026-07-02-data-module-backend-design.md`
+- Blog: `blog/2026-07-02-mdp01-completing-the-data-module.md`
+- Epic: casehubio/casehub-pages#95
 - Previous: `git show HEAD~1:HANDOFF.md`
