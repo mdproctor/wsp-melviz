@@ -162,7 +162,18 @@ yarn workspace @casehub/pages-examples run dev
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
 - **`examples/`** — Interactive dashboard examples gallery
+- **`backend/`** — Optional Quarkus Java backend (Maven modules)
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
+
+### Backend Modules (`backend/`)
+
+Maven multi-module project. Build: `mvn -f backend/pom.xml test`
+
+- `casehub-pages-auth` — SmallRye JWT dev-auth (`@UnlessBuildProfile("prod")`)
+- `casehub-pages-layout` — Layout persistence SPI + REST (`/api/layouts/{key}`)
+- `casehub-pages-layout-sqlite` — SQLite + HikariCP WAL + Flyway impl of layout SPI
+- `casehub-pages-data-backend` — Data SPI + REST (`/api/dataset/fetch` relay, `/api/dataset/query` push-down)
+- `casehub-pages-data-sql` — SQL provider via Quarkus Agroal named datasources
 
 ### Package Overview
 
