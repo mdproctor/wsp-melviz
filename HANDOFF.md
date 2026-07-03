@@ -19,6 +19,7 @@ Both repos on `main`. Pause stack empty.
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #86 | Publish 0.3.0 with workbench primitives + terminal | S | Low | CI green, all features included — unblocked |
+| #97 | Epic: real-time event subscription infrastructure | L | Med | Filed from drafthouse#87 brainstorm — listen/unlisten protocol, event connection API, Java push types |
 | #75 | Drag-and-drop panel rearrangement | L | High | Future epic |
 | #77 | Floating/popout panels | M | High | Future epic |
 
