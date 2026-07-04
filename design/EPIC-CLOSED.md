@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-89-small-issues-batch
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-05
+**Issues:** 89,98,99,100
 **Status:** merged to main
