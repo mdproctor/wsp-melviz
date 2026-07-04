@@ -3,7 +3,7 @@ project-sha: 36480ab1858b02537be859a53f0eaa45f0ebe4d2
 date: 2026-07-04
 issue: 89
 issue-repo: casehubio/casehub-pages
-covers: 89,98,99,100,101
+covers: 89,98,99,100
 flyway-next-v: none
 design-repo: workspace
 design-section-hashes: 
