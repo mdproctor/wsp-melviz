@@ -1,3 +1,5 @@
+*Updated: casehubio/claudony#161 closed — removed from cross-module.*
+
 # casehub-pages Session Handover — 2026-07-04
 
 ## Last Session
@@ -25,7 +27,6 @@ Both repos on `main`. Pause stack empty.
 
 **We're unblocking:**
 - `casehubio/connectors` — chat demo needs `casehub-pages-auth` for user identity + `pages-auth-success` event for post-login actions
-- `casehubio/claudony#161` — Quinoa phase 1 can switch from `file:` local deps to published 0.3.0 registry versions once npm publish runs
 
 ## References
 
