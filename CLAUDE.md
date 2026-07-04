@@ -167,11 +167,11 @@ yarn workspace @casehub/pages-examples run dev
 ### Package Overview
 
 **Core Packages** (`packages/`):
-- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata
+- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata, push wire utilities (`EventConnection`, `PushSource`, `ServiceCapabilities`)
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers
-- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
+- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`), capability discovery at init
 
 **Iframe Component API** (`packages/`):
 - `@casehub/pages-iframe-api` — Component controller for iframe-isolated components
