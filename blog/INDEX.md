@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-04-mdp01-four-fixes-one-branch.md](2026-07-04-mdp01-four-fixes-one-branch.md) | 2026-07-04 | Platform fixes batch — auth gap, Caffeine caching with TTL hierarchy, 14 push loops consolidated via onChanged, CSP compliance via JSONata |
 | [2026-07-03-mdp01-wiring-pushdown-to-frontend.md](2026-07-03-mdp01-wiring-pushdown-to-frontend.md) | 2026-07-03 | Frontend push-down integration — serverQuery source type, operation separation in data pipeline, SSRF redirect bypass fix |
 | [2026-07-02-mdp01-completing-the-data-module.md](2026-07-02-mdp01-completing-the-data-module.md) | 2026-07-02 | Data module backend — relay proxy + SQL push-down, filter expression tree, SSRF protection, 80% gap analysis, epic #95 |
 | [2026-07-01-mdp02-layout-as-first-class.md](2026-07-01-mdp02-layout-as-first-class.md) | 2026-07-01 | Layout serialization — observable split resize, LayoutStore contract, auto-persistence, lazy container restore |
