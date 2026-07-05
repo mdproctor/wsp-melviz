@@ -1,31 +1,37 @@
-# casehub-pages Session Handover — 2026-07-05 (2)
+# casehub-pages Session Handover — 2026-07-05 (3)
 
 ## Last Session
 
-Version alignment and issue housekeeping. Moved #115 (push protocol adoption) from casehub-pages to the correct repos — casehubio/drafthouse#92 and casehubio/connectors#60. Aligned all module versions to casehub-parent 0.2-SNAPSHOT: npm 0.3.0→0.2.0, Maven 0.1-SNAPSHOT→0.2-SNAPSHOT. Bumped connectors/chat-demo's `casehub-pages-auth` dependency to match. Established version alignment as a project protocol (PP-20260705-8fcb31).
+Token normalisation, wildcard patterns, and primitive push-down. Aligned all module versions to 0.2 (Closes #117). Implemented segment-level (`*`) and multi-level (`**`) wildcard matching in TopicRegistry (Java) and EventConnection (TypeScript) (Closes #114). Created pages-primitives Lit package with a11y mixins, SchemaForm, filter chips, scope selector; added event helpers and DatasetContract (Closes #116). Design-reviewed (5 rounds, 18 issues, $19.83), 10 implementation tasks with per-task reviews, final whole-branch review approved.
 
 ## Branch State
 
-Both repos on `main`. Pause stack empty. Two unpushed commits on project main (version alignment + protocol).
+Both repos on `main`. Pause stack empty.
 
 ## What's Left
 
-- PLATFORM.md update — casehubio/parent#346 filed for pages capability entry + repo map update · S · Low
-- npm publish for 0.2.0 — version bump committed, packages not yet published to GitHub Packages registry · XS · Low
+- PLATFORM.md update — parent#349 filed for pages capability entry update · S · Low
+- npm publish for 0.2.0 — packages not yet published to GitHub Packages registry · XS · Low
+- Minor implementation findings — #120 filed (null safety, as-any casts, mixin composition test, dist import path) · S · Low
 
 ## What's Next
 
-*Unchanged — `git show HEAD~1:HANDOFF.md`*
+| # | Description | Scale | Complexity | Notes |
+|---|-------------|-------|------------|-------|
+| #118 | Establish TypeScript/pages protocols in garden | S | Low | Token naming, event contract, Lit conventions |
+| #119 | Trie-based TopicRegistry wildcard index | S | Med | Only if pattern count warrants it |
+| #75 | Drag-and-drop panel rearrangement | L | High | Future epic |
+| #77 | Floating/popout panels | M | High | Future epic |
 
 ## Cross-Module
 
 **We're unblocking:**
-- `casehubio/blocks-ui` — can switch from `--blocks-*` to `--pages-*` token imports (#112) · S · Low
-- `casehubio/connectors` — chat demo can adopt typed push protocol SDK (connectors#60); `casehub-pages-auth` already bumped to 0.2-SNAPSHOT
-- `casehubio/drafthouse` — can adopt typed push protocol SDK + EventStore for replay (drafthouse#92)
+- `casehubio/blocks-ui` — blocks-ui#21: migrate from `--blocks-*` to `--pages-*` tokens, switch imports to pages-* packages
+- `casehubio/blocks-ui` — blocks-ui#20: queue board UX redesign can use `<pages-filter-chips>` and `<pages-scope-selector>`
 
 ## References
 
+- Spec: `docs/superpowers/specs/2026-07-05-tokens-wildcards-primitives-design.md`
 - Protocol: `docs/protocols/casehub/version-alignment-with-parent.md`
 - Garden: `GE-20260705-9a8478` — AML webui file: protocol dependency
 - Previous: `git show HEAD~1:HANDOFF.md`
