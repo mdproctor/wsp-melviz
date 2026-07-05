@@ -1,39 +1,31 @@
-# casehub-pages Session Handover — 2026-07-05
+# casehub-pages Session Handover — 2026-07-05 (2)
 
 ## Last Session
 
-Design tokens + push protocol maturation batch: four issues (#101, #105, #106, #107) designed, adversarial-reviewed (7 rounds, 17 issues, $23.48), implemented via subagent-driven development (9 tasks, 8 per-task reviews + final branch review), and merged to main. Created `@casehubio/pages-ui-tokens` package (OKLCH 12-step colour scales, full non-colour vocabulary). Matured push protocol with general correlation layer (required `id` + ack/error on all ops), prefix wildcard matching in `TopicRegistry`, `EventStore` SPI + `InMemoryEventStore` for per-topic event replay, and Promise-based `EventConnection` with seq tracking and reconnect replay.
+Version alignment and issue housekeeping. Moved #115 (push protocol adoption) from casehub-pages to the correct repos — casehubio/drafthouse#92 and casehubio/connectors#60. Aligned all module versions to casehub-parent 0.2-SNAPSHOT: npm 0.3.0→0.2.0, Maven 0.1-SNAPSHOT→0.2-SNAPSHOT. Bumped connectors/chat-demo's `casehub-pages-auth` dependency to match. Established version alignment as a project protocol (PP-20260705-8fcb31).
 
 ## Branch State
 
-Both repos on `main`. Pause stack empty.
+Both repos on `main`. Pause stack empty. Two unpushed commits on project main (version alignment + protocol).
 
 ## What's Left
 
 - PLATFORM.md update — casehubio/parent#346 filed for pages capability entry + repo map update · S · Low
-- npm publish for 0.3.0 — version bump committed, packages not yet published to GitHub Packages registry · XS · Low
-- DraftHouse adoption of `casehub-pages-push` — replace manual JSON formatting with typed PushMessage builders + TopicRegistry + EventStore · S · Med
-- Connectors chat-demo adoption — replace Map-based ObjectMapper serialization with PushMessage builders · S · Low
-- DraftHouse/Connectors push protocol adoption — #115 filed · S · Med
+- npm publish for 0.2.0 — version bump committed, packages not yet published to GitHub Packages registry · XS · Low
 
 ## What's Next
 
-| # | Description | Scale | Complexity | Notes |
-|---|-------------|-------|------------|-------|
-| #112 | blocks-ui migration from --blocks-* to --pages-* tokens | S | Low | Pages now owns canonical tokens |
-| #113 | Durable EventStore implementations (JDBC, Redis) | M | Med | InMemoryEventStore is the default; apps bring their own |
-| #114 | Nested wildcard patterns (debate:room:*:summary) | S | Med | Only if trailing-* proves insufficient |
-| #75 | Drag-and-drop panel rearrangement | L | High | Future epic |
-| #77 | Floating/popout panels | M | High | Future epic |
+*Unchanged — `git show HEAD~1:HANDOFF.md`*
 
 ## Cross-Module
 
 **We're unblocking:**
-- `casehubio/blocks-ui` — can switch from `--blocks-*` to `--pages-*` token imports (#112)
-- `casehubio/connectors` — chat demo can adopt typed push protocol SDK
-- `casehubio/drafthouse` — can adopt typed push protocol SDK + EventStore for replay
+- `casehubio/blocks-ui` — can switch from `--blocks-*` to `--pages-*` token imports (#112) · S · Low
+- `casehubio/connectors` — chat demo can adopt typed push protocol SDK (connectors#60); `casehub-pages-auth` already bumped to 0.2-SNAPSHOT
+- `casehubio/drafthouse` — can adopt typed push protocol SDK + EventStore for replay (drafthouse#92)
 
 ## References
 
-- Design spec: `docs/superpowers/specs/2026-07-05-tokens-and-push-protocol-maturation-design.md`
+- Protocol: `docs/protocols/casehub/version-alignment-with-parent.md`
+- Garden: `GE-20260705-9a8478` — AML webui file: protocol dependency
 - Previous: `git show HEAD~1:HANDOFF.md`
