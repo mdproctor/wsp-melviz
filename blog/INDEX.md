@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-05-mdp02-version-drift-and-forgotten-repos.md](2026-07-05-mdp02-version-drift-and-forgotten-repos.md) | 2026-07-05 | Version alignment to casehub-parent 0.2 — npm and Maven drift, downstream consumer audit, AML file: protocol discovery, version protocol established |
 | [2026-07-05-mdp01-colour-science-and-protocol-handshakes.md](2026-07-05-mdp01-colour-science-and-protocol-handshakes.md) | 2026-07-05 | OKLCH 12-step design token adoption from blocks-ui, push protocol correlation layer with ack/error, wildcard topic matching, per-topic event replay with EventStore SPI |
 | [2026-07-04-mdp02-closing-the-review-loop.md](2026-07-04-mdp02-closing-the-review-loop.md) | 2026-07-04 | Async render correctness — generation counter lift to PagesElement, Promise rejection handling, cache hash form field fix, 0.3.0 version bump |
 | [2026-07-04-mdp01-four-fixes-one-branch.md](2026-07-04-mdp01-four-fixes-one-branch.md) | 2026-07-04 | Platform fixes batch — auth gap, Caffeine caching with TTL hierarchy, 14 push loops consolidated via onChanged, CSP compliance via JSONata |
