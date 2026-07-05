@@ -167,7 +167,8 @@ yarn workspace @casehub/pages-examples run dev
 ### Package Overview
 
 **Core Packages** (`packages/`):
-- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata
+- `@casehub/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
+- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`).
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers
@@ -182,6 +183,9 @@ yarn workspace @casehub/pages-examples run dev
 - `@casehub/pages-component-echarts` — Apache ECharts visualizations
 - `@casehub/pages-component-llm-prompter` — LLM prompt engineering UI
 - `@casehub/pages-component-svg-heatmap` — SVG-based heatmaps
+
+**Backend (Java)** (`backend/`):
+- `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
 
 ### Data Flow
 
