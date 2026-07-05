@@ -209,6 +209,7 @@ YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
 | Path | What it is |
 |------|------------|
 | `CLAUDE.md` | Project conventions (build, test, naming) |
+| `docs/protocols/` | Standing project rules and conventions |
 | `docs/superpowers/specs/` | Design specs |
 
 ## Work Tracking
