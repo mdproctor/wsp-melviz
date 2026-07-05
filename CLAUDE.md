@@ -171,7 +171,8 @@ yarn workspace @casehub/pages-examples run dev
 - `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`).
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
-- `@casehub/pages-component` — CSS grid layout renderer, interactive containers
+- `@casehub/pages-component` — CSS grid layout renderer, interactive containers, `emitPagesEvent`/`onPagesEvent` helpers
+- `@casehubio/pages-primitives` — Lit web components: a11y mixins (`RovingTabindexMixin`, `FocusTrapMixin`, `KeyboardShortcutMixin`, `LiveRegionMixin`), `<pages-schema-form>`, `<pages-filter-chips>`, `<pages-scope-selector>`
 - `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
