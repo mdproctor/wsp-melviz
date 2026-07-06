@@ -168,7 +168,7 @@ yarn workspace @casehub/pages-examples run dev
 
 **Core Packages** (`packages/`):
 - `@casehub/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
-- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`).
+- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection).
 - `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehub/pages-component` — CSS grid layout renderer, interactive containers

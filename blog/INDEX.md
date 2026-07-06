@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-06-mdp01-sse-crosses-the-repo-line.md](2026-07-06-mdp01-sse-crosses-the-repo-line.md) | 2026-07-06 | SSEManager extracted from blocks-ui to pages-data with named event support, published 0.2.1, blocks-ui migration complete |
 | [2026-07-05-mdp03-primitives-push-down.md](2026-07-05-mdp03-primitives-push-down.md) | 2026-07-05 | Primitive push-down from blocks-ui — pages-primitives Lit package, segment-level wildcard matching, a11y mixins, SchemaForm, filter chips, scope selector |
 | [2026-07-05-mdp02-version-drift-and-forgotten-repos.md](2026-07-05-mdp02-version-drift-and-forgotten-repos.md) | 2026-07-05 | Version alignment to casehub-parent 0.2 — npm and Maven drift, downstream consumer audit, AML file: protocol discovery, version protocol established |
 | [2026-07-05-mdp01-colour-science-and-protocol-handshakes.md](2026-07-05-mdp01-colour-science-and-protocol-handshakes.md) | 2026-07-05 | OKLCH 12-step design token adoption from blocks-ui, push protocol correlation layer with ack/error, wildcard topic matching, per-topic event replay with EventStore SPI |
