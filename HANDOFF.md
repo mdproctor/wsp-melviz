@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Established TypeScript/pages protocols (#118). Created 4 project-level protocols (CSS design tokens, event contract, web component strategy, dataset contract) and 2 universal garden protocols (Lit immutable collections, CustomEvent shadow DOM) in a new `web/` namespace — the first non-Java protocol namespace in the garden. Spec went through 4-round adversarial design review (17 issues, 16 verified, 1 accepted, $14.56). Also audited token adoption across the codebase, filed #124 (visual alignment cleanup), and created #125 epic (event-mode push API — EventBroadcaster, Lit EventStreamController, documentation) after analysing how pages' push architecture could serve the platform notification use case.
+Three issues closed: #122 (iframe component API protocols — message format and lifecycle, plus bug #130 filed for Map/postMessage), #119 (TopicRegistry trie rewrite — O(n) linear scan replaced with O(d) segment trie, adversarial design review $18.97), #124 (OKLCH token alignment — fresh gallery CSS, auth widget migration, PagesBadge palette, selector dropdown fix #132, layout gap fixes, theme consistency, 110 new Playwright tests). Two garden entries submitted (Map/postMessage gotcha, CSS shorthand var() invalidation gotcha).
 
 ## Branch State
 
@@ -14,28 +14,30 @@ Both repos on `main`. Pause stack empty.
 - npm publish for 0.2.0 — #121 filed · XS · Low
 - Minor implementation findings — #120 (null safety, as-any casts, mixin composition test, dist import path) · S · Low
 - CLAUDE.md `@casehub/` vs `@casehubio/` prefix fix — #123 filed · XS · Low
+- Fleet Monitor gauge overlap — #133 filed (pre-existing, gauge canvas extends beyond grid cell) · M · Med
+- Map/postMessage structured clone — #130 filed (ComponentMessage.properties Map doesn't survive postMessage) · S · Med
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #124 | Align examples and auth widgets with OKLCH token system | M | Med | Examples gallery entirely off-token; auth widgets use hardcoded #007bff |
+| #130 | Fix ComponentMessage.properties Map → Record for postMessage | S | Med | Wire format protocol documents target; needs implementation |
+| #133 | Fleet Monitor gauge overlap | M | Med | YAML layout or gauge component sizing |
 | #125 | Event-mode push API epic | — | — | Epic: #126 EventBroadcaster (S/Low), #127 Lit EventStreamController (M/Med), #128 docs (XS/Low) |
-| #122 | Iframe component API protocols | S | Low | Future — if patterns emerge |
-| #119 | Trie-based TopicRegistry wildcard index | S | Med | Only if pattern count warrants |
 | #75 | Drag-and-drop panel rearrangement | L | High | Future epic |
 | #77 | Floating/popout panels | M | High | Future epic |
 
 ## Cross-Module
 
 **We're unblocking:**
-- `casehubio/blocks-ui` — blocks-ui#21: migrate from `--blocks-*` to `--pages-*` tokens; protocol now authoritative at `docs/protocols/casehub/css-design-tokens.md`
-- `casehubio/blocks-ui` — blocks-ui#20: adopt `<pages-filter-chips>` and `<pages-scope-selector>` from pages-primitives
-- `casehub-connectors/notifications` — event-mode push API (#125 epic) addresses their SSE vs WebSocket concerns; `createEventConnection` already works for rich domain events
+- `casehubio/blocks-ui` — blocks-ui#21: migrate from `--blocks-*` to `--pages-*` tokens; examples gallery now demonstrates the reference patterns
+- `casehubio/blocks-ui` — blocks-ui#20: adopt pages-primitives
+- `casehub-connectors/notifications` — event-mode push API (#125 epic)
 
 ## References
 
-- Spec: `docs/specs/2026-07-05-ts-pages-protocols-design.md`
-- Review workspace: `~/adr/casehub-pages/ts-pages-protocols-20260705-224610/`
-- Blog: `blog/2026-07-06-mdp01-writing-rules-from-the-garden.md`
+- Spec: `docs/specs/2026-07-06-oklch-token-alignment-design.md`
+- Spec: `docs/specs/2026-07-06-trie-topic-registry-design.md`
+- Review workspace: `~/adr/casehub-pages/trie-topic-registry-20260706-040048/`
+- Review workspace: `~/adr/casehub-pages/oklch-token-alignment-20260706-110833/`
 - Previous: `git show HEAD~1:HANDOFF.md`
