@@ -11,7 +11,6 @@ Both repos on `main`. Pause stack empty.
 ## What's Left
 
 - PLATFORM.md update — parent#349 filed for pages capability entry update · S · Low
-- npm publish for 0.2.0 — #121 filed (0.2.1 published this session; #121 may need scope adjustment) · XS · Low
 - Minor implementation findings — #120 (null safety, as-any casts, mixin composition test, dist import path) · S · Low
 - CLAUDE.md `@casehub/` vs `@casehubio/` prefix fix — #123 filed · XS · Low
 - Fleet Monitor gauge overlap — #133 filed (pre-existing, gauge canvas extends beyond grid cell) · M · Med
