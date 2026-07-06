@@ -125,13 +125,13 @@ yarn build:examples
 
 ```bash
 # Build a specific component
-yarn workspace @casehub/pages-component-echarts run build
+yarn workspace @casehubio/pages-component-echarts run build
 
 # Run component tests
-yarn workspace @casehub/pages-component-echarts run test
+yarn workspace @casehubio/pages-component-echarts run test
 
 # Dev mode with hot reload (port 9001)
-yarn workspace @casehub/pages-component-echarts run start
+yarn workspace @casehubio/pages-component-echarts run start
 ```
 
 ### Type Checking & Linting
@@ -148,10 +148,10 @@ yarn lint
 
 ```bash
 # Serve examples gallery (port 8080) — requires webapp to be built first
-yarn workspace @casehub/pages-examples run serve
+yarn workspace @casehubio/pages-examples run serve
 
 # Dev mode with file watching
-yarn workspace @casehub/pages-examples run dev
+yarn workspace @casehubio/pages-examples run dev
 ```
 
 ## Architecture Overview
@@ -167,22 +167,22 @@ yarn workspace @casehub/pages-examples run dev
 ### Package Overview
 
 **Core Packages** (`packages/`):
-- `@casehub/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
-- `@casehub/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection).
-- `@casehub/pages-ui` — YAML parser, DashBuilder backward compat, component model
-- `@casehub/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
-- `@casehub/pages-component` — CSS grid layout renderer, interactive containers
-- `@casehub/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
+- `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
+- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection).
+- `@casehubio/pages-ui` — YAML parser, DashBuilder backward compat, component model
+- `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
+- `@casehubio/pages-component` — CSS grid layout renderer, interactive containers
+- `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
-- `@casehub/pages-iframe-api` — Component controller for iframe-isolated components
-- `@casehub/pages-iframe-dev` — Development utilities for component testing
-- `@casehub/pages-echarts-base` — Reusable ECharts wrapper library
+- `@casehubio/pages-iframe-api` — Component controller for iframe-isolated components
+- `@casehubio/pages-iframe-dev` — Development utilities for component testing
+- `@casehubio/pages-echarts-base` — Reusable ECharts wrapper library
 
 **Standalone Components** (`components/`):
-- `@casehub/pages-component-echarts` — Apache ECharts visualizations
-- `@casehub/pages-component-llm-prompter` — LLM prompt engineering UI
-- `@casehub/pages-component-svg-heatmap` — SVG-based heatmaps
+- `@casehubio/pages-component-echarts` — Apache ECharts visualizations
+- `@casehubio/pages-component-llm-prompter` — LLM prompt engineering UI
+- `@casehubio/pages-component-svg-heatmap` — SVG-based heatmaps
 
 **Backend (Java)** (`backend/`):
 - `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
@@ -190,8 +190,8 @@ yarn workspace @casehub/pages-examples run dev
 ### Data Flow
 
 ```
-YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
-  → @casehub/pages-component (layout) → @casehub/pages-viz (render)
+YAML → @casehubio/pages-ui (parse) → @casehubio/pages-data (resolve)
+  → @casehubio/pages-component (layout) → @casehubio/pages-viz (render)
   → pages-filter/pages-sort events → back to data layer
 ```
 
@@ -215,7 +215,7 @@ YAML → @casehub/pages-ui (parse) → @casehub/pages-data (resolve)
 ## Work Tracking
 
 Issue tracking: enabled
-GitHub repo: mdproctor/casehub-pages
+GitHub repo: casehubio/casehub-pages
 Changelog: GitHub Releases (run `gh release create --generate-notes` at milestones)
 
 **Automatic behaviours (Claude follows these at all times in this project):**
