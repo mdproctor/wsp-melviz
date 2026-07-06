@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-124-oklch-token-alignment
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-06
+**Issues:** 124,132
 **Status:** merged to main
