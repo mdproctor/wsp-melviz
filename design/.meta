@@ -1,0 +1,9 @@
+branch: issue-131-sse-named-events
+project-sha: c4f394f41b9e2ff5f95cf3a9c9828b8098fff350
+date: 2026-07-06
+issue: 131
+issue-repo: casehubio/casehub-pages
+covers: 131
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
