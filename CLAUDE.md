@@ -168,7 +168,7 @@ yarn workspace @casehubio/pages-examples run dev
 
 **Core Packages** (`packages/`):
 - `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
-- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection).
+- `@casehubio/pages-data` — DataSet model, operations engine, JSONata. Push wire protocol with two modes: dataset mode (`PushSource`, `createWebSocketSource`) for tabular snapshot/append/replace/remove; event mode (`EventConnection`, `createEventConnection`, `EventStream`) for arbitrary domain events with topic/payload, seq tracking, wildcard matching, replay. `EventStream`: framework-agnostic subscription manager with connection pooling, topic filtering, and buffering. Lit adapter (`EventStreamController`) in `blocks-ui-core`. General-purpose `SSEManager` (connection pooling, named event support, reconnection).
 - `@casehubio/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehubio/pages-component` — CSS grid layout renderer, interactive containers
@@ -185,14 +185,18 @@ yarn workspace @casehubio/pages-examples run dev
 - `@casehubio/pages-component-svg-heatmap` — SVG-based heatmaps
 
 **Backend (Java)** (`backend/`):
-- `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
+- `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `EventBroadcaster` (single-call broadcast: append + route + send), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
 
 ### Data Flow
 
 ```
-YAML → @casehubio/pages-ui (parse) → @casehubio/pages-data (resolve)
-  → @casehubio/pages-component (layout) → @casehubio/pages-viz (render)
-  → pages-filter/pages-sort events → back to data layer
+Dataset mode:
+  YAML → @casehubio/pages-ui (parse) → @casehubio/pages-data (resolve)
+    → @casehubio/pages-component (layout) → @casehubio/pages-viz (render)
+    → pages-filter/pages-sort events → back to data layer
+Event mode:
+  Server → EventBroadcaster → WebSocket → EventConnection
+    → EventStream → onChange callback (or EventStreamController → Lit re-render)
 ```
 
 ## Key Technologies
