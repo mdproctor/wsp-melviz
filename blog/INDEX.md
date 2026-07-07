@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-07-mdp02-event-mode-grows-up.md](2026-07-07-mdp02-event-mode-grows-up.md) | 2026-07-07 | EventBroadcaster server convenience, EventStream framework-agnostic subscription with connection pooling, EventStreamController Lit adapter — event-mode push API epic #125 |
 | [2026-07-07-mdp01-the-interface-already-there.md](2026-07-07-mdp01-the-interface-already-there.md) | 2026-07-07 | ConfigurablePanel and DataReceiver interfaces formalize host-panel contract; dataset pipeline bridge via proxy adapter closes epic #111 |
 | [2026-07-06-mdp01-sse-crosses-the-repo-line.md](2026-07-06-mdp01-sse-crosses-the-repo-line.md) | 2026-07-06 | SSEManager extracted from blocks-ui to pages-data with named event support, published 0.2.1, blocks-ui migration complete |
 | [2026-07-05-mdp03-primitives-push-down.md](2026-07-05-mdp03-primitives-push-down.md) | 2026-07-05 | Primitive push-down from blocks-ui — pages-primitives Lit package, segment-level wildcard matching, a11y mixins, SchemaForm, filter chips, scope selector |
