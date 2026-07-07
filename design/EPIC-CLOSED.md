@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-135-migrate-blocks-ui-datareceiver
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-07
+**Issues:** 135
 **Status:** merged to main
