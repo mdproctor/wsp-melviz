@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-07-mdp01-the-interface-already-there.md](2026-07-07-mdp01-the-interface-already-there.md) | 2026-07-07 | ConfigurablePanel and DataReceiver interfaces formalize host-panel contract; dataset pipeline bridge via proxy adapter closes epic #111 |
 | [2026-07-06-mdp01-sse-crosses-the-repo-line.md](2026-07-06-mdp01-sse-crosses-the-repo-line.md) | 2026-07-06 | SSEManager extracted from blocks-ui to pages-data with named event support, published 0.2.1, blocks-ui migration complete |
 | [2026-07-05-mdp03-primitives-push-down.md](2026-07-05-mdp03-primitives-push-down.md) | 2026-07-05 | Primitive push-down from blocks-ui — pages-primitives Lit package, segment-level wildcard matching, a11y mixins, SchemaForm, filter chips, scope selector |
 | [2026-07-05-mdp02-version-drift-and-forgotten-repos.md](2026-07-05-mdp02-version-drift-and-forgotten-repos.md) | 2026-07-05 | Version alignment to casehub-parent 0.2 — npm and Maven drift, downstream consumer audit, AML file: protocol discovery, version protocol established |
