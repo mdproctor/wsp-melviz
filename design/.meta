@@ -1,0 +1,9 @@
+branch: issue-125-event-mode-push-api
+project-sha: 1ce305e990f61b75f13812c65e5ec173b4310f66
+date: 2026-07-07
+issue: 125
+issue-repo: casehubio/casehub-pages
+covers: 125,126,127,128
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
