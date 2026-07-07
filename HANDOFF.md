@@ -1,5 +1,7 @@
 # casehub-pages Session Handover — 2026-07-07
 
+*Updated: parent#349 closed — removed from backlog.*
+
 ## Last Session
 
 Closed #135 (migrate blocks-ui components to DataReceiver interface) — added `implements DataReceiver` to `PagesElement` base class in pages-viz. Single commit, mechanical migration. Also pushed a previously-unpushed commit (`4659c9b` — remove pages-primitives and PagesTable).
@@ -10,7 +12,6 @@ Both repos on `main`. Pause stack empty.
 
 ## What's Left
 
-- PLATFORM.md update — parent#349 filed for pages capability entry update · S · Low
 - Fleet Monitor gauge overlap — #133 filed (pre-existing, gauge canvas extends beyond grid cell) · M · Med
 - Panel-initiated dataset refresh — #134 filed (future convenience) · S · Med
 
