@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-136-cdi-push-integration
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-08
+**Issues:** 136
 **Status:** merged to main
