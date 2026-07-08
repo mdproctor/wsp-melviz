@@ -186,6 +186,7 @@ yarn workspace @casehubio/pages-examples run dev
 
 **Backend (Java)** (`backend/`):
 - `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
+- `casehub-pages-push-runtime` — CDI producers for EventBroadcaster, TopicRegistry, EventStore. @DefaultBean InMemoryEventStore with configurable capacity. Consumer provides SessionSender. Quarkus Arc, no JPA.
 
 ### Data Flow
 
