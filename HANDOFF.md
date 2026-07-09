@@ -1,3 +1,5 @@
+*Updated: #134 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-09
 
 ## Last Session
