@@ -1,10 +1,10 @@
-# casehub-pages Session Handover — 2026-07-08
+# casehub-pages Session Handover — 2026-07-09
 
 ## Last Session
 
-Closed #136 (CDI/Quarkus integration for EventBroadcaster) — new `casehub-pages-push-runtime` module with `PushProducers` class making `EventBroadcaster`, `TopicRegistry`, `EventStore` injectable. `@DefaultBean` InMemoryEventStore with configurable capacity. Consumer provides `SessionSender` (gateway pattern). Design reviewed (4 rounds, 10 issues, all resolved). 9 @QuarkusTest tests. Landed as 0f1f566 on main.
+Closed #145 (DataSource pipeline unified architecture) — reviewed the original 7-item issue against the codebase, found 3 items wrong or misframed, redesigned as 5 deliverables (plus SSEManager explicitly unchanged). Adversarial design review (4 rounds, 14 issues, all resolved). Implemented: DataSourceController state machine, standalone source factories (restSource/sseSource/wsSource/postMessageSource), DataReceiver+loading, VizTarget moved to pages-component, EventStream onReconnect, PagesElement delegation. Landed as 5f52cde on main.
 
-Investigated platform's notification/endpoint/subscription infrastructure before designing — confirmed pages-push is a different pattern (client-driven WebSocket pub/sub with wildcard topic routing + sequence-numbered replay vs platform's server-side CDI-event-driven SSE broadcasters). No overlap, stays in pages. #147 filed for future cross-node distribution.
+blocks-ui#44 design review summary posted — confirmed controller+adapter split, SSE separation, immediate deprecation of DataEndpointMixin.
 
 ## Branch State
 
@@ -22,14 +22,15 @@ Both repos on `main`. Pause stack empty.
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #142 | Scenario Engine — composition, triggers, remote control, demo UI | L | High | Plan at `docs/plans/2026-07-07-scenario-engine.md`. Next up per user request. |
+| #142 | Scenario Engine — composition, triggers, remote control, demo UI | L | High | Plan at `docs/plans/2026-07-07-scenario-engine.md` |
 | #143 | Cross-repo Migration — examples, blocks-ui, aml, clinical | L | Med | Plan at `docs/plans/2026-07-07-cross-repo-migration.md` |
 | #133 | Fleet Monitor gauge overlap | M | Med | YAML layout or gauge sizing |
 | #137 | Typed payload overload for EventBroadcaster | XS | Low | |
 
 ## References
 
-- Spec: `docs/specs/2026-07-08-push-runtime-cdi-design.md`
-- Plan: `docs/plans/2026-07-08-push-runtime-cdi.md`
-- Design review: `~/adr/casehub-pages/push-runtime-cdi-20260708-171234/`
+- Spec: `docs/specs/2026-07-09-datasource-pipeline-design.md`
+- Plan: `docs/plans/2026-07-09-datasource-pipeline.md`
+- Design review: `~/adr/casehub-pages/datasource-pipeline-20260709-101433/`
+- blocks-ui feedback: `casehubio/blocks-ui#44` (comment)
 - Previous: `git show HEAD~1:HANDOFF.md`
