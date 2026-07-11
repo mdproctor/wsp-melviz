@@ -173,7 +173,7 @@ yarn workspace @casehubio/pages-examples run dev
 - `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
 - `@casehubio/pages-component` — CSS grid layout renderer, interactive containers
 - `@casehubio/pages-primitives` — Lit-dependent UI primitives: a11y mixins (LiveRegionMixin, FocusTrapMixin, RovingTabindexMixin, KeyboardShortcutMixin). Depends on `lit`. Migrated from blocks-ui-core in blocks-ui#48.
-- `@casehubio/pages-data-table` — Data table Web Component: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility, multi-mode selection, tree rows, CSV export, ARIA grid, keyboard navigation. Depends on `lit`. Migrated from blocks-ui in blocks-ui#48. Will rename to `pages-table` after TypedDataSet integration (blocks-ui#49).
+- `@casehubio/pages-table` — Data table Web Component (`<pages-table>`): TypedDataSet-native API, CSS Grid rendering, virtual scroll, sorting, filtering, column visibility, multi-mode selection, tree rows, CSV export, ARIA grid, keyboard navigation. Depends on `lit` and `pages-data`. Renamed from `pages-data-table` in #152.
 - `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
