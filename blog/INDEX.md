@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-12-mdp01-the-gallery-that-wouldnt-render.md](2026-07-12-mdp01-the-gallery-that-wouldnt-render.md) | 2026-07-12 | Gallery sweep — 13 issues, 4 runtime fixes (columns layout, epoch millis, tree pagination, filter overlap), 12 dashboards with inline data, dock-bar id preservation, 205 chart titles migrated |
 | [2026-07-11-mdp01-the-type-already-there.md](2026-07-11-mdp01-the-type-already-there.md) | 2026-07-11 | TypedDataSet native — delete ColumnDef, three-concern split (data schema / cell rendering / presentation), pages-data-table → pages-table rename fixes activation |
 | [2026-07-09-mdp01-nine-abstractions-for-one-job.md](2026-07-09-mdp01-nine-abstractions-for-one-job.md) | 2026-07-09 | DataSource pipeline unified — nine abstractions rationalized, SourceFactory with options, onRefresh lifecycle, CI green |
 | [2026-07-07-mdp02-event-mode-grows-up.md](2026-07-07-mdp02-event-mode-grows-up.md) | 2026-07-07 | EventBroadcaster server convenience, EventStream framework-agnostic subscription with connection pooling, EventStreamController Lit adapter — event-mode push API epic #125 |
