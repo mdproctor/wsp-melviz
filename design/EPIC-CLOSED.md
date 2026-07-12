@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-154-table-runtime-wiring
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-12
+**Issues:** 154
 **Status:** merged to main
