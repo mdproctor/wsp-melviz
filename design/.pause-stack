@@ -1,3 +1,6 @@
 - branch: issue-150-examples-gallery
   issue: 150
   paused: 2026-07-10T21:54:45Z
+- branch: issue-154-table-runtime-wiring
+  issue: 154
+  paused: 2026-07-12T14:50:43Z
