@@ -162,7 +162,6 @@ yarn workspace @casehubio/pages-examples run dev
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
 - **`examples/`** — Interactive dashboard examples gallery
-- **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
 
