@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Closed #129 (pages-table spec gaps) and #111 (blocks-ui foundation epic). pages-table now fully compliant with blocks-ui#22: jump-to-page, page size selector, RovingTabindexMixin, toolbar repositioned, column picker dismiss. Landed as aa0918a on main.
+Closed #139 (pages-modal). Built `<pages-modal>` accessible dialog component in pages-primitives — native `<dialog>` with `showModal()` + `FocusTrapMixin`. Fixed pre-existing FocusTrapMixin bugs (shadow DOM activeElement, slot traversal). 10-round adversarial design review drove key fixes (dropped LiveRegionMixin, added animation guards, defined two close paths). Landed as 48c8102 on main.
 
 ## Branch State
 
@@ -10,7 +10,7 @@ Both repos on main. Pause stack empty.
 
 ## Immediate Next Step
 
-Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans ready.
+Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #143 (Cross-repo Migration) — all have plans ready.
 
 ## What's Left
 
