@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Implemented row-detail expansion for pages-table (#172). Full feature: three new properties (getRowDetail, detailMode, expandedDetailKeys), detail-change event, YAML rowDetail surface for pipeline mode, dedicated expand column with ARIA disclosure, grid-template-rows animation, focus rescue, 26 tests. Also fixed pipeline column visibility — YAML `columns` now filters visible columns. Added gallery example with dual YAML/TS source. Landed as 37b8e4e on main.
+XS/S batch (#176): grouped-view race guard spec (#173), reconnection gap surfacing (#174), cursor persistence (#175), action button ghost/outline/disabled/spinner (#138). Landed as ea9bc85 on main.
 
 ## Branch State
 
-Both repos on main. Pause stack empty (cleaned — #150 and #154 were already closed).
+Both repos on main. Pause stack empty.
 
 ## Immediate Next Step
 
