@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-139-pages-modal
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-13
+**Issues:** 139
 **Status:** merged to main
