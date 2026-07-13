@@ -2,6 +2,8 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-13-mdp03-the-platform-gave-us-the-modal.md](2026-07-13-mdp03-the-platform-gave-us-the-modal.md) | 2026-07-13 | pages-modal — native dialog, FocusTrapMixin shadow DOM fix, LiveRegionMixin dropped after design review |
+| [2026-07-13-mdp02-closing-table-spec-gaps.md](2026-07-13-mdp02-closing-table-spec-gaps.md) | 2026-07-13 | pages-table spec compliance — jump-to-page, page size selector, RovingTabindexMixin, column picker dismiss |
 | [2026-07-13-mdp01-four-small-things.md](2026-07-13-mdp01-four-small-things.md) | 2026-07-13 | XS/S batch — grouped-view race guard spec, reconnection gap surfacing, cursor persistence, action button variants |
 | [2026-07-12-mdp01-the-gallery-that-wouldnt-render.md](2026-07-12-mdp01-the-gallery-that-wouldnt-render.md) | 2026-07-12 | Gallery sweep — 13 issues, 4 runtime fixes (columns layout, epoch millis, tree pagination, filter overlap), 12 dashboards with inline data, dock-bar id preservation, 205 chart titles migrated |
 | [2026-07-11-mdp01-the-type-already-there.md](2026-07-11-mdp01-the-type-already-there.md) | 2026-07-11 | TypedDataSet native — delete ColumnDef, three-concern split (data schema / cell rendering / presentation), pages-data-table → pages-table rename fixes activation |
