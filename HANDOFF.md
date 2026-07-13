@@ -1,22 +1,20 @@
-*Updated: #168 closed — removed from backlog.*
-
 # casehub-pages Session Handover — 2026-07-13
 
 ## Last Session
 
-Closed #164 (gallery sweep epic) and all 12 child issues. Four runtime fixes: epoch millis DATE parsing in conversion.ts, `type: columns` layout component in component-desugar.ts, tree root-only pagination in pages-table, table filter flex layout. Component id preservation through desugar for dock-bar panelId resolution. 205 chart titles migrated from ECharts canvas to standalone title components across 30 files. Inline data added to 12+ monitoring/external-data examples. Landed as 7cd037a on main.
+Closed 4 XS/S issues in a single batch branch: #137 (typed EventBroadcaster overload with JsonWriter functional interface), #108 (dock-toggle display restore test coverage), #151 (join dataset dependency resolution in data pipeline), #133 (gauge overflow clipping and radius tightening). Landed as a0904ab on main.
 
 ## Branch State
 
-Both repos on main. No pause stack.
+Both repos on main. Pause stack: issue-150 (examples gallery), issue-154 (table runtime wiring).
 
 ## Immediate Next Step
 
-Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans ready. The gallery is clean; these are the next capability milestones.
+Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans ready.
 
 ## What's Left
 
-- Typed payload overload for EventBroadcaster — #137 · XS · Low
+*Nothing trailing from this session.*
 
 ## What's Next
 
@@ -28,5 +26,4 @@ Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans r
 
 ## References
 
-- Blog: `2026-07-12-mdp01-the-gallery-that-wouldnt-render.md`
 - Previous: `git show HEAD~1:HANDOFF.md`
