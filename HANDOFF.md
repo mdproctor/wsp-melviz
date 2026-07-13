@@ -20,6 +20,7 @@ Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans r
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
+| #172 | Row-detail expansion for pages-table | M | Med | Spec at `docs/specs/2026-07-13-row-detail-expansion-design.md`. Unblocks blocks-ui#47 |
 | #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration, Form Components |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
 | #143 | Cross-repo Migration — examples, blocks-ui, aml, clinical | L | Med | Plan ready |
