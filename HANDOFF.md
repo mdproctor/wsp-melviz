@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Closed 4 XS/S issues in a single batch branch: #137 (typed EventBroadcaster overload with JsonWriter functional interface), #108 (dock-toggle display restore test coverage), #151 (join dataset dependency resolution in data pipeline), #133 (gauge overflow clipping and radius tightening). Landed as a0904ab on main.
+Implemented row-detail expansion for pages-table (#172). Full feature: three new properties (getRowDetail, detailMode, expandedDetailKeys), detail-change event, YAML rowDetail surface for pipeline mode, dedicated expand column with ARIA disclosure, grid-template-rows animation, focus rescue, 26 tests. Also fixed pipeline column visibility — YAML `columns` now filters visible columns. Added gallery example with dual YAML/TS source. Landed as 37b8e4e on main.
 
 ## Branch State
 
-Both repos on main. Pause stack: issue-150 (examples gallery), issue-154 (table runtime wiring).
+Both repos on main. Pause stack empty (cleaned — #150 and #154 were already closed).
 
 ## Immediate Next Step
 
@@ -20,7 +20,6 @@ Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans r
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #172 | Row-detail expansion for pages-table | M | Med | Spec at `docs/specs/2026-07-13-row-detail-expansion-design.md`. Unblocks blocks-ui#47 |
 | #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration, Form Components |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
 | #143 | Cross-repo Migration — examples, blocks-ui, aml, clinical | L | Med | Plan ready |
