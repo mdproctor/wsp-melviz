@@ -1,3 +1,5 @@
+*Updated: #168 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-13
 
 ## Last Session
@@ -14,7 +16,6 @@ Pick up #159 (pages-schema-form) or #142 (Scenario Engine) — both have plans r
 
 ## What's Left
 
-- Carousel View next/prev still blank in Navigation Rebinding — #168 partial (lazy pages fixed, carousel nav not)
 - Typed payload overload for EventBroadcaster — #137 · XS · Low
 
 ## What's Next
