@@ -2,7 +2,7 @@
 
 ## Last Session
 
-XS/S batch (#176): grouped-view race guard spec (#173), reconnection gap surfacing (#174), cursor persistence (#175), action button ghost/outline/disabled/spinner (#138). Landed as ea9bc85 on main.
+Closed #129 (pages-table spec gaps) and #111 (blocks-ui foundation epic). pages-table now fully compliant with blocks-ui#22: jump-to-page, page size selector, RovingTabindexMixin, toolbar repositioned, column picker dismiss. Landed as aa0918a on main.
 
 ## Branch State
 
