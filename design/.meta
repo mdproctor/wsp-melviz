@@ -1,0 +1,9 @@
+branch: issue-177-eliminate-deep-imports
+project-sha: 60d96e5522e8a7b83b5da116f5695871c361b4b1
+date: 2026-07-14
+issue: 177
+issue-repo: casehubio/casehub-pages
+covers: 177
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
