@@ -1,8 +1,8 @@
-# casehub-pages Session Handover — 2026-07-13
+# casehub-pages Session Handover — 2026-07-14
 
 ## Last Session
 
-Closed #139 (pages-modal). Built `<pages-modal>` accessible dialog component in pages-primitives — native `<dialog>` with `showModal()` + `FocusTrapMixin`. Fixed pre-existing FocusTrapMixin bugs (shadow DOM activeElement, slot traversal). 10-round adversarial design review drove key fixes (dropped LiveRegionMixin, added animation guards, defined two close paths). Landed as 48c8102 on main.
+Two issues closed. #139 (pages-modal) — built accessible modal dialog component in pages-primitives using native `<dialog>` + `FocusTrapMixin`, 10-round adversarial design review, 63 new tests. #177 (deep imports) — exported missing symbols from pages-data/pages-component public APIs and rewrote 359 deep dist/ import paths across 139 files. Filed #178 for 44 pre-existing test type errors in `tsc --build`.
 
 ## Branch State
 
@@ -14,7 +14,7 @@ Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #143 (Cross-repo Mi
 
 ## What's Left
 
-*Nothing trailing from this session.*
+- #178 — 44 pre-existing test type errors in `tsc --build` · S · Low
 
 ## What's Next
 
