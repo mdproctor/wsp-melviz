@@ -1,0 +1,9 @@
+branch: issue-178-fix-test-type-errors
+project-sha: 9c227845d0e3fbd75201e2f1b3153a4d199ee789
+date: 2026-07-14
+issue: 178
+issue-repo: casehubio/casehub-pages
+covers: 178
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
