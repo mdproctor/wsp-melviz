@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-178-fix-test-type-errors
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-14
+**Issues:** 178
 **Status:** merged to main
