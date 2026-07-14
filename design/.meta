@@ -1,0 +1,9 @@
+branch: issue-185-data-layer-enhancements
+project-sha: 22edcef5a043c2a602a11a5dda14c6c1d93804db
+date: 2026-07-14
+issue: 185
+issue-repo: casehubio/casehub-pages
+covers: 185,182,181
+flyway-next-v: unknown
+design-repo: workspace
+design-section-hashes: 
