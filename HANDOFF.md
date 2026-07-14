@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Phase 8 of #143 — migrated 43 TypeScript examples from `inlineDataset()`/`dataset()` to `bind()`/`inlineSource()`/`restSource()`. Fixed `restSource` signature (removed redundant `dataSetId`). Replaced phantom imports (`@casehubio/ui`) with real package names. Filed #179 for making examples type-checkable (legacy `page()` convention restructuring needed).
+Two branches closed. Phase 8 of #143 — migrated 43 TypeScript examples to DataSource abstraction, fixed restSource signature, filed #179. Then #178 — resolved all 44 test type errors in tsc --build. Typecheck is now clean (zero errors).
 
 ## Branch State
 
@@ -14,7 +14,6 @@ Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #179 (examples type
 
 ## What's Left
 
-- #178 — 44 pre-existing test type errors in `tsc --build` · S · Low
 - #179 — make TypeScript examples type-checkable (legacy page() restructuring) · M · Low
 
 ## What's Next
