@@ -1,3 +1,5 @@
+*Updated: #143 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-14
 
 ## Last Session
@@ -22,7 +24,7 @@ Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #179 (examples type
 |---|-------------|-------|------------|-------|
 | #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration, Form Components |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
-| #143 | Cross-repo Migration phases 9–11 — blocks-ui, aml, clinical, cleanup | L | Med | Phase 8 done; phases 9–10 are cross-repo |
+
 
 ## References
 
