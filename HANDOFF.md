@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Two branches closed. Phase 8 of #143 — migrated 43 TypeScript examples to DataSource abstraction, fixed restSource signature, filed #179. Then #178 — resolved all 44 test type errors in tsc --build. Typecheck is now clean (zero errors).
+Three things landed. Phase 8 of #143 — migrated 43 TypeScript examples to DataSource abstraction (bind + inlineSource/restSource), fixed restSource signature, filed #179. Then #178 — resolved all 44 test type errors, 20 lint errors across pages-primitives and pages-table, and 5 carousel test failures (missing data attributes on buttons). CI is fully green: typecheck zero errors, lint zero errors, all tests passing, all 4 workflows succeed.
 
 ## Branch State
 
@@ -10,7 +10,7 @@ Both repos on main. Pause stack empty.
 
 ## Immediate Next Step
 
-Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #179 (examples type-checking) — all have plans or clear scope.
+Pick up #159 (pages-schema-form), #142 (Scenario Engine), or #179 (examples type-checking).
 
 ## What's Left
 
