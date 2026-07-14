@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Closed #148 and #134 — DataSourceController URL auto-routing and pipeline refresh redesign. `createSourceFactory` routes by URL scheme (ws/sse/rest). Pipeline `refreshDataSet` now re-fetches from source instead of serving stale cache; `deliverDataSet` handles cache re-delivery. Added `pages-refresh-request` event and stale-while-revalidate with manager-level TTL (60s default). Adversarial design review (4 rounds, 13 issues) caught infinite recursion before implementation.
+Closed #185, #182, #181 — all S-scale data layer enhancements deferred from the pipeline refresh spec. totalPath extracts total row count from REST API responses via configurable dot-path (#185). cacheTtl decouples staleness threshold from polling interval (#182). Manager-level eviction removes datasets from memory when all DOM consumers disconnect, with full state cleanup (#181). TDD throughout, 13 new tests across 3 packages.
 
 ## Branch State
 
@@ -10,26 +10,21 @@ Both repos on main. Pause stack empty.
 
 ## Immediate Next Step
 
-Pick up #180 (remove @ts-nocheck — L/Low, mechanical), #142 (Scenario Engine), or one of the new deferred issues (#181-#185).
+Pick up #180 (remove @ts-nocheck — L/Low, mechanical), #183 (DataSourceController pipeline integration — M/High, can now leverage totalPath), #142 (Scenario Engine), or #159 (pages-schema-form).
 
 ## What's Left
 
 - #180 — remove // @ts-nocheck from 40 example files (full type conformance) · L · Low
-- #181 — Manager-level eviction for unreferenced datasets · S · Med
-- #182 — Per-dataset TTL configuration beyond refreshTime · S · Med
 - #183 — DataSourceController pipeline integration · M · High
-- #185 — totalPath implementation in restSource · S · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | ModelMesh is reference impl |
+| #183 | DataSourceController pipeline integration | M | High | Can now use totalPath from #185 |
 | #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
-| #181 | Manager-level eviction (unreferenced datasets) | S | Med | Deferred from #134 |
-| #182 | Per-dataset TTL beyond refreshTime | S | Med | Deferred from #134 |
-| #185 | totalPath in restSource | S | Low | Deferred from #148 |
 
 ## References
 
