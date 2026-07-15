@@ -1,0 +1,9 @@
+branch: issue-188-grouped-view-compose-pages-table
+project-sha: 23b9903ac9ee76fc44966b5ac101a339117ebaf6
+date: 2026-07-15
+issue: 188
+issue-repo: casehubio/casehub-pages
+covers: 188
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
