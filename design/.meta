@@ -1,0 +1,9 @@
+branch: issue-196-table-composability
+project-sha: 0a301a1f4dd59586ee7455f7385200b6f458d868
+date: 2026-07-16
+issue: 196
+issue-repo: casehubio/casehub-pages
+covers: 196
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
