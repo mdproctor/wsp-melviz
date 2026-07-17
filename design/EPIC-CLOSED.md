@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-196-table-composability
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-17
+**Issues:** 196
 **Status:** merged to main
