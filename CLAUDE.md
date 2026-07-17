@@ -170,10 +170,10 @@ yarn workspace @casehubio/pages-examples run dev
 - `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
 - `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection).
 - `@casehubio/pages-ui` — YAML parser, DashBuilder backward compat, component model
-- `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
+- `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts). `<pages-legend>` component (linear/horizontal/vertical/grid layouts). `<pages-grouped-view>` with recursive multi-level grouping, interstitial hooks, rowAccent forwarding.
 - `@casehubio/pages-component` — CSS grid layout renderer, interactive containers
 - `@casehubio/pages-primitives` — Lit-dependent UI primitives: a11y mixins (LiveRegionMixin, FocusTrapMixin, RovingTabindexMixin, KeyboardShortcutMixin). Depends on `lit`. Migrated from blocks-ui-core in blocks-ui#48.
-- `@casehubio/pages-data-table` — Data table Web Component: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility, multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation. Depends on `lit`. Migrated from blocks-ui in blocks-ui#48. Will rename to `pages-table` after TypedDataSet integration (blocks-ui#49).
+- `@casehubio/pages-data-table` — Data table Web Component (`<pages-table>`): CSS Grid rendering, virtual scroll, sorting, filtering, column visibility, multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation. YAML column hints (`width`, `align`, `sortable`, `minWidth`, `pill`), `rowStyle` conditional styling, `rowAccent` left-border colors (per-row or per-cell via `columns: all`). Depends on `lit`.
 - `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
