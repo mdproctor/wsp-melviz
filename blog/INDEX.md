@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md](2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md) | 2026-07-17 | Grouped-view enhancements — list mode renderers, synchronized column visibility, cross-group unified selection, native groupBy on pages-table. Coexistence design: two tools for two purposes. |
 | [2026-07-14-mdp01-phantom-imports.md](2026-07-14-mdp01-phantom-imports.md) | 2026-07-14 | Phase 8 example migration — phantom imports fixed, restSource signature simplified, 43 files ported to bind()/inlineSource()/restSource() |
 | [2026-07-13-mdp01-four-small-things.md](2026-07-13-mdp01-four-small-things.md) | 2026-07-13 | XS/S batch — grouped-view race guard spec, reconnection gap surfacing, cursor persistence, action button variants |
 | [2026-07-12-mdp01-the-gallery-that-wouldnt-render.md](2026-07-12-mdp01-the-gallery-that-wouldnt-render.md) | 2026-07-12 | Gallery sweep — 13 issues, 4 runtime fixes (columns layout, epoch millis, tree pagination, filter overlap), 12 dashboards with inline data, dock-bar id preservation, 205 chart titles migrated |
