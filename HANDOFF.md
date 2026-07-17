@@ -1,21 +1,22 @@
-# casehub-pages Session Handover — 2026-07-16
+# casehub-pages Session Handover — 2026-07-17
 
 ## Last Session
 
-Closed #188 — PagesGroupedView now composes per-group `<pages-table>` elements instead of reimplementing table rendering via innerHTML. Type migration moved TableColumnConfig, ColumnAlign, SelectionMode, ColumnRenderer to pages-component. PagesTable gained embedded, headerVisible, sortable, rowStyle direct properties. 5-round adversarial design review, full TDD implementation, PR #195 opened on blessed repo. Also filed follow-on issues #189-#193 for out-of-scope items.
+Closed #189, #190, #191, #193 — four grouped-view enhancements on one branch. Column renderers for list mode, synchronized column visibility with shared picker, cross-group unified selection with select-all, and native `groupBy` property on pages-table. PR #203 opened on blessed repo. Filed #204 for fork-sync at work-start to prevent recurring force-push issue.
 
 ## Branch State
 
-Project on main (1 commit ahead of origin — PR #195 pending). Workspace on main. Pause stack has 1 entry: issue-183-datasource-controller-pipeline (#183).
+Project on main (1 commit ahead of origin — PR #203 pending). Workspace on main. Pause stack has 1 entry: issue-183-datasource-controller-pipeline (#183).
 
 ## Immediate Next Step
 
-Resume #183 (DataSourceController pipeline integration — M/High, spec committed, zero implementation) via `/work`, or pick up #180 (remove @ts-nocheck — L/Low).
+Resume #183 (DataSourceController pipeline integration — paused, spec committed, zero implementation) via `/work`, or pick up #204 (fork-sync at work-start — workflow fix, not code).
 
 ## What's Left
 
 - #183 — DataSourceController pipeline integration (paused, spec only) · M · High
 - #180 — remove // @ts-nocheck from 40 example files · L · Low
+- #204 — sync fork/main with origin/main at work-start · XS · Low
 
 ## What's Next
 
@@ -23,15 +24,12 @@ Resume #183 (DataSourceController pipeline integration — M/High, spec committe
 |---|-------------|-------|------------|-------|
 | #183 | DataSourceController pipeline integration | M | High | Paused, design spec committed |
 | #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | ModelMesh is reference impl |
-| #189 | groupBy as native pages-table property | M | High | Follow-on from #188 |
-| #190 | Column renderers for list mode | S | Low | Follow-on from #188 |
-| #191 | Synchronized column visibility across groups | S | Med | Follow-on from #188 |
 | #192 | PagesElement base class to Lit | L | High | Follow-on from #188 |
-| #193 | Cross-group unified selection | S | Med | Follow-on from #188 |
 | #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
+| #204 | Sync fork/main at work-start | XS | Low | Prevents recurring force-push |
 
 ## References
 
+- PR: https://github.com/casehubio/casehub-pages/pull/203
 - Previous: `git show HEAD~1:HANDOFF.md`
-- PR: https://github.com/casehubio/casehub-pages/pull/195
