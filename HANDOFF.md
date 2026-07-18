@@ -1,12 +1,14 @@
-# casehub-pages Session Handover — 2026-07-17
+# casehub-pages Session Handover — 2026-07-18
 
 ## Last Session
 
 Closed #189, #190, #191, #193 — four grouped-view enhancements on one branch. Column renderers for list mode, synchronized column visibility with shared picker, cross-group unified selection with select-all, and native `groupBy` property on pages-table. PR #203 opened on blessed repo. Filed #204 for fork-sync at work-start to prevent recurring force-push issue.
 
+**Cross-repo (2026-07-18):** `@casehubio/pages-form` added — schema-form migrated from blocks-ui (casehubio/blocks-ui#83, pages #205). Committed to main, pushed. Partially delivers #159 layer 2 (native pages-schema-form). Submit pipeline (#159 layer 1) still needed.
+
 ## Branch State
 
-Project on main (1 commit ahead of origin — PR #203 pending). Workspace on main. Pause stack has 1 entry: issue-183-datasource-controller-pipeline (#183).
+Project on main. Workspace on main. Pause stack has 1 entry: issue-183-datasource-controller-pipeline (#183).
 
 ## Immediate Next Step
 
