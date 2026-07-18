@@ -2,9 +2,16 @@
 
 ## Last Session
 
-Closed #189, #190, #191, #193 — four grouped-view enhancements on one branch. Column renderers for list mode, synchronized column visibility with shared picker, cross-group unified selection with select-all, and native `groupBy` property on pages-table. PR #203 opened on blessed repo. Filed #204 for fork-sync at work-start to prevent recurring force-push issue.
+**Cross-repo work from blocks-ui session:** Created `@casehubio/pages-form` package — schema-driven form renderer migrated from blocks-ui and enhanced. 8 commits to main:
+- pages-form package with PagesSchemaForm component, field registry, display/edit modes
+- Nested object editing (recursive sub-forms) and array editing (add/remove for strings and objects)
+- CSS aligned with pages' existing form input styling (vertical layout, same tokens)
+- Three-tab gallery example: Schema (full automation), HTML (escape hatch), YAML (pure DSL)
+- tsPath auto-detection in generate-samples.js (Row Detail TS companion now detected too)
+- Form Components example merged into Schema Form as tabbed comparison
+- 22 tests covering all field types, nested objects, arrays, validation, submit
 
-**Cross-repo (2026-07-18):** `@casehubio/pages-form` added — schema-form migrated from blocks-ui (casehubio/blocks-ui#83, pages #205). Committed to main, pushed. Partially delivers #159 layer 2 (native pages-schema-form). Submit pipeline (#159 layer 1) still needed.
+Issues: #205 closed. Partially delivers #159 layer 2 (native pages-schema-form). Layer 1 (submit pipeline) still needed.
 
 ## Branch State
 
@@ -12,26 +19,26 @@ Project on main. Workspace on main. Pause stack has 1 entry: issue-183-datasourc
 
 ## Immediate Next Step
 
-Resume #183 (DataSourceController pipeline integration — paused, spec committed, zero implementation) via `/work`, or pick up #204 (fork-sync at work-start — workflow fix, not code).
+Resume #183 (DataSourceController pipeline integration — paused, spec committed, zero implementation) via `/work`, or pick up #159 layer 1 (form submit pipeline — prerequisite for Developer Registration example).
 
 ## What's Left
 
 - #183 — DataSourceController pipeline integration (paused, spec only) · M · High
 - #180 — remove // @ts-nocheck from 40 example files · L · Low
 - #204 — sync fork/main with origin/main at work-start · XS · Low
+- #159 — form submit pipeline (layer 1) + uniforms adapter (layer 3) · M · High
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #183 | DataSourceController pipeline integration | M | High | Paused, design spec committed |
+| #159 | Form submit pipeline + pages-schema-form integration | M | High | Layer 1 unblocks Developer Registration |
 | #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | ModelMesh is reference impl |
 | #192 | PagesElement base class to Lit | L | High | Follow-on from #188 |
-| #159 | pages-schema-form — JSON Schema forms | L | High | Unblocks Developer Registration |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
 | #204 | Sync fork/main at work-start | XS | Low | Prevents recurring force-push |
 
 ## References
 
-- PR: https://github.com/casehubio/casehub-pages/pull/203
 - Previous: `git show HEAD~1:HANDOFF.md`
