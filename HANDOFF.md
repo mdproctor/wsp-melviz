@@ -2,7 +2,7 @@
 
 ## Last Session
 
-Completed epic #210 (cell spanning for pages-table). Added Playwright visual tests (#217) — 9 screenshot-comparison tests covering colspan, rowspan, scroll, hover, and regression baseline. Closed all 8 issues (#210–#217), pushed to fork and upstream, published blog.
+Completed epic #210 (cell spanning) and follow-on #218 (YAML pipeline + gallery sample). Added `mergeRows` to `ColumnSettings` so it flows through the YAML pipeline. Added companion script execution to the gallery — TS companions are now stripped and eval'd after `loadSite`, enabling programmatic features like `cellSpan` in demos. Gallery Spanning sample has two tabs: mergeRows via YAML and cellSpan via TypeScript.
 
 ## Branch State
 
