@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-07-19-mdp01-validation-as-pure-function.md](2026-07-19-mdp01-validation-as-pure-function.md) | 2026-07-19 | pages-form field metadata (title, description, placeholder) and validation engine as a separate pure function — 53 tests, inline error display, optional blur validation. |
 | [2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md](2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md) | 2026-07-17 | Grouped-view enhancements — list mode renderers, synchronized column visibility, cross-group unified selection, native groupBy on pages-table. Coexistence design: two tools for two purposes. |
 | [2026-07-14-mdp01-phantom-imports.md](2026-07-14-mdp01-phantom-imports.md) | 2026-07-14 | Phase 8 example migration — phantom imports fixed, restSource signature simplified, 43 files ported to bind()/inlineSource()/restSource() |
 | [2026-07-13-mdp01-four-small-things.md](2026-07-13-mdp01-four-small-things.md) | 2026-07-13 | XS/S batch — grouped-view race guard spec, reconnection gap surfacing, cursor persistence, action button variants |
