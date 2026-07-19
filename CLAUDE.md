@@ -6,8 +6,8 @@
 
 ## Git Remotes
 
-`origin` = `casehubio/casehub-pages` (blessed repo)
-`fork` = `mdproctor/casehub-pages` (fork — all work pushes here)
+`origin` = `mdproctor/casehub-pages` (fork — all work pushes here)
+`upstream` = `casehubio/casehub-pages` (blessed repo)
 
 ## Session Start
 
