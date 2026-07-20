@@ -168,10 +168,10 @@ yarn workspace @casehubio/pages-examples run dev
 
 **Core Packages** (`packages/`):
 - `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
-- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection). Group extraction (`extractGroupBoundaries`, `extractGroupTree`).
+- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection). Group extraction (`extractGroupBoundaries`, `extractGroupTree`). `SourceConnector` — data source lifecycle primitive (connect/disconnect/replace/refresh with stale-source guard).
 - `@casehubio/pages-ui` — YAML parser, DashBuilder backward compat, component model
 - `@casehubio/pages-viz` — Web Component chart/table/metric wrappers (ECharts)
-- `@casehubio/pages-component` — CSS grid layout renderer, interactive containers
+- `@casehubio/pages-component` — CSS grid layout renderer, interactive containers, `DataSourceController` (Declaration + VizTarget, delegates lifecycle to `SourceConnector`), `createStandaloneConnector` (wires controller + connector + DataSetManager for non-pipeline use)
 - `@casehubio/pages-primitives` — Lit-dependent UI primitives: a11y mixins (LiveRegionMixin, FocusTrapMixin, RovingTabindexMixin, KeyboardShortcutMixin). Depends on `lit`. Migrated from blocks-ui-core in blocks-ui#48.
 - `@casehubio/pages-data-table` — Data table Web Component: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility (`hiddenColumns`), multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation, native `groupBy` (interleaved group headers). Depends on `lit`. Migrated from blocks-ui in blocks-ui#48. Will rename to `pages-table` after TypedDataSet integration (blocks-ui#49).
 - `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
