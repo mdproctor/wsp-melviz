@@ -2,31 +2,25 @@
 
 ## Last Session
 
-Resumed and completed #183 (DataSourceController pipeline integration). Extracted `SourceConnector` primitive into pages-data, refactored `DataSourceController` to Declaration + VizTarget only, pipeline adopted SourceConnector internally with binding refresh/TTL support. Landed as cd32049 on main.
+Fixed #220 (pages-modal duplicate CustomElementRegistry crash). Root cause was barrel coupling in pages-primitives — the barrel re-exported both a11y mixins and modal, so pages-table importing RovingTabindexMixin also triggered modal registration. In aliased bundler setups this created two module instances. Fix: added package.json `exports` map with sub-paths (`./a11y`, `./modal`), updated pages-table to import from the a11y sub-path only. Landed as c1bbca2 on main.
+
+Filed #221 (guard remaining @customElement decorators as defense-in-depth).
 
 ## Branch State
 
-Project and workspace on `main`. Pause stack empty.
-
-## Immediate Next Step
-
-Pick next work from What's Next. #159 (form submit pipeline) is the highest-impact item — unblocks Developer Registration.
-
-## What's Left
-
-- #180 — remove `@ts-nocheck` from 40 example files · L · Low
-- #159 — form submit pipeline + uniforms adapter · M · High
+Project and workspace on `main`. Pause stack: `issue-192-pageselement-to-lit` (paused 2026-07-20).
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #159 | Form submit pipeline + pages-schema-form integration | M | High | Layer 1 unblocks Developer Registration |
-| #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | ModelMesh is reference impl |
-| #192 | PagesElement base class to Lit | L | High | Follow-on from #188 |
+| #221 | Guard all @customElement decorators | XS | Low | Mechanical — 2 files |
+| #192 | PagesElement base class to Lit | L | High | Paused in stack |
+| #159 | Form submit pipeline + pages-schema-form integration | M | High | Unblocks Developer Registration |
+| #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | |
 | #142 | Scenario Engine — composition, triggers, demo UI | L | High | Plan ready |
 
 ## References
 
-- Spec: `docs/specs/2026-07-15-source-connector-pipeline-integration-design.md`
-- Previous: `git show HEAD~1:HANDOFF.md`
+- Garden: GE-20260720-96fab8 (barrel coupling gotcha)
+- Protocol updated: `docs/protocols/casehub/web-component-strategy.md`
