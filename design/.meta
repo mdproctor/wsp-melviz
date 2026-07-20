@@ -1,0 +1,9 @@
+branch: issue-220-modal-duplicate-define
+project-sha: c855714eb2e6d9e338d5a44fde67d2c525b118b2
+date: 2026-07-20
+issue: 220
+issue-repo: casehubio/casehub-pages
+covers: 220
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
