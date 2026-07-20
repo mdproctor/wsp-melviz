@@ -1,20 +1,19 @@
-# casehub-pages Session Handover — 2026-07-19
+# casehub-pages Session Handover — 2026-07-20
 
 ## Last Session
 
-Completed epic #210 (cell spanning) and follow-on #218 (YAML pipeline + gallery sample). Added `mergeRows` to `ColumnSettings` so it flows through the YAML pipeline. Added companion script execution to the gallery — TS companions are now stripped and eval'd after `loadSite`, enabling programmatic features like `cellSpan` in demos. Gallery Spanning sample has two tabs: mergeRows via YAML and cellSpan via TypeScript.
+Resumed and completed #183 (DataSourceController pipeline integration). Extracted `SourceConnector` primitive into pages-data, refactored `DataSourceController` to Declaration + VizTarget only, pipeline adopted SourceConnector internally with binding refresh/TTL support. Landed as cd32049 on main.
 
 ## Branch State
 
-Project and workspace on `main`. Pause stack has 1 entry: `issue-183-datasource-controller-pipeline` (#183).
+Project and workspace on `main`. Pause stack empty.
 
 ## Immediate Next Step
 
-Resume #183 (DataSourceController pipeline integration) via `/work` → select from pause stack. Design spec is committed.
+Pick next work from What's Next. #159 (form submit pipeline) is the highest-impact item — unblocks Developer Registration.
 
 ## What's Left
 
-- #183 — DataSourceController pipeline integration (paused, spec only) · M · High
 - #180 — remove `@ts-nocheck` from 40 example files · L · Low
 - #159 — form submit pipeline + uniforms adapter · M · High
 
@@ -22,7 +21,6 @@ Resume #183 (DataSourceController pipeline integration) via `/work` → select f
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #183 | DataSourceController pipeline integration | M | High | Paused, design spec committed |
 | #159 | Form submit pipeline + pages-schema-form integration | M | High | Layer 1 unblocks Developer Registration |
 | #180 | Remove @ts-nocheck — full type conformance for examples | L | Low | ModelMesh is reference impl |
 | #192 | PagesElement base class to Lit | L | High | Follow-on from #188 |
@@ -30,5 +28,5 @@ Resume #183 (DataSourceController pipeline integration) via `/work` → select f
 
 ## References
 
-- Design spec: `docs/specs/2026-07-19-data-table-cell-spanning-design.md`
+- Spec: `docs/specs/2026-07-15-source-connector-pipeline-integration-design.md`
 - Previous: `git show HEAD~1:HANDOFF.md`
