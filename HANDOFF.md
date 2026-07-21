@@ -1,17 +1,17 @@
-# casehub-pages Session Handover — 2026-07-20
+# casehub-pages Session Handover — 2026-07-21
 
 ## Last Session
 
-Completed #192 — full Lit migration of PagesElement hierarchy. All 30 pages-viz Web Components now extend LitElement instead of vanilla HTMLElement. 65 files changed, net ~600 line reduction from removing imperative DOM construction.
+Closed #223 — auto-hide pagination when data fits on a single page. One-line render guard in `_renderPaginationFooter()`, five tests. Also: fit-gap analysis on #159 (schema form), issue spec updated with remaining gaps. Fixed CLAUDE.md symlink replication in slot manager (committed to soredium). Created work-slots 14 (batch small fixes) and 23 (#159 schema form runtime).
 
-Key decisions: cache() directive preserves ECharts DOM across loading transitions. DataSourceController stays framework-agnostic. willUpdate() guards initial render to prevent double data request (garden GE-20260720-80f6e1). Chart tests need setTimeout flush after updateComplete for async buildOption (garden GE-20260720-a60eec).
-
-Also: PagesLegend activation fixed in pages-runtime. Web-component-strategy protocol updated. CLAUDE.md pages-viz description updated. Blog entry written.
-
-Landed as f512927 on main. Pushed to both origin and upstream.
+Landed as e29badc on main. Pushed to both origin and upstream.
 
 ## Follow-ups
 
-- Apply a11y mixins (RovingTabindexMixin, FocusTrapMixin) to viz components — unblocked by this migration
+- Apply a11y mixins (RovingTabindexMixin, FocusTrapMixin) to viz components — unblocked by #192 Lit migration
 - pages-ui auth components (pages-identity, pages-dev-auth) still vanilla HTMLElement
-- CLAUDE.md still references pages-data-table as "Will rename to pages-table" — already renamed
+
+## Active Slots
+
+- **Slot 14** — batch-small-fixes: #221, #201, #184, #219, #199
+- **Slot 23** — issue-159-schema-form-runtime: #159 (pipeline bridge, a11y, example update)
