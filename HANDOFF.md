@@ -1,3 +1,5 @@
+*Updated: #184, #192 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-21
 
 ## Last Session
@@ -8,10 +10,10 @@ Landed as e29badc on main. Pushed to both origin and upstream.
 
 ## Follow-ups
 
-- Apply a11y mixins (RovingTabindexMixin, FocusTrapMixin) to viz components — unblocked by #192 Lit migration
+- Apply a11y mixins (RovingTabindexMixin, FocusTrapMixin) to viz components — Lit migration (#192) landed
 - pages-ui auth components (pages-identity, pages-dev-auth) still vanilla HTMLElement
 
 ## Active Slots
 
-- **Slot 14** — batch-small-fixes: #221, #201, #184, #219, #199
+- **Slot 14** — batch-small-fixes: #221, #201, #219, #199
 - **Slot 23** — issue-159-schema-form-runtime: #159 (pipeline bridge, a11y, example update)
