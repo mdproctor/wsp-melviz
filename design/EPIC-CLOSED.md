@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-223-auto-hide-pagination
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-21
+**Issues:** 223
 **Status:** merged to main
