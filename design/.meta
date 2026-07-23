@@ -1,0 +1,9 @@
+branch: issue-229-simple-table-devtown-ux
+project-sha: 4cfd441b48b7c299e6af48974f4ab555f408bf51
+date: 2026-07-23
+issue: 229
+issue-repo: casehubio/casehub-pages
+covers: 229,231,232
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
