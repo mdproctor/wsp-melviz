@@ -1,18 +1,15 @@
-*Updated: #230 closed — removed from backlog.*
-
 # casehub-pages Session Handover — 2026-07-25
 
 ## Last Session
 
-Shipped 8 fixes/features across two sessions (23–25 Jul). Major items: `mutableRestSource` production write path (#144 — brainstorm → spec → plan → TDD implementation → work-end), GridTable `transpose` prop (#235), tree-table hierarchy-preserving client-filter (#240), GroupedView toggle fix (#239), `<pages-table>` alias (#242), dark theme defaults and token fixes (#243, #238, #226, #234). Fixed gallery CSS crash from missing webpack aliases. Stamped and closed 6 stale branches.
+Fixed PagesChartElement test failures (#244) — #230's transparent background injection was missing from 2 test expectations. All 460 tests now pass. Also cleaned stale rebase-merge state in project repo and removed closed #230 from backlog.
 
 ## Immediate Next Step
 
-Gallery is running on casehub-dark. The 2 pre-existing `PagesChartElement` test failures (backgroundColor: "transparent" not expected in setOption mock) should be fixed — they're from #230's transparent chart background change.
+Pick from What's Next — all S/XS items are cleared. Garden push auth issue remains but is infrastructure, not code.
 
 ## What's Left
 
-- PagesChartElement test failures from #230 transparent background · XS · Low
 - Garden push failing (auth/remote issue) — 1 entry committed locally · XS · Low
 
 ## What's Next
