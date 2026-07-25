@@ -1,3 +1,5 @@
+*Updated: #230 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-25
 
 ## Last Session
@@ -21,4 +23,3 @@ Gallery is running on casehub-dark. The 2 pre-existing `PagesChartElement` test 
 | #236 | Rename blocks-ui components to blocks- prefix | M | Med | Naming convention sweep |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
 | #180 | Remove // @ts-nocheck from example files | L | Low | 40 files, mechanical |
-| #230 | Pluggable theme system — spec written, not implemented | L | High | Pipeline architecture |
