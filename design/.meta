@@ -1,0 +1,9 @@
+branch: issue-144-mutable-rest-source
+project-sha: c499d64e3a1d748e7d4c08d6827b604076d73b62
+date: 2026-07-25
+issue: 144
+issue-repo: casehubio/casehub-pages
+covers: 144
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
