@@ -1,18 +1,24 @@
-# casehub-pages Session Handover — 2026-07-23
+# casehub-pages Session Handover — 2026-07-25
 
 ## Last Session
 
-Added GridTable component (`pages-grid-table`) — information grids for feature matrices, status dashboards, scorecards, cross-tabulations. Full styling: togglable column/row headers (cross-matrix), per-column cell display (text, boolean, color, badge, number), compact mode (fixed-width), stripe (rows/columns/both), vertical grid lines. Renamed existing table to DataTable (`pages-data-table`). Fixed page padding (#231) and graceful filter degradation (#232). Created comprehensive examples page with 14 grid patterns. Closed #229, #231, #232.
+Shipped 8 fixes/features across two sessions (23–25 Jul). Major items: `mutableRestSource` production write path (#144 — brainstorm → spec → plan → TDD implementation → work-end), GridTable `transpose` prop (#235), tree-table hierarchy-preserving client-filter (#240), GroupedView toggle fix (#239), `<pages-table>` alias (#242), dark theme defaults and token fixes (#243, #238, #226, #234). Fixed gallery CSS crash from missing webpack aliases. Stamped and closed 6 stale branches.
 
 ## Immediate Next Step
 
-The `row.cell()` path in `conversion.ts` still throws `UNKNOWN_COLUMN` when a metric/table references a non-existent column. The filter path was fixed to degrade gracefully, but the cell access path was not — visible in DevTown dashboard. Consider making `row.cell()` return null for unknown columns, or catching at the component render level.
+Gallery is running on casehub-dark. The 2 pre-existing `PagesChartElement` test failures (backgroundColor: "transparent" not expected in setOption mock) should be fixed — they're from #230's transparent chart background change.
+
+## What's Left
+
+- PagesChartElement test failures from #230 transparent background · XS · Low
+- Garden push failing (auth/remote issue) — 1 entry committed locally · XS · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| — | row.cell() UNKNOWN_COLUMN graceful degradation | S | Med | Different path than filter-resolve fix |
-| #226 | applyTheme() should set background/color on target element | S | Low | Theme tokens injected but not consumed |
-| #230 | Pluggable theme system — pipeline architecture for pages-ui-tokens | L | High | Spec written, not implemented |
-| #180 | Remove // @ts-nocheck from example files — full type conformance | L | Low | 40 files, mechanical |
+| #237 | Propagate form tag renames to downstream repos | M | Low | Cross-repo coordination |
+| #236 | Rename blocks-ui components to blocks- prefix | M | Med | Naming convention sweep |
+| #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
+| #180 | Remove // @ts-nocheck from example files | L | Low | 40 files, mechanical |
+| #230 | Pluggable theme system — spec written, not implemented | L | High | Pipeline architecture |
