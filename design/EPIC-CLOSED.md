@@ -1,5 +1,5 @@
-# Branch Closed: issue-55-rename-casehub-to-pages
+# Branch Closed: issue-244-fix-chart-element-test-expectations
 
-**Date:** 2026-06-29
-**Issues:** 55
+**Date:** 2026-07-25
+**Issues:** 244
 **Status:** merged to main
