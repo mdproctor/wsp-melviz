@@ -24,6 +24,10 @@ Three Maven artifacts map to three distinct tiers:
 
 Mixing build-time and runtime in `casehub-pages-npm` creates a category error — it is unpacked to a source directory, not classpath-served. Bundling into `casehub-pages-webapp` inverts the dependency arrow — the design system is lower in the stack than the dashboard app.
 
+### Why not the issue's URLs
+
+Issue #247 proposed `/pages-ui-tokens/themes/casehub-dark.css` and `/pages-ui-components/bundle.js` — artifact-name-based paths. This spec uses a unified `/pages/` namespace instead (`/pages/tokens/`, `/pages/ui/`). The shorter, grouped paths are easier for consumers to remember and keep all design system assets under one prefix. The original issue also proposed shipping the files inside the existing `casehub-pages-npm` artifact's `dist/` directories, but that artifact is unpacked to a source directory, not classpath-served — hence the separate artifact.
+
 ## Artifact structure
 
 ```
@@ -33,9 +37,12 @@ META-INF/resources/pages/
     casehub-light.css
     default-dark.css
     default-light.css
-  components/
+  ui/
     components.js
+    components.js.map
 ```
+
+The `/pages/ui/` path is deliberately distinct from the existing `/pages/component/` path (singular) in `casehub-pages-webapp`, which serves the `llm-prompter` and `svg-heatmap` dashboard components.
 
 ## Consumer usage
 
@@ -47,9 +54,18 @@ import { applyTheme } from '@casehubio/pages-ui-tokens';
 
 **Static HTML pages** (new):
 ```html
-<link rel="stylesheet" href="/pages/tokens/casehub-dark.css">
-<script type="module" src="/pages/components/components.js"></script>
+<html class="pages-theme-casehub-dark">
+<head>
+  <link rel="stylesheet" href="/pages/tokens/casehub-dark.css">
+</head>
+<body>
+  <script type="module" src="/pages/ui/components.js"></script>
+  <pages-button label="Submit" variant="primary"></pages-button>
+</body>
+</html>
 ```
+
+The `class="pages-theme-casehub-dark"` on an ancestor element is required — theme CSS files scope all custom properties under a `.pages-theme-{name}` selector. Without the class, no CSS variables take effect and components fall back to hardcoded defaults.
 
 **Maven dependency:**
 ```xml
@@ -60,15 +76,20 @@ import { applyTheme } from '@casehubio/pages-ui-tokens';
 </dependency>
 ```
 
+**Cache headers:** Quarkus serves `META-INF/resources/` files with default cache headers. For SNAPSHOT-based development (all current consumers), Quarkus dev mode handles cache invalidation. Cache-busting for released versions (e.g., versioned query parameters) is deferred — see casehubio/casehub-pages#248.
+
 ## Implementation
 
 ### 1. Token CSS build integration
 
-The CLI `build` command already exists (`node dist/cli.js build` → `dist/themes/*.css`). Wire it into the normal build:
+The CLI `build` command already exists (`node dist/cli.js build` → `dist/themes/*.css`). The existing `build:tokens` script remains separate from `build` — it is not merged into the default build to avoid generating theme CSS files during `yarn build`, which would cause them to be packed into the `casehub-pages-npm` artifact by `pack-all.sh`.
 
 ```json
-"build": "tsc -p tsconfig.build.json && node dist/cli.js build"
+"build": "tsc -p tsconfig.build.json",
+"build:tokens": "node dist/cli.js build"
 ```
+
+The `assembly.sh` script (§3) calls `build:tokens` explicitly after `yarn build` has completed tsc compilation.
 
 Produces `dist/themes/{casehub-dark,casehub-light,default-dark,default-light}.css` — each containing `.pages-theme-*` class with all CSS custom properties plus `.pages-density-compact`.
 
@@ -82,12 +103,13 @@ await build({
   entryPoints: ['dist/index.js'],
   bundle: true,
   format: 'esm',
-  outfile: 'dist/bundle.js',
+  outfile: 'dist/components.js',
   minify: true,
+  sourcemap: 'linked',
 });
 ```
 
-Entry point is `dist/index.js` (tsc output) — esbuild resolves `lit` from node_modules and inlines it. Output: single self-contained ESM registering all 5 custom elements (`pages-button`, `pages-input`, `pages-select`, `pages-textarea`, `pages-checkbox`).
+Entry point is `dist/index.js` (tsc output) — esbuild resolves `lit` from node_modules and inlines it. Output: single self-contained ESM registering all 5 custom elements (`pages-button`, `pages-input`, `pages-select`, `pages-textarea`, `pages-checkbox`), plus a linked source map at `dist/components.js.map`.
 
 Build script:
 ```json
@@ -108,17 +130,32 @@ static-assets/
   assembly.sh
 ```
 
-`assembly.sh` copies files into the Maven resource structure:
-- `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
-- `packages/pages-ui-components/dist/bundle.js` → `target/static/META-INF/resources/pages/components/`
+`assembly.sh` generates token CSS files, then copies all outputs into the Maven resource structure:
+1. Runs `yarn workspace @casehubio/pages-ui-tokens run build:tokens` to generate theme CSS
+2. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
+3. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
+4. Copies `packages/pages-ui-components/dist/components.js.map` → `target/static/META-INF/resources/pages/ui/`
 
 Fails fast if expected files are missing (non-empty assertions).
 
-`pom.xml`: parent `casehub-parent`, artifact `casehub-pages-ui-static`, packaging `jar`. Uses `exec-maven-plugin` to run `assembly.sh` during `generate-resources`. Maps `target/static` as resource directory. Compiler plugin skipped (no Java source).
+`pom.xml`: parent `casehub-parent`, artifact `casehub-pages-ui-static`, packaging `jar`. Uses `exec-maven-plugin` to run `assembly.sh` during `generate-resources`. Maps `target/static` as resource directory. Compiler plugin skipped (no Java source). Includes `<repositories>` section for GitHub Packages resolution (same as `webapp/pom.xml`). No `<distributionManagement>` — CI uses `-DaltDeploymentRepository` flags.
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <name>casehubio GitHub Packages</name>
+        <url>https://maven.pkg.github.com/casehubio/*</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
 
 ### 4. CI integration
 
-`maven-publish.yml` — add to `frontend-artifacts` job after yarn build:
+**`maven-publish.yml`** — add `static-assets/**` to the `on.push.paths` and `on.pull_request.paths` trigger arrays. Add to `frontend-artifacts` job after yarn build:
 
 ```yaml
 - name: Install static-assets artifact
@@ -128,15 +165,33 @@ Fails fast if expected files are missing (non-empty assertions).
   run: mvn -f static-assets/pom.xml --batch-mode deploy ...
 ```
 
-`pr-validation.yml` — add `mvn -f static-assets/pom.xml --batch-mode install` after yarn build.
+**`pr-validation.yml`** — add `static-assets/**` to the `js-changes` path filter (since the static-assets Maven build depends on JS build output):
 
-Build order: `yarn build` (tokens CSS + component bundle) → Maven installs (independent, any order).
+```yaml
+- name: Check for JavaScript changes
+  id: js-changes
+  uses: dorny/paths-filter@v3
+  with:
+    filters: |
+      js:
+        - 'packages/**'
+        - 'components/**'
+        - 'webapp/**'
+        - 'examples/**'
+        - 'static-assets/**'
+        - 'package.json'
+        - 'yarn.lock'
+```
+
+Add `mvn -f static-assets/pom.xml --batch-mode install` as a new step after the `js-build` step, conditioned on `steps.js-changes.outputs.js == 'true'`. This step depends on `yarn build:prod` having completed (tsc output must exist for both `build:tokens` and the esbuild bundle).
+
+Build order: `yarn build` (tsc for all packages, including component bundle) → Maven installs (static-assets assembly calls `build:tokens`, then copies all files).
 
 ### 5. Testing
 
 **Build-time:** `assembly.sh` asserts expected files exist and are non-empty before copying.
 
-**Functional:** vitest test in `pages-ui-components` validates `dist/bundle.js` is a loadable ESM that registers the expected custom elements.
+**Functional:** vitest test in `pages-ui-components` validates `dist/components.js` is a loadable ESM that registers the expected custom elements.
 
 ## Scope
 
