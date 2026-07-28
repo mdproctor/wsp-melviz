@@ -1,18 +1,17 @@
-*Updated: #246, #236 closed — removed from backlog.*
-
 # casehub-pages Session Handover — 2026-07-28
 
 ## Last Session
 
-Implemented Maven SNAPSHOT cross-repo dependency management (ADR-0001, #246). Migrated 12 repos: pages and blocks-ui produce `casehub-pages-npm` / `casehub-blocks-ui-npm` Maven artifacts via `yarn pack`, all 9 consumer repos consume via `maven-dependency-plugin:unpack` + Yarn `portal:` resolutions. Eliminated three different CI workarounds (sed hacks, sibling checkouts, broken builds). Updated `ui-architecture.md` in parent, cleaned stale references across 5 repos, removed 5 vestigial `.npmrc` files. Garden entries GE-20260728-93e8db (yarn pack gotcha) and GE-20260728-4f59e3 (portal technique).
+Shipped `casehub-pages-ui-static` (#247) — new Maven artifact serving pre-built theme CSS and component ESM bundle via `META-INF/resources/pages/`. Three-tier artifact separation: build-time source (`npm`), runtime design system (`static`), runtime dashboard app (`webapp`). Design review caught 13 issues including `build:bundle` separation from `build` (now protocol PP-20260728-3676e1) and Lit ESM validation gotcha (garden GE-20260728-6d585d). Pushed to upstream.
 
 ## Immediate Next Step
 
-Verify CI passes on casehub-pages first (push to main triggers `maven-publish.yml` which now builds `npm-packages/` and `webapp/`). Once pages artifacts are on GitHub Maven Packages, trigger blocks-ui CI to verify it resolves pages-npm correctly. Then spot-check one consumer repo (openclaw is simplest).
+Verify CI passes — push to main triggers `maven-publish.yml` which now also builds and publishes `casehub-pages-ui-static`. Once the artifact is on GitHub Maven Packages, add it as a dependency in claudony's pom.xml and migrate login/register pages (#185).
 
 ## What's Left
 
 - Verify CI end-to-end: pages → blocks-ui → one consumer app · S · Low
+- Hygiene: blog on `issue-192` branch and specs on `issue-144` branch never reached workspace main · XS · Low
 
 ## What's Next
 
