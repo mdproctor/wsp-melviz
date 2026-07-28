@@ -136,7 +136,7 @@ static-assets/
 `assembly.sh` generates the static build outputs, validates them, then copies into the Maven resource structure:
 1. Runs `yarn workspace @casehubio/pages-ui-tokens run build:tokens` to generate theme CSS
 2. Runs `yarn workspace @casehubio/pages-ui-components run build:bundle` to generate the component bundle
-3. Validates the bundle is loadable ESM (`node --input-type=module -e "await import('./packages/pages-ui-components/dist/components.js')"`)
+3. Validates the bundle is loadable ESM — stubs browser globals that don't exist in Node.js (`customElements` at minimum, since every component has module-level `customElements.get()`/`customElements.define()` calls), then dynamically imports the bundle. This confirms esbuild produced valid, self-contained ESM.
 4. Asserts all expected files exist and are non-empty (theme CSS files, `components.js`, `components.js.map`)
 5. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
 6. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
