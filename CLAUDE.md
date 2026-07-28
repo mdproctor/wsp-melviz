@@ -161,6 +161,7 @@ yarn workspace @casehubio/pages-examples run dev
 - **`packages/`** — Core TypeScript libraries for dashboard rendering
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
+- **`static-assets/`** — Maven artifact `casehub-pages-ui-static`: pre-built theme CSS + component ESM bundle served via `META-INF/resources/pages/`
 - **`examples/`** — Interactive dashboard examples gallery
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
@@ -206,6 +207,7 @@ YAML → @casehubio/pages-ui (parse) → @casehubio/pages-data (resolve)
 - **ESLint** with `@typescript-eslint/strict-type-checked` — linting
 - **Apache ECharts** — charting
 - **JSONata** — data transformation
+- **esbuild** — ESM bundling for static-assets component bundle
 
 ## Project Artifacts
 
