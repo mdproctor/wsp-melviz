@@ -1,3 +1,5 @@
+*Updated: #246, #236 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-07-28
 
 ## Last Session
@@ -11,13 +13,11 @@ Verify CI passes on casehub-pages first (push to main triggers `maven-publish.ym
 ## What's Left
 
 - Verify CI end-to-end: pages → blocks-ui → one consumer app · S · Low
-- `#246` remains open until CI verification passes across the chain · M · Med
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
 | #245 | Compact theme picker with flyout popover | S | Med | |
-| #236 | Rename blocks-ui components to blocks- prefix | M | Med | blocks-ui owns remaining work |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
 | #180 | Remove // @ts-nocheck from example files | L | Low | 40 files, mechanical |
