@@ -111,10 +111,13 @@ await build({
 
 Entry point is `dist/index.js` (tsc output) — esbuild resolves `lit` from node_modules and inlines it. Output: single self-contained ESM registering all 5 custom elements (`pages-button`, `pages-input`, `pages-select`, `pages-textarea`, `pages-checkbox`), plus a linked source map at `dist/components.js.map`.
 
-Build script:
+Build scripts:
 ```json
-"build": "tsc -p tsconfig.build.json && node build-bundle.js"
+"build": "tsc -p tsconfig.build.json",
+"build:bundle": "node build-bundle.js"
 ```
+
+The bundle step is separate from `build` for the same reason as `build:tokens` (§1) — `pack-all.sh` packs all of `dist/` for every non-private package into `casehub-pages-npm`, so merging the bundle into `build` would put `dist/components.js` into the npm artifact. The npm artifact only needs tree-shakeable modules; the pre-built bundle is exclusively for the `casehub-pages-ui-static` Maven artifact. The `assembly.sh` script (§3) calls `build:bundle` explicitly.
 
 Existing tsc-compiled individual modules remain unchanged — bundled app consumers keep tree-shakeable imports.
 
@@ -130,11 +133,12 @@ static-assets/
   assembly.sh
 ```
 
-`assembly.sh` generates token CSS files, then copies all outputs into the Maven resource structure:
+`assembly.sh` generates the static build outputs, then copies them into the Maven resource structure:
 1. Runs `yarn workspace @casehubio/pages-ui-tokens run build:tokens` to generate theme CSS
-2. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
-3. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
-4. Copies `packages/pages-ui-components/dist/components.js.map` → `target/static/META-INF/resources/pages/ui/`
+2. Runs `yarn workspace @casehubio/pages-ui-components run build:bundle` to generate the component bundle
+3. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
+4. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
+5. Copies `packages/pages-ui-components/dist/components.js.map` → `target/static/META-INF/resources/pages/ui/`
 
 Fails fast if expected files are missing (non-empty assertions).
 
@@ -185,7 +189,7 @@ Fails fast if expected files are missing (non-empty assertions).
 
 Add `mvn -f static-assets/pom.xml --batch-mode install` as a new step after the `js-build` step, conditioned on `steps.js-changes.outputs.js == 'true'`. This step depends on `yarn build:prod` having completed (tsc output must exist for both `build:tokens` and the esbuild bundle).
 
-Build order: `yarn build` (tsc for all packages, including component bundle) → Maven installs (static-assets assembly calls `build:tokens`, then copies all files).
+Build order: `yarn build` (tsc for all packages) → Maven installs (static-assets assembly calls `build:tokens` and `build:bundle`, then copies all files).
 
 ### 5. Testing
 
@@ -197,4 +201,4 @@ Build order: `yarn build` (tsc for all packages, including component bundle) →
 
 - **Scale:** S — build-step additions and one new pom.xml
 - **Complexity:** Low — no API changes, no new runtime code
-- **Files touched:** ~8 (2 package.json edits, 1 new build-bundle.js, 1 new pom.xml, 1 new assembly.sh, 2 CI workflow edits, 1 test file)
+- **Files touched:** ~7 (1 package.json edit, 1 new build-bundle.js, 1 new pom.xml, 1 new assembly.sh, 2 CI workflow edits, 1 test file)
