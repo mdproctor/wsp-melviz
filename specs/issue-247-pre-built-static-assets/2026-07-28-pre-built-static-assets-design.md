@@ -133,14 +133,16 @@ static-assets/
   assembly.sh
 ```
 
-`assembly.sh` generates the static build outputs, then copies them into the Maven resource structure:
+`assembly.sh` generates the static build outputs, validates them, then copies into the Maven resource structure:
 1. Runs `yarn workspace @casehubio/pages-ui-tokens run build:tokens` to generate theme CSS
 2. Runs `yarn workspace @casehubio/pages-ui-components run build:bundle` to generate the component bundle
-3. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
-4. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
-5. Copies `packages/pages-ui-components/dist/components.js.map` → `target/static/META-INF/resources/pages/ui/`
+3. Validates the bundle is loadable ESM (`node --input-type=module -e "await import('./packages/pages-ui-components/dist/components.js')"`)
+4. Asserts all expected files exist and are non-empty (theme CSS files, `components.js`, `components.js.map`)
+5. Copies `packages/pages-ui-tokens/dist/themes/*.css` → `target/static/META-INF/resources/pages/tokens/`
+6. Copies `packages/pages-ui-components/dist/components.js` → `target/static/META-INF/resources/pages/ui/`
+7. Copies `packages/pages-ui-components/dist/components.js.map` → `target/static/META-INF/resources/pages/ui/`
 
-Fails fast if expected files are missing (non-empty assertions).
+Fails fast at any step — build, validation, or copy.
 
 `pom.xml`: parent `casehub-parent`, artifact `casehub-pages-ui-static`, packaging `jar`. Uses `exec-maven-plugin` to run `assembly.sh` during `generate-resources`. Maps `target/static` as resource directory. Compiler plugin skipped (no Java source). Includes `<repositories>` section for GitHub Packages resolution (same as `webapp/pom.xml`). No `<distributionManagement>` — CI uses `-DaltDeploymentRepository` flags.
 
@@ -193,12 +195,15 @@ Build order: `yarn build` (tsc for all packages) → Maven installs (static-asse
 
 ### 5. Testing
 
-**Build-time:** `assembly.sh` asserts expected files exist and are non-empty before copying.
+All static-asset validation is co-located in `assembly.sh`, which is the single orchestrator for generating, validating, and packaging the artifacts:
 
-**Functional:** vitest test in `pages-ui-components` validates `dist/components.js` is a loadable ESM that registers the expected custom elements.
+- **File assertions:** expected files exist and are non-empty (theme CSS, `components.js`, `components.js.map`)
+- **ESM load test:** dynamic import of the component bundle verifies esbuild produced valid ESM output
+
+No separate vitest test file is needed — `dist/components.js` only exists after `build:bundle`, which runs exclusively in assembly.sh. The existing vitest suites in `pages-ui-components` cover individual component correctness via tree-shakeable imports.
 
 ## Scope
 
 - **Scale:** S — build-step additions and one new pom.xml
 - **Complexity:** Low — no API changes, no new runtime code
-- **Files touched:** ~7 (1 package.json edit, 1 new build-bundle.js, 1 new pom.xml, 1 new assembly.sh, 2 CI workflow edits, 1 test file)
+- **Files touched:** ~6 (1 package.json edit, 1 new build-bundle.js, 1 new pom.xml, 1 new assembly.sh, 2 CI workflow edits)
