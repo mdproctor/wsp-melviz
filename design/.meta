@@ -1,0 +1,9 @@
+branch: issue-248-fix-cross-repo-ci
+project-sha: 04f5c9f3eda6e64edfeb09a02be76ff6dcd6c564
+date: 2026-07-28
+issue: 248
+issue-repo: casehubio/casehub-pages
+covers: 248
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
