@@ -1,5 +1,5 @@
-# Branch Closed: issue-236-blocks-prefix-rename
+# Branch Closed: issue-247-pre-built-static-assets
 
-**Date:** 2026-07-27
-**Issues:** 236
+**Date:** 2026-07-28
+**Issues:** 247
 **Status:** merged to main
