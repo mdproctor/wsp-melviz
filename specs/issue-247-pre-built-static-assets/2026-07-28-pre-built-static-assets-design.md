@@ -76,7 +76,7 @@ The `class="pages-theme-casehub-dark"` on an ancestor element is required — th
 </dependency>
 ```
 
-**Cache headers:** Quarkus serves `META-INF/resources/` files with default cache headers. For SNAPSHOT-based development (all current consumers), Quarkus dev mode handles cache invalidation. Cache-busting for released versions (e.g., versioned query parameters) is deferred — see casehubio/casehub-pages#248.
+**Cache headers:** Quarkus serves `META-INF/resources/` files with default cache headers. For SNAPSHOT-based development (all current consumers), Quarkus dev mode handles cache invalidation. Cache-busting for released versions (e.g., versioned query parameters) is deferred — see casehubio/casehub-pages#249.
 
 ## Implementation
 
