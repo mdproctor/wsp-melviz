@@ -1,18 +1,23 @@
-# casehub-pages Session Handover — 2026-07-27
+# casehub-pages Session Handover — 2026-07-28
 
 ## Last Session
 
-Closed #237 — propagated form tag renames (`text-input` → `input`, `dropdown` → `select`) across example YAML files. Verification uncovered three bugs: form components tree-shaken from examples bundle (webpack alias bypasses `sideEffects` resolution), accordion chevrons wrong on initial render, redundant filter Go button. All fixed. Swept ~207 hardcoded hex colours with oklch overlays across 15 example files for dark mode. Filed #245 (compact theme picker flyout). Garden entry GE-20260727-0e1c60 submitted for the webpack gotcha.
+Implemented Maven SNAPSHOT cross-repo dependency management (ADR-0001, #246). Migrated 12 repos: pages and blocks-ui produce `casehub-pages-npm` / `casehub-blocks-ui-npm` Maven artifacts via `yarn pack`, all 9 consumer repos consume via `maven-dependency-plugin:unpack` + Yarn `portal:` resolutions. Eliminated three different CI workarounds (sed hacks, sibling checkouts, broken builds). Updated `ui-architecture.md` in parent, cleaned stale references across 5 repos, removed 5 vestigial `.npmrc` files. Garden entries GE-20260728-93e8db (yarn pack gotcha) and GE-20260728-4f59e3 (portal technique).
 
 ## Immediate Next Step
 
-Pick from What's Next — no trailing obligations remain.
+Verify CI passes on casehub-pages first (push to main triggers `maven-publish.yml` which now builds `npm-packages/` and `webapp/`). Once pages artifacts are on GitHub Maven Packages, trigger blocks-ui CI to verify it resolves pages-npm correctly. Then spot-check one consumer repo (openclaw is simplest).
+
+## What's Left
+
+- Verify CI end-to-end: pages → blocks-ui → one consumer app · S · Low
+- `#246` remains open until CI verification passes across the chain · M · Med
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #245 | Compact theme picker with flyout popover | S | Med | Filed this session |
-| #236 | Rename blocks-ui components to blocks- prefix | M | Med | casehub-pages verified clean; blocks-ui owns remaining work |
+| #245 | Compact theme picker with flyout popover | S | Med | |
+| #236 | Rename blocks-ui components to blocks- prefix | M | Med | blocks-ui owns remaining work |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
 | #180 | Remove // @ts-nocheck from example files | L | Low | 40 files, mechanical |
