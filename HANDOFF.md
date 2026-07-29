@@ -1,3 +1,5 @@
+*Updated: #185 closed — removed from immediate next step.*
+
 # casehub-pages Session Handover — 2026-07-28
 
 ## Last Session
@@ -6,7 +8,7 @@ Shipped `casehub-pages-ui-static` (#247) — new Maven artifact serving pre-buil
 
 ## Immediate Next Step
 
-Verify CI passes — push to main triggers `maven-publish.yml` which now also builds and publishes `casehub-pages-ui-static`. Once the artifact is on GitHub Maven Packages, add it as a dependency in claudony's pom.xml and migrate login/register pages (#185).
+Verify CI passes — push to main triggers `maven-publish.yml` which now also builds and publishes `casehub-pages-ui-static`. Once the artifact is on GitHub Maven Packages, add it as a dependency in a consumer app's pom.xml to validate the static artifact integration.
 
 ## What's Left
 
