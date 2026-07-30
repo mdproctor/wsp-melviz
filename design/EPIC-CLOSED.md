@@ -1,5 +1,5 @@
-# Branch Closed: issue-236-blocks-prefix-rename
+# Branch Closed: issue-245-compact-theme-picker
 
-**Date:** 2026-07-27
-**Issues:** 236
+**Date:** 2026-07-30
+**Issues:** 245
 **Status:** merged to main
