@@ -2,6 +2,7 @@
 
 | Entry | Date | Summary |
 |-------|------|---------|
+| [2026-08-02-mdp01-the-layer-that-made-things-worse.md](2026-08-02-mdp01-the-layer-that-made-things-worse.md) | 2026-08-02 | CSS @layer doesn't isolate from unlayered host CSS — three-mechanism approach for embedding React Flow in Lit Web Components. |
 | [2026-07-19-mdp02-killing-the-row-grid.md](2026-07-19-mdp02-killing-the-row-grid.md) | 2026-07-19 | Single CSS Grid body replaces per-row grids in pages-table — native row and column spanning, SpanMap computation, span-aware virtual scroll, hover, keyboard, and selection. |
 | [2026-07-19-mdp01-validation-as-pure-function.md](2026-07-19-mdp01-validation-as-pure-function.md) | 2026-07-19 | pages-form field metadata (title, description, placeholder) and validation engine as a separate pure function — 53 tests, inline error display, optional blur validation. |
 | [2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md](2026-07-17-mdp01-four-follow-ons-two-kinds-of-grouping.md) | 2026-07-17 | Grouped-view enhancements — list mode renderers, synchronized column visibility, cross-group unified selection, native groupBy on pages-table. Coexistence design: two tools for two purposes. |
