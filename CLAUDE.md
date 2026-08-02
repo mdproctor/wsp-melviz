@@ -91,6 +91,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 type: custom
 
+## Platform Docs
+- [Platform Index](https://raw.githubusercontent.com/casehubio/parent/main/docs/INDEX.md) — discovery index (start here)
+- [Building Platform](https://raw.githubusercontent.com/casehubio/parent/main/docs/guides/building-platform.md) — platform contributor guide
+
+## Repo Guide
+
+This repo owns its own documentation, synced to parent via CI:
+- `docs/consumer-guide.md` — for app builders: modules, APIs, quick start
+- `docs/contributor-guide.md` — for platform builders: architecture, SPIs, internals
+
+Update the relevant guide in the same session when implementation changes modules, SPIs, or public APIs. Do not defer — drift compounds.
+
+Read `consumer-guide.md` for app-level work. Only read `contributor-guide.md` when modifying this repo's internals or extension points.
+
 ## Build Commands
 
 This is a TypeScript monorepo managed with Yarn workspaces. Build order matters: packages → components → webapp.
