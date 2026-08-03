@@ -188,7 +188,7 @@ yarn workspace @casehubio/pages-examples run dev
 - `@casehubio/pages-component` — CSS grid layout renderer, interactive containers, `DataSourceController` (Declaration + VizTarget, delegates lifecycle to `SourceConnector`), `createStandaloneConnector` (wires controller + connector + DataSetManager for non-pipeline use)
 - `@casehubio/pages-primitives` — Lit-dependent UI primitives: a11y mixins (LiveRegionMixin, FocusTrapMixin, RovingTabindexMixin, KeyboardShortcutMixin). Depends on `lit`. Migrated from blocks-ui-core in blocks-ui#48.
 - `@casehubio/pages-table` — `PagesDataTable` (`pages-data-table`, type `data-table`) — interactive data table: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility (`hiddenColumns`), multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation, native `groupBy` (interleaved group headers). Builder: `dataTable()`. Depends on `lit`. Migrated from blocks-ui in blocks-ui#48.
-- `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
+- `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`), panel detach/popout (`DetachController`, `DetachRegistry`)
 
 **Iframe Component API** (`packages/`):
 - `@casehubio/pages-iframe-api` — Component controller for iframe-isolated components
