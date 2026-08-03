@@ -1,5 +1,5 @@
-# Branch Closed: issue-236-blocks-prefix-rename
+# Branch Closed: issue-257-pages-badge-tag-collision
 
-**Date:** 2026-07-27
-**Issues:** 236
+**Date:** 2026-08-03
+**Issues:** 257
 **Status:** merged to main
