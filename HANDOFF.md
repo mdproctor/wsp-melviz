@@ -2,11 +2,11 @@
 
 ## Last Session
 
-Fixed PagesBadge tag name collision (#257) — renamed viz `PagesBadge` to `pages-data-badge`, added `TAG_NAME_OVERRIDES` map in activation pipeline. Closed epic #255 (pages-ui-components complete). Reorganised backlog: renamed epic #95 to "Dashboard platform completion", moved #113/#147 into it, closed duplicate #256 and stale #97/#262.
+Shipped floating/popout panels (#77) — container-level adoptNode to child windows, 15-event relay, MutationObserver guard, placeholder positioning, theme sync. Also fixed PagesBadge tag collision (#257), closed epic #255 (pages-ui-components), reorganised backlog (renamed #95, closed #256/#97/#262). Garden entry GE-20260803-cdec3c for happy-dom adoptNode round-trip limitation.
 
 ## Immediate Next Step
 
-Pick next issue. #222 (nested schema-form) is the largest remaining feature. #265 (graph-renderer Phase 1B) is the active initiative.
+Pick next issue. #265 (graph-renderer Phase 1B) is the active initiative with 6 child issues. #222 (nested schema-form) is the largest standalone feature.
 
 ## What's Left
 
