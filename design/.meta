@@ -1,0 +1,9 @@
+branch: issue-257-pages-badge-tag-collision
+project-sha: 26b46fa86620aeddbec659d61bc6cd49d3f10694
+date: 2026-08-03
+issue: 257
+issue-repo: casehubio/casehub-pages
+covers: 257
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
