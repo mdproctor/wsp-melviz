@@ -1,0 +1,10 @@
+branch: issue-277-node-decoration-types
+state: scaffolded
+project-sha: aabcdb802dc3af1e0df431326ba55722e680023f
+date: 2026-08-04
+issue: 277
+issue-repo: casehubio/casehub-pages
+covers: 277,279
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
