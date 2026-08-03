@@ -1,0 +1,9 @@
+branch: issue-077-floating-popout-panels
+project-sha: 981c1ca0a4019741f4601d3c7249d4e28e858764
+date: 2026-08-03
+issue: 77
+issue-repo: casehubio/casehub-pages
+covers: 77
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
