@@ -1,3 +1,5 @@
+*Updated: #180 closed — removed from backlog.*
+
 # casehub-pages Session Handover — 2026-08-04
 
 ## Last Session
@@ -6,7 +8,7 @@ Validated and closed Phase 1A epic (#264 — all 5 children done, 101 tests). Fi
 
 ## Immediate Next Step
 
-Pick next issue. Slot 5 (#180, ts-nocheck removal) is ready for work. #265 has one remaining child (#279 — now closed). #277 is closed. blocks-ui is unblocked for RuntimeAdapter work consuming NodeDecoration.
+Pick next issue. #265 has one remaining child (#279 — now closed). #277 is closed. blocks-ui is unblocked for RuntimeAdapter work consuming NodeDecoration.
 
 ## What's Left
 
@@ -19,5 +21,4 @@ Pick next issue. Slot 5 (#180, ts-nocheck removal) is ready for work. #265 has o
 |---|-------------|-------|------------|-------|
 | #265 | Epic: graph-renderer Phase 1B — one child remaining (#279, now closed) | XS | Low | Close epic when verified |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
-| #180 | Remove `// @ts-nocheck` from example files | L | Low | Slot 5 ready |
 | #249 | Cache-busting for classpath static assets | M | Med | |
