@@ -1,0 +1,10 @@
+branch: issue-285-dock-workbench
+state: scaffolded
+project-sha: 224a9b92d1cbf1add52f7ea5e11ffde27c9bb63f
+date: 2026-08-04
+issue: 285
+issue-repo: casehubio/casehub-pages
+covers: 285
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
