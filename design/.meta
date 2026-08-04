@@ -1,0 +1,10 @@
+branch: issue-012-lazy-dataset-pagination
+state: scaffolded
+project-sha: 38a60fddbddf81aa860c57639b508fd4412b0ab5
+date: 2026-08-04
+issue: 12
+issue-repo: casehubio/casehub-pages
+covers: 12
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
