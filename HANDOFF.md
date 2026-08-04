@@ -2,22 +2,23 @@
 
 ## Last Session
 
-Closed Phase 1B epic (#265 — all children done). Created and completed Phase 6 epic (#280) — `@casehubio/graph-work-registry` package with WorkStencil types, marketplace YAML loader, CategoryIndex, and default work stencil renderer in graph-renderer. 35 new tests, full build + typecheck clean. Closed #281–#284, pushed to upstream.
+Closed the visual diagram editor foundation epic (#258, #280). Batched four S-scale fixes on `issue-288-s-fixes-batch`: paginated table sizing (#288), group-eval graceful degradation (#287), terminal focus management (#286), typed DSL gaps (#278 partial). Deferred #12 (lazy pagination) as M/High.
 
 ## Immediate Next Step
 
-Pick next issue. #258 (parent epic) has Phase 6 complete. Phases 5 (SWF drill-down) and 7 (runtime overlay) are next — both can run in parallel. Or pick from standalone issues.
+Branch `issue-288-s-fixes-batch` is open with one committed fix. Run `/work` — either `work-end` to close this branch (all four fixes landed), or continue if #278 remaining gaps are worth addressing here.
 
 ## What's Left
 
+- #278 remaining DSL gaps: site(), appGrid(), div(), navGroupId variants — need design decisions · S · Med
 - Hygiene: stale branch `issue-024-casehub-pages-rename` (33+ days old) · XS · Low
-- Hygiene: unrecovered artifacts on closed branches · S · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #258 | Epic: Visual Diagram Editor — Phase 5 (SWF drill-down) or Phase 7 (runtime overlay) | M | Med-High | Both can run in parallel |
-| #278 | Typed DSL — API gaps from @ts-nocheck removal | S | Low | Follow-on from #180 |
+| #12 | Lazy on-demand pagination for datasets | M | High | Needs design brainstorm — DataSource wrapper, caching, sort/filter composition |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
 | #249 | Cache-busting for classpath static assets | M | Med | |
+| #142 | epic: Scenario Engine — phases 5-7 | L | High | Epic |
+| #140 | DataSource abstraction — live/mock/simulated/replay | M | Med | |
