@@ -2,15 +2,14 @@
 
 ## Last Session
 
-Closed the visual diagram editor foundation epic (#258, #280). Batched four S-scale fixes on `issue-288-s-fixes-batch`: paginated table sizing (#288), group-eval graceful degradation (#287), terminal focus management (#286), typed DSL gaps (#278 partial). Deferred #12 (lazy pagination) as M/High.
+Closed visual diagram editor foundation epic (#258, #280). Batched and closed four S-scale fixes (#288, #287, #286, #278) — paginated table sizing, group-eval graceful degradation, terminal focus management, typed DSL gaps. Branch `issue-288-s-fixes-batch` merged and pushed to upstream.
 
 ## Immediate Next Step
 
-Branch `issue-288-s-fixes-batch` is open with one committed fix. Run `/work` — either `work-end` to close this branch (all four fixes landed), or continue if #278 remaining gaps are worth addressing here.
+Start #12 (lazy on-demand pagination). Needs a design brainstorm — DataSource wrapper, page caching, sort/filter composition. Run `/work` to begin.
 
 ## What's Left
 
-- #278 remaining DSL gaps: site(), appGrid(), div(), navGroupId variants — need design decisions · S · Med
 - Hygiene: stale branch `issue-024-casehub-pages-rename` (33+ days old) · XS · Low
 
 ## What's Next
