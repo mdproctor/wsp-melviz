@@ -221,20 +221,29 @@ rows(
 
 ### `defaultOpen` handling
 
-Panels with `defaultOpen: true` are still wrapped in `lazy()`. The rendering
-flow handles it naturally:
+Panels with `defaultOpen: true` are rendered eagerly — the builder does NOT
+wrap them in `lazy()`. Only initially-closed panels are lazy-wrapped. This
+avoids a timing issue: dock-bar activation fires during `renderComponent()` (via
+`onNode`), but the dock-toggle handler in `site.ts` is registered AFTER
+rendering. Events dispatched during activation would be missed.
 
-1. `renderComponent()` builds the full tree (lazy containers are empty)
-2. `loadSite()` restores layout state from `LayoutStore` (or URL)
-3. For each panel that should be visible (from state, or `defaultOpen` on first
-   visit), the dock-toggle handler fires
-4. The handler triggers `pages-lazy-render` on the lazy container
-5. Panel content renders synchronously and is shown
+```typescript
+// Builder logic per panel:
+const wrapped = panel.defaultOpen
+  ? withId(panel.key, panel.content)        // render eagerly
+  : withId(panel.key, lazy(panel.content))  // render on first open
+```
 
-On first visit (no saved state), the builder encodes `defaultOpen` into the dock
-bar's `DockItem.defaultOpen` prop. The dock-bar activation sets initial
-`data-active` state. The runtime's initial dock state replay shows those panels
-and triggers their lazy render.
+The builder also encodes `defaultOpen` into the dock bar's `DockItem.defaultOpen`
+prop so dock-bar activation sets the correct initial `data-active` state.
+
+**State restore (subsequent visits)**: saved state may differ from defaults —
+a panel that was not `defaultOpen` may have been opened by the user and saved.
+After `loadSite()` restores dock visibility from `LayoutStore`, a post-render
+init step walks the restored dock state. For each panel marked visible in saved
+state: if its slot container has `[data-lazy="pending"]`, trigger
+`pages-lazy-render` and show the slot container. This ensures saved-state
+panels render even if they were not `defaultOpen`.
 
 ### YAML desugaring
 
@@ -374,3 +383,6 @@ No new packages.
   of existing component types. Future Lit wrapper (v2) would wrap the builder.
 - **Backward compatible**: non-exclusive dock bars unchanged, existing split
   collapse behavior preserved (cascading is a superset)
+- **Reserved event**: `pages-lazy-render` is a new framework-internal event.
+  Update the reserved names table in PP-20260705-bac842 in the same commit
+  that adds the lazy primitive (per protocol requirement).
