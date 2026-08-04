@@ -1,0 +1,10 @@
+branch: issue-280-graph-work-registry
+state: scaffolded
+project-sha: c45ed0d52941664ed86b6dd307234761dab91750
+date: 2026-08-04
+issue: 280
+issue-repo: casehubio/casehub-pages
+covers: 281,282,283,284
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
