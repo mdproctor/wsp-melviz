@@ -1,0 +1,10 @@
+branch: issue-288-s-fixes-batch
+state: scaffolded
+project-sha: f1f594a16de3e6282ffc739208053f3a8802b327
+date: 2026-08-04
+issue: 288
+issue-repo: casehubio/casehub-pages
+covers: 288,287,286,278,12
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
