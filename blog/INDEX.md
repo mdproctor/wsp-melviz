@@ -52,3 +52,4 @@
 | [2026-06-10-mdp01-filter-model-type-safety.md](2026-06-10-mdp01-filter-model-type-safety.md) | 2026-06-10 | Filter model with Level 2 discriminated unions, TimeFrame parser, 5 Java null-handling bug fixes |
 | [2026-08-03-mdp02-from-flat-positions.md](2026-08-03-mdp02-from-flat-positions.md) | 2026-08-03 | ELK containment layout, interaction events, toolbar — completing Phase 1B |
 | [2026-08-04-mdp02-marketplace-stencil-discovery.md](2026-08-04-mdp02-marketplace-stencil-discovery.md) | 2026-08-04 | Phase 6 graph-work-registry: marketplace work stencil discovery, category index, default renderer |
+| [2026-08-04-mdp03-clearing-backlog-batch-fixes.md](2026-08-04-mdp03-clearing-backlog-batch-fixes.md) | 2026-08-04 | Batch of four S-scale fixes: data-table paginated sizing, group-eval graceful degradation, terminal focus management, DSL gaps |
