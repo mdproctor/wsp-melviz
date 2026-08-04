@@ -1,5 +1,5 @@
-# Branch Closed: issue-236-blocks-prefix-rename
+# Branch Closed: issue-285-dock-workbench
 
-**Date:** 2026-07-27
-**Issues:** 236
+**Date:** 2026-08-04
+**Issues:** 285
 **Status:** merged to main
