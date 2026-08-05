@@ -1,22 +1,22 @@
-# casehub-pages Session Handover — 2026-08-04
+# casehub-pages Session Handover — 2026-08-05
 
 ## Last Session
 
-Closed visual diagram editor foundation epic (#258, #280). Batched and closed four S-scale fixes (#288, #287, #286, #278) — paginated table sizing, group-eval graceful degradation, terminal focus management, typed DSL gaps. Branch `issue-288-s-fixes-batch` merged and pushed to upstream.
+Designed and partially implemented server-side pagination (#12). Spec approved (design review: 0 issues across structure and robustness). Implementation: Tasks 1-4 committed (types, PageCache, DSL builder, ServerPaginationManager). Tasks 5-6 remain (pipeline wiring, build verification).
 
 ## Immediate Next Step
 
-Start #12 (lazy on-demand pagination). Needs a design brainstorm — DataSource wrapper, page caching, sort/filter composition. Run `/work` to begin.
+Branch `issue-012-lazy-dataset-pagination` is open with 4 committed tasks. Run `/work` to resume. Next task is Task 5 — wire `ServerPaginationManager` into `data-pipeline.ts` pushData and site.ts event handlers. Plan at `plans/2026-08-05-server-pagination.md`.
 
 ## What's Left
 
-- Hygiene: stale branch `issue-024-casehub-pages-rename` (33+ days old) · XS · Low
+- Task 5: pipeline wiring — connect manager to pushData, sort/filter invalidation, corrupted view protection · M · Med
+- Task 6: full build verification · XS · Low
 
 ## What's Next
 
 | # | Description | Scale | Complexity | Notes |
 |---|-------------|-------|------------|-------|
-| #12 | Lazy on-demand pagination for datasets | M | High | Needs design brainstorm — DataSource wrapper, caching, sort/filter composition |
 | #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
 | #249 | Cache-busting for classpath static assets | M | Med | |
 | #142 | epic: Scenario Engine — phases 5-7 | L | High | Epic |
