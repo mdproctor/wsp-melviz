@@ -1,0 +1,10 @@
+branch: issue-113-durable-eventstore
+state: scaffolded
+project-sha: bc509de4d00d45fc01a5a471911de6990c486b1b
+date: 2026-08-06
+issue: 113
+issue-repo: casehubio/casehub-pages
+covers: 113
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
