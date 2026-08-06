@@ -12,6 +12,7 @@ Branch `issue-012-lazy-dataset-pagination` is open with 4 committed tasks. Run `
 
 - Task 5: pipeline wiring — connect manager to pushData, sort/filter invalidation, corrupted view protection · M · Med
 - Task 6: full build verification · XS · Low
+- Bug: work_router.py checks HANDOFF.md on filesystem (feature branch) not workspace main — soredium fix pending · XS · Low
 
 ## What's Next
 
