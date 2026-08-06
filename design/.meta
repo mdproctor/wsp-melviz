@@ -1,0 +1,10 @@
+branch: issue-290-elk-per-node-size-overrides
+state: scaffolded
+project-sha: 278b8fb8f35f55a37242a3de87e03b047f75db26
+date: 2026-08-06
+issue: 290
+issue-repo: casehubio/casehub-pages
+covers: 290
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
