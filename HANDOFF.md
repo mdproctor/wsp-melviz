@@ -1,24 +1,18 @@
-# casehub-pages Session Handover — 2026-08-05
+# casehub-pages Session Handover — 2026-08-07
 
 ## Last Session
 
-Designed and partially implemented server-side pagination (#12). Spec approved (design review: 0 issues across structure and robustness). Implementation: Tasks 1-4 committed (types, PageCache, DSL builder, ServerPaginationManager). Tasks 5-6 remain (pipeline wiring, build verification).
+Designed and began implementing durable EventStore backends (JDBC + Redis) for the push protocol (#113). Broke the EventStore SPI with two changes — `Instant createdAt` on StoredEvent, `int limit` on `replay()`. Design review caught a critical Redis XTRIM MINID incompatibility with seq-based stream IDs. Task 1 (SPI changes) landed: 9 files, 127 tests green. Tasks 2-3 (JDBC and Redis modules) remain.
+
+Also created work slot 89 for #75 (IntelliJ-style tool window docking) and updated the issue with the full 6-zone docking model.
 
 ## Immediate Next Step
 
-Branch `issue-012-lazy-dataset-pagination` is open with 4 committed tasks. Run `/work` to resume. Next task is Task 5 — wire `ServerPaginationManager` into `data-pipeline.ts` pushData and site.ts event handlers. Plan at `plans/2026-08-05-server-pagination.md`.
+Run `/work` on branch `issue-113-durable-eventstore` to continue. Execute Task 2 (JDBC module) from the plan at `plans/2026-08-07-durable-eventstore.md`.
 
-## What's Left
+## References
 
-- Task 5: pipeline wiring — connect manager to pushData, sort/filter invalidation, corrupted view protection · M · Med
-- Task 6: full build verification · XS · Low
-- Bug: work_router.py checks HANDOFF.md on filesystem (feature branch) not workspace main — soredium fix pending · XS · Low
-
-## What's Next
-
-| # | Description | Scale | Complexity | Notes |
-|---|-------------|-------|------------|-------|
-| #222 | Nested object/array schema support for schema-form | L | High | Recursive rendering |
-| #249 | Cache-busting for classpath static assets | M | Med | |
-| #142 | epic: Scenario Engine — phases 5-7 | L | High | Epic |
-| #140 | DataSource abstraction — live/mock/simulated/replay | M | Med | |
+- Spec: `specs/issue-113-durable-eventstore/2026-08-07-durable-eventstore-design.md`
+- Plan: `plans/2026-08-07-durable-eventstore.md`
+- Journal: `design/JOURNAL.md`
+- Slot 89 (#75): `/Users/mdproctor/claude/casehub/slots/89/`
