@@ -1,0 +1,10 @@
+branch: issue-309-floating-ux-polish
+state: scaffolded
+project-sha: dea86dc295e85216d8721d64dd58ccc1345fe92c
+date: 2026-08-10
+issue: 309
+issue-repo: casehubio/casehub-pages
+covers: 309
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
