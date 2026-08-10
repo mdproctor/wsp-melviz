@@ -1,0 +1,10 @@
+branch: issue-303-floating-engine-autowire
+state: scaffolded
+project-sha: e2458163895a90ae34e033bf5d471024ecbfce9a
+date: 2026-08-10
+issue: 303
+issue-repo: casehubio/casehub-pages
+covers: 303
+flyway-next-v: none
+design-repo: workspace
+design-section-hashes: 
