@@ -56,3 +56,4 @@
 | [2026-08-05-mdp01-where-does-pagination-go.md](2026-08-05-mdp01-where-does-pagination-go.md) | 2026-08-05 | Server-side pagination design: tracing event flow to determine where new logic belongs, pipeline-level approach over middleware wrapper |
 | [2026-08-09-mdp01-neutral-scale-two-modes.md](2026-08-09-mdp01-neutral-scale-two-modes.md) | 2026-08-09 | Unified dock builder, auto-detect in loadSite, IntelliJ Island theme pattern using neutral scale inversion |
 | [2026-08-10-mdp01-selection-context-bridge.md](2026-08-10-mdp01-selection-context-bridge.md) | 2026-08-10 | Selection context bridge — the narrower-than-expected gap between table selection and parameterised detail datasets |
+| [2026-08-10-mdp03-stale-positions-and-engine-purity.md](2026-08-10-mdp03-stale-positions-and-engine-purity.md) | 2026-08-10 | Wire function preserves engine purity while fixing stale-position bug and eliminating consumer boilerplate |
