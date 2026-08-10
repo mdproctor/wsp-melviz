@@ -55,3 +55,4 @@
 | [2026-08-04-mdp03-clearing-backlog-batch-fixes.md](2026-08-04-mdp03-clearing-backlog-batch-fixes.md) | 2026-08-04 | Batch of four S-scale fixes: data-table paginated sizing, group-eval graceful degradation, terminal focus management, DSL gaps |
 | [2026-08-05-mdp01-where-does-pagination-go.md](2026-08-05-mdp01-where-does-pagination-go.md) | 2026-08-05 | Server-side pagination design: tracing event flow to determine where new logic belongs, pipeline-level approach over middleware wrapper |
 | [2026-08-09-mdp01-neutral-scale-two-modes.md](2026-08-09-mdp01-neutral-scale-two-modes.md) | 2026-08-09 | Unified dock builder, auto-detect in loadSite, IntelliJ Island theme pattern using neutral scale inversion |
+| [2026-08-10-mdp01-selection-context-bridge.md](2026-08-10-mdp01-selection-context-bridge.md) | 2026-08-10 | Selection context bridge — the narrower-than-expected gap between table selection and parameterised detail datasets |
