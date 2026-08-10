@@ -62,13 +62,11 @@ Per-artifact routing destinations (optional). If absent, all artifacts route to 
 |------------|-------------|-------|
 | adr        | project     | lands in `docs/adr/` — promoted at work end |
 | specs      | project     | lands in `docs/specs/` — promoted at work end |
-| blog       | workspace   | staged here; published via publish-blog at work end |
+| blog       | project     | lands in docs/blog/ — promoted at work end |
 | plans      | workspace   | stay in workspace permanently |
 | design     | workspace   | epic journal stays in workspace |
 | snapshots  | workspace   | stay in workspace permanently |
 | handover   | workspace   | |
-
-**Blog directory:** `/Users/mdproctor/claude/public/casehub/pages/blog/`
 
 Valid destinations: `project` · `workspace` · `mdproctor.github.io` · `alternative ~/path/to/repo/`
 
