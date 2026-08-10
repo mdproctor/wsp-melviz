@@ -10,22 +10,41 @@ Five UX enhancements to the floating workspace. All build on existing extension 
 
 ### Architectural constraints
 
-- `FloatingFrameBackend` interface not structurally changed — two additive callbacks (`onFrameDragMove`, `getFrameElement`) added for snap preview and animation; detach is handled above the backend layer
+- `FloatingFrameBackend` interface not structurally changed — three additive callbacks (`onFrameDragMove`, `onTitlebarDoubleClick`, `getFrameElement`) added; detach is handled above the backend layer
 - No Lit dependency added to `pages-runtime` — all new DOM is plain, matching `injectFrameChrome()` patterns
 - `FrameLayout` stays flat — two new optional fields (`detached`, `snappedZone`), backward-compatible
 - Accessibility beyond `prefers-reduced-motion` and existing `aria-pressed` deferred to #15
+
+### Prerequisite: FrameLayout spread refactor
+
+The engine constructs `FrameLayout` objects by explicitly listing every field in 7+ locations (`showFrame`, `addTab`, `removeTab`, `setActiveTab`, `togglePin`, `updatePosition`, `updateSize`), plus `withLayout` in `frame-organisers.ts`. Adding `detached` and `snappedZone` to `FrameLayout` would be silently stripped at all these sites.
+
+**Before any feature work:** refactor all FrameLayout construction sites to use object spread (`{ ...frame, hidden: false }`) instead of explicit field listing. This eliminates the maintenance trap structurally — new optional fields are automatically preserved.
+
+### Module decomposition
+
+The wire function stays focused on its current responsibility: connecting backend callbacks to engine state and DOM events. New concerns are decomposed into companion modules that the wire function (or activation callback) composes:
+
+| Module | Responsibility |
+|--------|---------------|
+| `frame-detach-handler.ts` | **New** — child window lifecycle, EventRelay, DetachRegistry, content factory rendering |
+| `frame-snap-preview.ts` | **New** — snap preview overlay DOM, drag tracking, zone detection |
+| `frame-animations.ts` | **New** — enter/exit CSS injection, Web Animations API bridge, `prefers-reduced-motion` |
+| `frame-keyboard.ts` | **New** — keyboard handler factory (already designed as standalone) |
+
+Each module exports a factory function taking the engine, backend, and/or container. The wire function and activation callback compose them.
 
 ## 1. Frame Detach (#304)
 
 ### Architecture
 
-Detach is wired at the integration layer (wire function + activation callback), not the backend layer. Uses the existing `DetachController`, `EventRelay`, `DetachRegistry`, and `copyStyles` infrastructure from `pages-runtime/src/detach/`.
+Detach is handled by a new `frame-detach-handler.ts` module, composed by the wire function. It reuses three utilities from `pages-runtime/src/detach/`: `EventRelay` (event bridging), `DetachRegistry` (tracking), and `copyStyles` (visual consistency). It does NOT use `DetachController` itself — the core detach/reattach logic is a new implementation tailored to Dockview's destroy/recreate lifecycle, using `engine.hideFrame()` / `engine.showFrame()` instead of `adoptNode()`.
 
-The flow uses `engine.hideFrame()` / `engine.showFrame()` to manage the Dockview panel lifecycle — these methods already preserve config for restoration, which is exactly the detach/reattach lifecycle.
+`DetachController` remains in use for dock panel detach (a separate, simpler path). Both patterns coexist.
 
-### Wire function changes
+### Detach handler setup
 
-`wireFloatingWorkspace()` gains an optional `detachEnabled?: boolean` parameter (default `true`). When enabled, it passes an `extraButtons` entry to `backend.attach()`:
+`wireFloatingWorkspace()` gains an optional `detachEnabled?: boolean` parameter (default `true`). When enabled, it creates a `FrameDetachHandler` from `frame-detach-handler.ts` and passes an `extraButtons` entry to `backend.attach()`:
 
 ```typescript
 const detachBtn: FrameButtonConfig = {
@@ -112,7 +131,7 @@ Plain DOM created by the activation callback, rendered at the top of the floatin
 
 ### Rendering
 
-Created in the activation callback after the centre container and before the overlay container:
+Extracted into a standalone `createOrganiserToolbar(engine, container, signal)` function (not inline in the activation callback). Created after the centre container and before the overlay container:
 
 ```typescript
 const toolbar = document.createElement("div");
@@ -198,9 +217,11 @@ unsnapFrame(key: string): void;
 recomputeSnappedFrames(canvasSize: Size): void;
 ```
 
-- `snapFrame()`: sets `snappedZone` on the frame, computes position/size via `zoneToRect()`, updates internal state, calls `backend.updatePosition()` and `backend.updateSize()`
-- `unsnapFrame()`: clears `snappedZone`, position/size become free-floating
+- `snapFrame()`: captures pre-snap position/size internally, sets `snappedZone` on the frame, computes new position/size via `zoneToRect()`, updates internal state, calls `backend.updatePosition()` and `backend.updateSize()`
+- `unsnapFrame()`: clears `snappedZone`, restores pre-snap position/size from internally captured state. If no pre-snap state exists (e.g., frame was created already snapped), uses the zone's current geometry as-is.
 - `recomputeSnappedFrames()`: iterates all frames with `snappedZone`, recomputes position/size for the new canvas size. Called on container resize.
+
+The engine owns pre-snap state internally — no external shadow map needed. This is consistent with the engine owning all frame geometry state.
 
 ### Backend integration
 
@@ -229,15 +250,21 @@ When a snapped frame is dragged away from its zone, the `onFrameDragMove` callba
 
 ### Double-click to maximise/restore
 
-The backend's `injectFrameChrome()` adds a `dblclick` listener on the titlebar:
-- If frame is not snapped to `full`: call `engine.snapFrame(key, "full", canvasSize)`
-- If frame is snapped to `full`: call `engine.unsnapFrame(key)` and restore to pre-snap position/size
+New backend callback:
 
-Pre-snap position/size is stored in a `Map<string, { position, size }>` in the wire function, populated before `snapFrame()` and consumed by the restore path.
+```typescript
+onTitlebarDoubleClick(cb: (key: string) => void): void;
+```
+
+The backend's `injectFrameChrome()` adds a `dblclick` listener on the titlebar that fires this callback. Consistent with `onFrameClose`/`onFramePin` — the backend detects the gesture, the wire function handles the logic.
+
+The snap preview handler (or wire function) subscribes:
+- If frame is not snapped to `full`: call `engine.snapFrame(key, "full", canvasSize)`
+- If frame is snapped to `full`: call `engine.unsnapFrame(key)` — engine restores pre-snap position/size internally
 
 ### Container resize handling
 
-The activation callback adds a `ResizeObserver` on the overlay container. On resize: calls `engine.recomputeSnappedFrames(newCanvasSize)`.
+The snap preview module sets up a `ResizeObserver` on the overlay container internally. On resize: calls `engine.recomputeSnappedFrames(newCanvasSize)`. Cleanup via the AbortSignal passed to the module factory.
 
 ### Event contract additions
 
@@ -347,7 +374,7 @@ In `dockview-backend.ts`, after `injectFrameChrome()` creates the group element,
 
 ### Exit animation
 
-In the wire function's `onFrameClose` handler, before calling `engine.removeFrame()`:
+In the animation module's close handler (composed by the wire function), before calling `engine.removeFrame()`:
 1. Find the group's DOM element
 2. Add `.frame-exiting` class
 3. Wait for `animationend` event (or skip if `prefers-reduced-motion`)
@@ -374,7 +401,7 @@ Web Animations API runs to completion as a one-shot. No persistent CSS transitio
 
 ### Animation bridge
 
-The wire function needs access to Dockview group DOM elements to run `element.animate()`. New backend method:
+The animation module needs access to Dockview group DOM elements to run `element.animate()`. New backend method:
 
 ```typescript
 getFrameElement(key: string): HTMLElement | null;
@@ -388,7 +415,7 @@ Returns the floating group's root element. Read-only — no state mutation, no a
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 ```
 
-Checked before any JavaScript animation (`element.animate()`). CSS handles its own via the `@media` query. The `matchMedia` object is stored in the wire function scope and can be listened to for runtime changes.
+Checked before any JavaScript animation (`element.animate()`). CSS handles its own via the `@media` query. The `matchMedia` object is stored in the animation module scope and can be listened to for runtime changes.
 
 ## 6. Event Contract Summary
 
@@ -445,10 +472,11 @@ recomputeSnappedFrames(canvasSize: Size): void;
 
 ```typescript
 onFrameDragMove(cb: (key: string, pos: { x: number; y: number }) => void): void;
+onTitlebarDoubleClick(cb: (key: string) => void): void;
 getFrameElement(key: string): HTMLElement | null;
 ```
 
-Both are additive — no breaking changes.
+All three are additive — no breaking changes.
 
 ## 8. Testing Strategy
 
@@ -489,16 +517,23 @@ Extend `examples/e2e/floating-workspace.spec.ts`:
 | **pages-runtime** | |
 | `src/frame-boundaries.ts` | Add `snapToZone()`, `zoneToRect()` |
 | `src/frame-boundaries.test.ts` | Extend — snap zone tests |
+| `src/frame-detach-handler.ts` | **New** — child window lifecycle, EventRelay, DetachRegistry |
+| `src/frame-detach-handler.test.ts` | **New** — detach/reattach flow tests |
+| `src/frame-snap-preview.ts` | **New** — snap preview overlay, drag tracking, ResizeObserver |
+| `src/frame-snap-preview.test.ts` | **New** — snap preview tests |
+| `src/frame-animations.ts` | **New** — CSS injection, Web Animations bridge, prefers-reduced-motion |
+| `src/frame-animations.test.ts` | **New** — animation tests |
 | `src/frame-keyboard.ts` | **New** — keyboard handler factory |
 | `src/frame-keyboard.test.ts` | **New** — keyboard handler tests |
-| `src/floating-frame-engine.ts` | Add `setDetached()`, `snapFrame()`, `unsnapFrame()`, `recomputeSnappedFrames()` |
+| `src/floating-frame-engine.ts` | Spread refactor for all FrameLayout construction sites; add `setDetached()`, `snapFrame()` (with pre-snap capture), `unsnapFrame()` (with pre-snap restore), `recomputeSnappedFrames()` |
 | `src/floating-frame-engine.test.ts` | Extend — new engine method tests |
-| `src/floating-frame-backend.ts` | Add `onFrameDragMove()`, `getFrameElement()` to interface |
-| `src/dockview-backend.ts` | Implement `onFrameDragMove` (subscribe `onDidChange`), `getFrameElement()`, double-click titlebar handler, enter animation class, animation CSS injection |
+| `src/floating-frame-backend.ts` | Add `onFrameDragMove()`, `onTitlebarDoubleClick()`, `getFrameElement()` to interface |
+| `src/dockview-backend.ts` | Implement new callbacks/methods; double-click listener in `injectFrameChrome()`; enter animation class |
 | `src/dockview-backend.test.ts` | Extend — new method/callback tests |
-| `src/wire-floating-workspace.ts` | Detach/reattach flow, snap preview overlay, animation bridge, organiser toolbar rendering, keyboard handler wiring |
-| `src/wire-floating-workspace.test.ts` | Extend — detach, snap, animation tests |
-| `src/activation.ts` | Wire `createFrameKeyboardHandler()`, ResizeObserver for snap recomputation, toolbar creation |
+| `src/frame-organisers.ts` | Spread refactor for `withLayout()` |
+| `src/wire-floating-workspace.ts` | Compose detach handler, snap preview, animation module; pass detach extraButton |
+| `src/wire-floating-workspace.test.ts` | Extend — composition tests |
+| `src/activation.ts` | Wire `createFrameKeyboardHandler()`, `createOrganiserToolbar()` |
 | `src/site.ts` | `scheduleLayoutSave()` for new events (`pages-frame-detach`, `pages-frame-reattach`, `pages-frame-snap`, `pages-frame-unsnap`) |
 | `src/index.ts` | Re-export new types and functions |
 | **docs** | |
@@ -506,4 +541,4 @@ Extend `examples/e2e/floating-workspace.spec.ts`:
 | **examples** | |
 | `e2e/floating-workspace.spec.ts` | Extend — new e2e tests |
 
-**Total: 3-4 new files, 14 modified files.**
+**Total: 8 new files (+ 4 test files), 12 modified files.**
