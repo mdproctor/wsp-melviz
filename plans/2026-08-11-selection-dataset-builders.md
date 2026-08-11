@@ -80,6 +80,32 @@ describe("detailDataset()", () => {
     expect(result.url).toBe("/api/ae/#{selection.adverse-events.id}/history");
     expect(result.selectionSource).toBe("adverse-events");
   });
+
+  it("returns a frozen object", () => {
+    const result = detailDataset(
+      "grade-history",
+      "adverse-events",
+      "/api/ae/#{selection.adverse-events.id}/history",
+    );
+
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it("throws if URL has no selection template referencing the declared source", () => {
+    expect(() =>
+      detailDataset("detail", "adverse-events", "/api/static-url"),
+    ).toThrow("adverse-events");
+  });
+
+  it("throws on typo in selection template source name", () => {
+    expect(() =>
+      detailDataset(
+        "detail",
+        "adverse-events",
+        "/api/ae/#{selection.advese-events.id}/history",
+      ),
+    ).toThrow("adverse-events");
+  });
 });
 ```
 
@@ -112,18 +138,35 @@ Note: `dataSetId` may already be imported — check and add only if missing. `Ex
 Add the function after the `bind()` function (after line ~462):
 
 ```typescript
+/**
+ * Create a selection-driven detail dataset that auto-fetches when a master
+ * table row is selected. The URL must contain `#{selection.<selectionSource>.<field>}`
+ * templates that resolve against RuntimeContext.selection.
+ *
+ * @example
+ * const gradeHistory = detailDataset(
+ *   "grade-history",
+ *   "adverse-events",
+ *   "/api/ae/#{selection.adverse-events.id}/history",
+ * );
+ */
 export function detailDataset(
   id: string,
   selectionSource: string,
   url: string,
   options?: Omit<ExternalDataSetDef, "uuid" | "url" | "selectionSource">,
 ): ExternalDataSetDef {
-  return {
+  if (!url.includes(`#{selection.${selectionSource}.`)) {
+    throw new Error(
+      `detailDataset "${id}": URL must contain #{selection.${selectionSource}.<field>} template`,
+    );
+  }
+  return Object.freeze({
     ...options,
     uuid: dataSetId(id),
     url,
     selectionSource,
-  };
+  });
 }
 ```
 
@@ -236,3 +279,18 @@ raw dataset properties pass through to the root component's props.
 
 Refs #299"
 ```
+
+- [ ] **Step 4: Update issue #299 acceptance criteria**
+
+Update the issue body to match the actual implementation. The original AC described `restSource(url, id, { selectionSource })` which won't work (binding path has no template resolution). Replace with the actual API:
+
+```bash
+gh issue edit 299 --repo casehubio/casehub-pages --body "$(gh issue view 299 --repo casehubio/casehub-pages --json body --jq '.body')"
+```
+
+The acceptance criteria should become:
+- `detailDataset("id", "master-ds", "/api/#{selection.master-ds.field}/path")` creates a selection-bound `ExternalDataSetDef`
+- `selectionSource` on `ExternalDataSetDef` declares the master dataset dependency
+- YAML with `selectionSource` property deserialises correctly
+- `detailDataset()` validates that the URL contains a `#{selection.<source>.` template matching the declared source
+- Builder API documented with JSDoc example
