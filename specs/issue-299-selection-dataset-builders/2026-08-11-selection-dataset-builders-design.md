@@ -4,6 +4,17 @@
 **Date:** 2026-08-11
 **Scope:** #299 only — selection context bridge (#298, done) and host-panel forwarding (#300) are separate issues
 
+## Issue Divergence
+
+This spec intentionally departs from the issue's original acceptance criteria:
+
+- **Issue says** `restSource(url, id, { selectionSource: "master-ds" })` — **spec says** `detailDataset()` returns `ExternalDataSetDef` directly. Reason: `restSource` produces a `DataSource` that enters `handleBindingRequest` in `data-pipeline.ts`, which has no template resolution. Only the `ExternalDataSetDef` path (`handleDefRequest`) resolves `#{...}` templates and gates fetches via `allTemplateVarsResolved()`. Putting `selectionSource` on `RestSourceOptions` would be dead weight — `restSource` can't act on it.
+- **Issue says** `detailDataset()` is sugar over `restSource + selectionSource` — **spec says** it produces an `ExternalDataSetDef` directly. Same reason as above.
+- **Issue says** TypeScript types enforce `selectionSource` references a valid dataset ID — **spec says** `string` type. Enforcing `DataSetId` would require all dataset IDs to be known at compile time, which YAML-originated configs cannot satisfy.
+- **Issue says** JSDoc examples — will be added during implementation, not a design concern.
+
+The issue should be updated to match this spec after approval.
+
 ## Problem
 
 The selection context bridge (#298) wired `PagesDataTable` selection events into `RuntimeContext.selection` and enabled template resolution for `#{selection.xxx.yyy}` in dataset URLs. But there's no ergonomic API for declaring selection-driven datasets — authors must manually construct `ExternalDataSetDef` objects with template URLs and understand the runtime plumbing.
@@ -39,10 +50,10 @@ export function detailDataset(
   options?: Omit<ExternalDataSetDef, 'uuid' | 'url' | 'selectionSource'>,
 ): ExternalDataSetDef {
   return {
+    ...options,
     uuid: dataSetId(id),
     url,
     selectionSource,
-    ...options,
   };
 }
 ```
@@ -81,6 +92,8 @@ datasets:
 
 The raw YAML property lands on `ExternalDataSetDef` directly — `page-parser.ts` passes datasets as raw objects into root component props, and the runtime interprets them as `ExternalDataSetDef`. No changes to `page-parser.ts`, `component-desugar.ts`, `page-schema.ts`, or `defToBinding()`.
 
+**Routing verification:** YAML datasets produce `ExternalDataSetDef` objects. The runtime routes them via `isBinding(scopeEntry)` at `data-pipeline.ts:890` — `ExternalDataSetDef` returns `false`, entering `handleDefRequest` (template-aware path). `defToBinding()` is only called when datasets are programmatically constructed as bindings. YAML datasets with template URLs never touch the binding path.
+
 ### 4. Runtime Behaviour (No Changes)
 
 The existing runtime pipeline handles selection-driven datasets without modification:
@@ -102,7 +115,6 @@ The existing runtime pipeline handles selection-driven datasets without modifica
 - Export from pages-ui DSL index
 - Unit tests for `detailDataset()` builder
 - Integration test for YAML selectionSource passthrough
-- Integration test for end-to-end template resolution with selection
 
 **Out of scope:**
 - Runtime behaviour changes — existing pipeline handles everything
@@ -128,5 +140,4 @@ The existing runtime pipeline handles selection-driven datasets without modifica
 - **Unit:** `detailDataset()` returns correct `ExternalDataSetDef` shape — `uuid`, `url`, `selectionSource` set, optional fields forwarded
 - **Unit:** `detailDataset()` with options bag (`dataPath`, `columns`) merges correctly
 - **Integration:** YAML with `selectionSource` parses into a root component whose dataset has the field intact
-- **Integration:** End-to-end template resolution — dataset with `url: "/api/#{selection.master.id}"` defers fetch until selection exists, fetches with resolved URL when `updateSelection` is called, stops fetching when selection is cleared
-- **Edge cases:** Missing selection (template unresolved → no fetch), selection cleared (detail stops), multiple detail datasets bound to same master, `selectionSource` declared but no templates in URL (harmless)
+- **Edge cases:** `selectionSource` declared but no templates in URL (harmless), options bag with extra fields merges correctly without overriding explicit params
