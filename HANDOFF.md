@@ -1,18 +1,20 @@
-# casehub-pages Session Handover — 2026-08-07
+# casehub-pages Session Handover — 2026-08-12
 
 ## Last Session
 
-Designed and began implementing durable EventStore backends (JDBC + Redis) for the push protocol (#113). Broke the EventStore SPI with two changes — `Instant createdAt` on StoredEvent, `int limit` on `replay()`. Design review caught a critical Redis XTRIM MINID incompatibility with seq-based stream IDs. Task 1 (SPI changes) landed: 9 files, 127 tests green. Tasks 2-3 (JDBC and Redis modules) remain.
+Opened a branch for #308 (frame animations), #307 (keyboard shortcuts), and #298 (selection context bridge). All three were already fully implemented on main — closed the issues on GitHub, updated epic #309 checklist, tore down the branch.
 
-Also created work slot 89 for #75 (IntelliJ-style tool window docking) and updated the issue with the full 6-zone docking model.
+Commit `4cdc204` had landed all five #309 children (#304-#308). #298 was already closed from a prior session. No code written this session.
 
 ## Immediate Next Step
 
-Run `/work` on branch `issue-113-durable-eventstore` to continue. Execute Task 2 (JDBC module) from the plan at `plans/2026-08-07-durable-eventstore.md`.
+Close #304, #305, #306 on GitHub — they are also implemented on main via the same commit but still open.
 
-## References
+## What's Next
 
-- Spec: `specs/issue-113-durable-eventstore/2026-08-07-durable-eventstore-design.md`
-- Plan: `plans/2026-08-07-durable-eventstore.md`
-- Journal: `design/JOURNAL.md`
-- Slot 89 (#75): `/Users/mdproctor/claude/casehub/slots/89/`
+| Item | Scale / Complexity | Notes |
+|------|--------------------|-------|
+| Close #304, #305, #306 | XS / Low | Already implemented, need GitHub closure |
+| #297 Export ui-tokens theme API | XS / Low | Quick fix — blocks chat-app SNAPSHOT |
+| #142 Scenario Engine | L / High | Phases 5-7 of DataSource |
+| #294 Server-dependent examples tab | M / Med | Blocked by #113 (durable EventStore) |
