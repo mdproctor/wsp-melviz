@@ -711,7 +711,7 @@ describe("compositor-renderer", () => {
       type: "leaf", id: "r1", tabs: [{ id: "t1", name: "Tab 1", frames: [] }],
       activeTabId: "t1", viewMode: "tab",
     };
-    const dom = renderCompositor({ type: "leaf", region }, container, stubCallbacks());
+    const dom = renderCompositor(region, container, stubCallbacks());
     const tabBar = container.querySelector("[data-compositor-tabbar]");
     expect(tabBar).not.toBeNull();
     const headers = container.querySelectorAll("[data-tab-id]");
@@ -725,7 +725,7 @@ describe("compositor-renderer", () => {
       type: "leaf", id: "r1", tabs: [{ id: "t1", name: "Tab 1", frames: [] }],
       activeTabId: "t1", viewMode: "tab",
     };
-    const dom = renderCompositor({ type: "leaf", region }, container, stubCallbacks());
+    const dom = renderCompositor(region, container, stubCallbacks());
     expect(container.querySelector("[data-tab-add]")).not.toBeNull();
     expect(container.querySelector("[data-view-toggle]")).not.toBeNull();
     dom.dispose();
@@ -738,7 +738,7 @@ describe("compositor-renderer", () => {
       activeTabId: "t1", viewMode: "tab",
     };
     const cbs = stubCallbacks();
-    const dom = renderCompositor({ type: "leaf", region }, container, cbs);
+    const dom = renderCompositor(region, container, cbs);
     (container.querySelector("[data-tab-add]") as HTMLElement).click();
     expect(cbs.onTabCreate).toHaveBeenCalledWith("r1");
     dom.dispose();
@@ -754,7 +754,7 @@ describe("compositor-renderer", () => {
       ],
       activeTabId: "t1", viewMode: "accordion",
     };
-    const dom = renderCompositor({ type: "leaf", region }, container, stubCallbacks());
+    const dom = renderCompositor(region, container, stubCallbacks());
     const sections = container.querySelectorAll("[data-accordion-section]");
     expect(sections).toHaveLength(2);
     dom.dispose();
@@ -762,14 +762,14 @@ describe("compositor-renderer", () => {
 
   it("renders split with two regions and a resize handle", () => {
     const container = document.createElement("div");
-    const split = {
-      type: "split" as const, direction: "v" as const, ratio: 0.5,
+    const split: SplitRegionState = {
+      type: "split", direction: "v", ratio: 0.5,
       children: [
-        { type: "leaf" as const, id: "r1", tabs: [{ id: "t1", name: "Tab 1", frames: [] }], activeTabId: "t1", viewMode: "tab" as const },
-        { type: "leaf" as const, id: "r2", tabs: [{ id: "t2", name: "Tab 2", frames: [] }], activeTabId: "t2", viewMode: "tab" as const },
-      ] as [LeafRegionState, LeafRegionState],
+        { type: "leaf", id: "r1", tabs: [{ id: "t1", name: "Tab 1", frames: [] }], activeTabId: "t1", viewMode: "tab" },
+        { type: "leaf", id: "r2", tabs: [{ id: "t2", name: "Tab 2", frames: [] }], activeTabId: "t2", viewMode: "tab" },
+      ],
     };
-    const dom = renderCompositor({ type: "split", region: split }, container, stubCallbacks());
+    const dom = renderCompositor(split, container, stubCallbacks());
     const regions = container.querySelectorAll("[data-region-id]");
     expect(regions).toHaveLength(2);
     expect(container.querySelector("[data-split-handle]")).not.toBeNull();
@@ -792,6 +792,8 @@ Create `packages/pages-runtime/src/compositor-renderer.ts`. This module creates 
 The renderer returns a `CompositorDOM` object with `update(root)` (re-renders from new state) and `dispose()`.
 
 Implementation details: ~200 lines of plain DOM construction. Each tab header is a `<button>` with `draggable="true"`. Tab close is a nested `<span>`. Add button and view toggle are sibling buttons. Accordion sections use `flex-direction: column` with `overflow-y: auto` on the region container.
+
+**Event dispatching (F4):** Every callback invocation must also dispatch the corresponding compositor event on the container element (`bubbles: true, composed: true`). Example: when `onTabCreate` fires, also dispatch `new CustomEvent("pages-compositor-tab-create", { bubbles: true, composed: true, detail: { regionId, tabId, name } })`. This enables `scheduleLayoutSave()` in site.ts to listen for compositor events and auto-save layout state. All 9 compositor events from the spec's event contract must be dispatched by either the renderer (UI actions) or the compositor core (split/collapse).
 
 - [ ] **Step 4: Run tests — verify they pass**
 
@@ -948,9 +950,10 @@ Create `packages/pages-runtime/src/compositor-transfer.ts`:
 
 ```typescript
 export interface TransferSnapshot {
-  readonly scrollTop: number;
-  readonly scrollLeft: number;
+  readonly scrollPositions: readonly { selector: string; top: number; left: number }[];
+  readonly focusedSelector: string | null;
   readonly inputValues: readonly { selector: string; value: string }[];
+  readonly selectionRange: { selector: string; start: number; end: number } | null;
 }
 
 export function captureTransferSnapshot(el: HTMLElement): TransferSnapshot {
@@ -973,14 +976,19 @@ export function applyTransferSnapshot(el: HTMLElement, snapshot: TransferSnapsho
 }
 
 export function transferFrame(
-  sourceEngine: { frames: ReadonlyMap<string, { tabs: readonly { key: string }[] }>; removeFrame(key: string): void },
-  targetEngine: { createFrame(config: { key: string; tabs: readonly { key: string }[]; position: { x: number; y: number } }): void },
+  sourceEngine: FloatingFrameEngine,
+  targetEngine: FloatingFrameEngine,
   frameKey: string,
   dropPosition: { x: number; y: number },
 ): void {
   const frame = sourceEngine.frames.get(frameKey);
   if (!frame) return;
-  const tabs = [...frame.tabs];
+  // Reattach if detached (R2: close child window before transfer)
+  if (frame.detached) {
+    sourceEngine.setDetached(frameKey, false);
+    sourceEngine.showFrame(frameKey);
+  }
+  const tabs: FrameTabConfig[] = [...frame.tabs];
   sourceEngine.removeFrame(frameKey);
   targetEngine.createFrame({ key: frameKey, tabs, position: dropPosition });
 }
