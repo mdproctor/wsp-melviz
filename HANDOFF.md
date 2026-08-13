@@ -1,20 +1,15 @@
-# casehub-pages Session Handover — 2026-08-12
+# casehub-pages Session Handover — 2026-08-13
 
 ## Last Session
 
-Opened a branch for #308 (frame animations), #307 (keyboard shortcuts), and #298 (selection context bridge). All three were already fully implemented on main — closed the issues on GitHub, updated epic #309 checklist, tore down the branch.
-
-Commit `4cdc204` had landed all five #309 children (#304-#308). #298 was already closed from a prior session. No code written this session.
+Closed epic #309 (all 5 children: #304-#308) and #298 — all already implemented on main, just needed GitHub closure. Designed and began implementing the workspace compositor (#312): splits, tabs, and accordion view as a layer above `FloatingFrameEngine`. Tasks 1-2 (core state management + persistence) complete with 28 tests. Tasks 3-7 remain.
 
 ## Immediate Next Step
 
-Close #304, #305, #306 on GitHub — they are also implemented on main via the same commit but still open.
+Run `/work` to continue on branch `issue-312-workspace-compositor`. Next task is Task 3: compositor renderer (tab bar, accordion sections, split layout). Plan at `plans/2026-08-13-workspace-compositor.md`.
 
-## What's Next
+## References
 
-| Item | Scale / Complexity | Notes |
-|------|--------------------|-------|
-| Close #304, #305, #306 | XS / Low | Already implemented, need GitHub closure |
-| #297 Export ui-tokens theme API | XS / Low | Quick fix — blocks chat-app SNAPSHOT |
-| #142 Scenario Engine | L / High | Phases 5-7 of DataSource |
-| #294 Server-dependent examples tab | M / Med | Blocked by #113 (durable EventStore) |
+- Spec: `specs/workspace-compositor/2026-08-13-workspace-compositor-design.md`
+- Decisions: `specs/workspace-compositor/decisions.md`
+- Plan: `plans/2026-08-13-workspace-compositor.md`
