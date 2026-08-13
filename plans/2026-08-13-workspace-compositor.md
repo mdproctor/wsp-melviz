@@ -1088,3 +1088,66 @@ GH_PACKAGES_TOKEN=$(gh auth token) yarn build
 git -C /Users/mdproctor/claude/casehub/pages add packages/pages-runtime/src/activation.ts packages/pages-runtime/src/site.ts packages/pages-runtime/src/index.ts docs/protocols/casehub/pages-event-contract.md
 git -C /Users/mdproctor/claude/casehub/pages commit -m "feat: compositor activation and site integration  Refs #<N>"
 ```
+
+---
+
+### Task 7: Examples Gallery — Compositor Showcase
+
+**Files:**
+- Create: `examples/src/compositor-workspace.ts`
+- Modify: `examples/samples.json`
+
+**Interfaces:**
+- Consumes: `floatingWorkspace()` builder from `@casehubio/pages-ui`, compositor features via user interaction
+- Produces: Interactive example demonstrating tabs, splits, accordion view, and cross-tab frame drag
+
+- [ ] **Step 1: Create compositor workspace example**
+
+Create `examples/src/compositor-workspace.ts` — a dashboard definition that sets up a floating workspace with multiple pre-configured frames. The example should demonstrate:
+
+1. **Multi-tab workspace** — starts with 2 tabs, each containing different chart types (bar chart in Tab 1, line + metric in Tab 2)
+2. **Instructions panel** — a metric or HTML panel explaining the available interactions:
+   - "Click + to add tabs. Drag tab to edge to split. Toggle ☰ for accordion view."
+   - "Drag frames between tabs. Double-click tab name to rename."
+3. Use existing example datasets (sales, metrics) already available in the examples gallery
+
+The example uses the standard `floatingWorkspace()` builder. The compositor is activated automatically by the runtime when the workspace renders. Pre-configured frames are created via the `frames` prop.
+
+- [ ] **Step 2: Register in samples.json**
+
+Add an entry to `examples/samples.json`:
+
+```json
+{
+  "id": "compositor-workspace",
+  "title": "Workspace Compositor",
+  "description": "Multi-tab workspaces with splits, accordion view, and cross-tab frame drag",
+  "category": "workbench",
+  "module": "./src/compositor-workspace.ts"
+}
+```
+
+- [ ] **Step 3: Verify example renders**
+
+```bash
+GH_PACKAGES_TOKEN=$(gh auth token) yarn build:prod
+GH_PACKAGES_TOKEN=$(gh auth token) yarn workspace @casehubio/pages-examples run serve
+```
+
+Open in browser, navigate to the Compositor Workspace example. Verify:
+- Two tabs visible in the tab bar
+- Frames render in each tab
+- Tab switching works
+- Add tab button creates a new empty tab
+- Accordion toggle shows all tabs stacked
+
+- [ ] **Step 4: Update existing floating workspace example**
+
+If `examples/src/floating-workspace.ts` (or similar) exists, add a note or link in its description pointing to the compositor example for the full multi-tab experience.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git -C /Users/mdproctor/claude/casehub/pages add examples/src/compositor-workspace.ts examples/samples.json
+git -C /Users/mdproctor/claude/casehub/pages commit -m "feat: compositor workspace example in gallery  Refs #<N>"
+```
