@@ -358,16 +358,16 @@ In `packages/pages-ui/src/dsl/builders.ts`, update `metricGrid()`:
 ```typescript
 export function metricGrid(
   ...args: [...Component[]] | [MetricGridProps, ...Component[]]
-): Component {
+): TypedComponent<"metric-grid"> {
   const first = args[0];
-  const hasOptions = first != null && typeof first === 'object' && 'direction' in first;
+  const hasOptions = first != null && typeof first === 'object' && !('type' in first) && 'direction' in first;
   const options = hasOptions ? first as MetricGridProps : undefined;
   const children = (hasOptions ? args.slice(1) : args) as Component[];
-  return {
-    type: "metric-grid",
+  return freeze({
+    type: "metric-grid" as const,
     props: { direction: options?.direction },
     slots: { default: freeze(children) },
-  };
+  });
 }
 ```
 
