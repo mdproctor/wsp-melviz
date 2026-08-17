@@ -1,5 +1,5 @@
-# Branch Closed: issue-236-blocks-prefix-rename
+# Branch Closed: batch-small-fixes
 
-**Date:** 2026-07-27
-**Issues:** 236
+**Date:** 2026-07-21
+**Issues:** 221,201,184,219,199
 **Status:** merged to main
