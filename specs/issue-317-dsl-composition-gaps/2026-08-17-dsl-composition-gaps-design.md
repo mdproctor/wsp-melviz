@@ -23,7 +23,7 @@ Epic #317 identified 5 gaps in the pages DSL. Context gathering revealed that 2 
 
 ### Problem
 
-Seven component types have prop interfaces, type guards, and activation registration but no DSL builder function in `builders.ts`. App builders can't use them from the DSL without dropping to raw component objects.
+Seven component types have prop interfaces and activation registration but no DSL builder function in `builders.ts`. Of these, 4 (badge, countdown, timeline, graph) are also missing from `ComponentTypeRegistry` and have no type guard functions. App builders can't use them from the DSL without dropping to raw component objects.
 
 ### Solution
 
@@ -59,9 +59,24 @@ export function graph(props: GraphProps): TypedComponent<"graph"> {
 }
 ```
 
+### Registry and type guard completeness
+
+4 components (badge, countdown, timeline, graph) need `ComponentTypeRegistry` entries and `isX()` type guards added to `type-guards.ts` alongside their builders. The heatmap family (heatmap-chart, treemap-chart, density-heatmap) already has these.
+
+| Component | Registry | Type Guard | Action |
+|-----------|----------|------------|--------|
+| heatmap-chart | ✓ | ✓ | builder only |
+| treemap-chart | ✓ | ✓ | builder only |
+| density-heatmap | ✓ | ✓ | builder only |
+| badge | ✗ | ✗ | builder + registry + guard |
+| countdown | ✗ | ✗ | builder + registry + guard |
+| timeline | ✗ | ✗ | builder + registry + guard |
+| graph | ✗ | ✗ | builder + registry + guard |
+
 ### Files changed
 
 - `packages/pages-ui/src/dsl/builders.ts` — add 7 builder functions, add imports for prop types
+- `packages/pages-component/src/model/type-guards.ts` — add 4 registry entries and type guards (badge, countdown, timeline, graph)
 - `packages/pages-ui/src/dsl/builders.test.ts` — add tests for each builder
 
 ### Testing
@@ -83,19 +98,21 @@ Each builder gets a test verifying:
 
 #### Part A: metricGrid direction option
 
-Add `direction` option to `metricGrid()`. The first argument is an options object if it lacks a `type` property (all `Component` objects have `type`):
+Add `direction` option to `metricGrid()`. Add a typed `MetricGridProps` interface to `displayer-types.ts` and a registry entry to `type-guards.ts`. The first argument is an options object if it contains a `direction` field (following the established `isPageOptions` pattern):
 
 ```typescript
-interface MetricGridOptions {
-  direction?: "row" | "grid";
+// In displayer-types.ts
+export interface MetricGridProps {
+  readonly direction?: "row" | "grid";
 }
 
+// In builders.ts
 export function metricGrid(
-  ...args: [...Component[]] | [MetricGridOptions, ...Component[]]
+  ...args: [...Component[]] | [MetricGridProps, ...Component[]]
 ): Component {
   const first = args[0];
-  const hasOptions = first != null && typeof first === 'object' && !('type' in first);
-  const options = hasOptions ? first as MetricGridOptions : undefined;
+  const hasOptions = first != null && typeof first === 'object' && 'direction' in first;
+  const options = hasOptions ? first as MetricGridProps : undefined;
   const children = hasOptions ? args.slice(1) as Component[] : args as Component[];
   return {
     type: "metric-grid",
@@ -157,7 +174,8 @@ metricGrid(
 
 ### Files changed
 
-- `packages/pages-component/src/model/displayer-types.ts` — add `sparklineData`, `trend` to `MetricProps`
+- `packages/pages-component/src/model/displayer-types.ts` — add `MetricGridProps`, add `sparklineData`, `trend` to `MetricProps`
+- `packages/pages-component/src/model/type-guards.ts` — add `metric-grid` registry entry
 - `packages/pages-component/src/renderer/layout.ts` — handle `direction` in metric-grid case
 - `packages/pages-viz/src/components/PagesMetric.ts` — render sparkline and trend
 - `packages/pages-ui/src/dsl/builders.ts` — update `metricGrid()` signature
@@ -173,12 +191,26 @@ The existing `PagesTimeline` is an ECharts Gantt chart (horizontal duration bars
 
 New `PagesEventTimeline` component in `pages-viz` with a `eventTimeline()` DSL builder.
 
-#### Types (in `pages-component/src/model/displayer-types.ts`)
+#### Types
+
+Pure data props go in `pages-component/src/model/displayer-types.ts` (matching the existing pattern for all component props). Strategy and node types contain render methods (`renderNode`, `renderDetail`) so they live in `pages-viz` alongside the component — matching how `PagesTimeline` keeps its `TimelineDataItem` local.
+
+**In `pages-component/src/model/displayer-types.ts`** (pure props only):
+
+```typescript
+export type EventTimelineLayout = "vertical" | "horizontal" | "compact";
+
+export interface EventTimelineProps extends DataComponentCommon {
+  readonly layout?: EventTimelineLayout;
+  readonly pageSize?: number;
+  readonly strategyKey?: string;
+}
+```
+
+**In `pages-viz/src/components/event-timeline-types.ts`** (rendering-adjacent types):
 
 ```typescript
 export type EventNodeStatus = "completed" | "active" | "pending" | "failed" | "skipped";
-
-export type EventTimelineLayout = "vertical" | "horizontal" | "compact";
 
 export interface EventTimelineNode {
   readonly key: string;
@@ -198,17 +230,13 @@ export interface EventTimelineStrategy<T = unknown> {
   renderDetail?: (node: EventTimelineNode) => unknown;
   filterCategories?: string[];
 }
-
-export interface EventTimelineProps extends DataComponentCommon {
-  readonly layout?: EventTimelineLayout;
-  readonly pageSize?: number;
-}
 ```
 
 #### Component (`pages-viz/src/components/PagesEventTimeline.ts`)
 
 - Extends `PagesElement<EventTimelineProps>`
-- Accepts `strategy` property for pluggable data transformation
+- Accepts `strategy` property for pluggable data transformation (imperative, for programmatic use)
+- Accepts `strategyKey` prop (declarative, for DSL use) — resolves via a static registry: `PagesEventTimeline.registerStrategy(key, strategy)`. Built-in default: `"chronological"` (sorts nodes by timestamp, vertical layout)
 - Accepts `data` property for direct data binding (alternative to DataSet pipeline)
 - Three renderers ported from blocks-timeline's generic rendering (vertical, horizontal, compact)
 - Node expansion with `_expandedKeys: Set<string>`
@@ -234,9 +262,10 @@ export function eventTimeline(props: EventTimelineProps): TypedComponent<"event-
 
 ### Files changed
 
-- `packages/pages-component/src/model/displayer-types.ts` — add types
+- `packages/pages-component/src/model/displayer-types.ts` — add `EventTimelineProps`, `EventTimelineLayout`
 - `packages/pages-component/src/model/type-guards.ts` — add registry entry + guard
 - `packages/pages-runtime/src/activation.ts` — add to DATA_COMPONENT_TYPES
+- `packages/pages-viz/src/components/event-timeline-types.ts` — new file: `EventTimelineNode`, `EventTimelineStrategy`, `EventNodeStatus`
 - `packages/pages-viz/src/components/PagesEventTimeline.ts` — new component
 - `packages/pages-viz/src/components/PagesEventTimeline.test.ts` — tests
 - `packages/pages-viz/src/index.ts` — export
@@ -267,6 +296,8 @@ Building a master-detail layout requires manually composing `split()` + `dataTab
 
 ### Solution
 
+**Prerequisite:** Add `selection?: SelectionMode` to `DataTableProps` in `displayer-types.ts` and wire the activation callback in `pages-runtime` to set it on the element. Currently `selection` is only an imperative property on `PagesDataTable` — making master-detail declarative requires making selection mode declarative first.
+
 ```typescript
 export function masterDetail(config: {
   master: TypedComponent<"data-table">;
@@ -286,10 +317,7 @@ export function masterDetail(config: {
     ...detail,
     props: {
       ...detail.props,
-      panelProps: {
-        ...(detail.props.panelProps ?? {}),
-        selectionSource: masterLookup.dataSetId,
-      },
+      selectionSource: masterLookup.dataSetId,
     },
   });
 
@@ -297,7 +325,7 @@ export function masterDetail(config: {
 }
 ```
 
-Type signature enforces `TypedComponent<"data-table">` for master and `TypedComponent<"host-panel">` for detail — prevents silent failures with unsupported component types.
+Type signature enforces `TypedComponent<"data-table">` for master and `TypedComponent<"host-panel">` for detail — prevents silent failures with unsupported component types. `selectionSource` is a top-level property on `HostPanelProps` (not nested in `panelProps`).
 
 ### DSL usage
 
@@ -311,6 +339,8 @@ masterDetail({
 
 ### Files changed
 
+- `packages/pages-component/src/model/displayer-types.ts` — add `selection` to `DataTableProps`
+- `packages/pages-runtime/src/activation.ts` — wire `selection` prop to element in activation callback
 - `packages/pages-ui/src/dsl/builders.ts` — add `masterDetail()` function
 - `packages/pages-ui/src/dsl/builders.test.ts` — tests
 

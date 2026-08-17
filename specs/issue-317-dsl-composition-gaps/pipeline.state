@@ -1,12 +1,12 @@
 format_version: 1
-state: SPEC_WRITING
-entered: 2026-08-17T23:10:00Z
+state: POST_SPEC_REVIEW
+entered: 2026-08-17T23:20:00Z
 decision_count: 4
 dimensions_completed: 0
-dimensions_total: 0
+dimensions_total: 1
 ordered: false
 dimensions_done:
-current_dimension:
+current_dimension: spec
 workspace_structure:
 workspace_coherence:
 workspace_robustness:
