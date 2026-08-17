@@ -1,0 +1,15 @@
+# Work Plan — issue-317-dsl-composition-gaps
+
+## State
+branch: issue-317-dsl-composition-gaps
+state: scaffolded
+project-sha: 9ff0315470e8f82431886d1c54ca9313385a63a6
+date: 2026-08-17
+issue-repo: casehubio/casehub-pages
+covers: 317
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #317 — Issue #317 ← active
