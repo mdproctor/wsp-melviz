@@ -83,14 +83,19 @@ Each builder gets a test verifying:
 
 #### Part A: metricGrid direction option
 
-Add `direction` option to `metricGrid()`:
+Add `direction` option to `metricGrid()`. The first argument is an options object if it lacks a `type` property (all `Component` objects have `type`):
 
 ```typescript
+interface MetricGridOptions {
+  direction?: "row" | "grid";
+}
+
 export function metricGrid(
-  ...args: [...Component[]] | [{ direction?: "row" | "grid" }, ...Component[]]
+  ...args: [...Component[]] | [MetricGridOptions, ...Component[]]
 ): Component {
-  const hasOptions = args.length > 0 && args[0] != null && 'direction' in (args[0] as object);
-  const options = hasOptions ? args[0] as { direction?: "row" | "grid" } : undefined;
+  const first = args[0];
+  const hasOptions = first != null && typeof first === 'object' && !('type' in first);
+  const options = hasOptions ? first as MetricGridOptions : undefined;
   const children = hasOptions ? args.slice(1) as Component[] : args as Component[];
   return {
     type: "metric-grid",
