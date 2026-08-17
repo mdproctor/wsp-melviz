@@ -1,0 +1,15 @@
+# Work Plan — issue-318-viz-shadow-dom-fixes
+
+## State
+branch: issue-318-viz-shadow-dom-fixes
+state: scaffolded
+project-sha: d56deeb54436ce96a5fb98227d1773a2202d71a3
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 318,319
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #318 — Issue #318 ← active
