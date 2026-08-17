@@ -13,3 +13,14 @@ flyway-next-v: none
 
 ## Queue
 - [ ] #317 — Issue #317 ← active
+  - [ ] Batch 1: Builders
+    - [ ] Task 1: 7 builders + 4 type guards
+  - [ ] Batch 2: Metrics
+    - [ ] Task 2: metricGrid direction option
+    - [ ] Task 3: PagesMetric sparkline and trend
+  - [ ] Batch 3: EventTimeline
+    - [ ] Task 4: types and registration
+    - [ ] Task 5: PagesEventTimeline component
+  - [ ] Batch 4: MasterDetail
+    - [ ] Task 6: declarative selection prop
+    - [ ] Task 7: masterDetail builder
