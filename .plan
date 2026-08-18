@@ -1,0 +1,19 @@
+# Work Plan — issue-320-graphcanvas-public-props
+
+## State
+branch: issue-320-graphcanvas-public-props
+state: closing:review
+project-sha: e077f4f63a4008a352ccc3284e2c032986f5141e
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 320
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #320 — Issue #320 ← active
+  - [x] Batch 1: GraphCanvas API and rendering
+    - [x] Task 1: Add public nodes/edges properties
+    - [x] Task 2: Constrain stencil wrapper dimensions
+    - [x] Task 3: Bundle React Flow CSS into getIsolationCSS
