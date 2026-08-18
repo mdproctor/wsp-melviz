@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-318-viz-shadow-dom-fixes
-state: scaffolded
+state: closing:review
 project-sha: d56deeb54436ce96a5fb98227d1773a2202d71a3
 date: 2026-08-18
 issue-repo: casehubio/casehub-pages
