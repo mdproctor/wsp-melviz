@@ -1,0 +1,15 @@
+# Work Plan — issue-320-css-isolation-fix
+
+## State
+branch: issue-320-css-isolation-fix
+state: scaffolded
+project-sha: c55f228ba62dcab4fc979fd6210530a85a3983ca
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 320
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #320 — Issue #320 ← active
