@@ -1,0 +1,15 @@
+# Work Plan — issue-325-elk-default-node-size
+
+## State
+branch: issue-325-elk-default-node-size
+state: scaffolded
+project-sha: 9121775279a51fdb7edafb0725a9f97b9efbe559
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 325
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #325 — Issue #325 ← active
