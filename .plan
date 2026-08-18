@@ -13,3 +13,8 @@ flyway-next-v: none
 
 ## Queue
 - [ ] #318 — Issue #318 ← active
+  - [ ] Batch 1: Shadow-aware CSS injection
+    - [ ] Task 1: Refactor css-isolation.ts per-root injection
+    - [ ] Task 2: Wire GraphCanvas host element
+  - [ ] Batch 2: Dynamic import heatmap
+    - [ ] Task 3: Convert PagesDensityHeatmap to dynamic import
