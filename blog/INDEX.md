@@ -58,3 +58,4 @@
 | [2026-08-10-mdp01-selection-context-bridge.md](2026-08-10-mdp01-selection-context-bridge.md) | 2026-08-10 | Selection context bridge — the narrower-than-expected gap between table selection and parameterised detail datasets |
 | [2026-08-10-mdp03-stale-positions-and-engine-purity.md](2026-08-10-mdp03-stale-positions-and-engine-purity.md) | 2026-08-10 | Wire function preserves engine purity while fixing stale-position bug and eliminating consumer boilerplate |
 | [2026-08-18-mdp01-closing-the-dsl-surface-gap.md](2026-08-18-mdp01-closing-the-dsl-surface-gap.md) | 2026-08-18 | DSL composition gaps — 7 missing builders, metric sparklines, event timeline component, master-detail wiring |
+| [2026-08-18-mdp02-two-packaging-fixes-and-a-weakmap.md](2026-08-18-mdp02-two-packaging-fixes-and-a-weakmap.md) | 2026-08-18 | Dynamic import for @drdreo/heatmap barrel crash fix; shadow-aware CSS injection with per-root WeakMap ref-counting in graph-renderer |
