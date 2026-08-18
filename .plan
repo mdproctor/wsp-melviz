@@ -1,0 +1,15 @@
+# Work Plan — issue-320-graphcanvas-public-props
+
+## State
+branch: issue-320-graphcanvas-public-props
+state: scaffolded
+project-sha: e077f4f63a4008a352ccc3284e2c032986f5141e
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 320
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #320 — Issue #320 ← active
