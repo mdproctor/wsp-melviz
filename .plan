@@ -1,0 +1,15 @@
+# Work Plan — issue-322-hostpanel-template-resolve
+
+## State
+branch: issue-322-hostpanel-template-resolve
+state: scaffolded
+project-sha: 7f6cd8b1d8152817278740a32656ec8c0a4c42ba
+date: 2026-08-18
+issue-repo: casehubio/casehub-pages
+covers: 322
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #322 — Issue #322 ← active
