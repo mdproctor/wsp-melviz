@@ -60,11 +60,11 @@ private async _updateHeatmap(container: HTMLDivElement): Promise<void> {
 }
 ```
 
-`createInstance` receives the loaded module as a parameter instead of referencing top-level imports.
+`createInstance` receives the loaded module as a parameter instead of referencing top-level imports. The same pattern applies to `onResize()`, which also creates heatmap instances — it delegates to `_updateHeatmap` instead of calling `createInstance` directly.
 
 ### Files changed
 
-- `packages/pages-viz/src/charts/PagesDensityHeatmap.ts` — replace static import with dynamic, refactor `createInstance` and `updated`
+- `packages/pages-viz/src/charts/PagesDensityHeatmap.ts` — replace static import with dynamic, refactor `createInstance`, `updated`, and `onResize`
 
 ### No barrel or package.json changes
 
@@ -115,10 +115,6 @@ function getStyleRoot(host?: HTMLElement): Document | ShadowRoot {
   return document;
 }
 
-function getStyleTarget(root: Document | ShadowRoot): HTMLElement {
-  return root instanceof ShadowRoot ? (root as unknown as { host: HTMLElement }).host.shadowRoot! as unknown as HTMLElement : document.head;
-  // Simplified: inject into the shadow root directly if ShadowRoot, else document.head
-}
 ```
 
 The injection target for a `ShadowRoot` is the shadow root itself (shadow roots accept `appendChild` for `<style>` elements). For `Document`, it's `document.head`.
