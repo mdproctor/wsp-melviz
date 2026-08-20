@@ -164,6 +164,10 @@ yarn workspace @casehubio/pages-examples run serve
 
 # Dev mode with file watching
 yarn workspace @casehubio/pages-examples run dev
+
+# Server-dependent examples (requires Docker)
+# Start Quarkus demo server + Postgres, then use Server tab in gallery
+cd examples && docker compose up
 ```
 
 ## Architecture Overview
@@ -173,7 +177,8 @@ yarn workspace @casehubio/pages-examples run dev
 - **`packages/`** — Core TypeScript libraries for dashboard rendering
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
-- **`examples/`** — Interactive dashboard examples gallery
+- **`examples/`** — Interactive dashboard examples gallery (Client tab: static; Server tab: requires `docker compose up`)
+- **`examples/server/`** — Quarkus demo server for push WebSocket, event replay, persistence demos
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
