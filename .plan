@@ -1,0 +1,15 @@
+# Work Plan — issue-321-missing-exports
+
+## State
+branch: issue-321-missing-exports
+state: scaffolded
+project-sha: 99e2550a62dbae28c8b68f90a8724bb1698c7455
+date: 2026-08-20
+issue-repo: casehubio/casehub-pages
+covers: 321,297
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #321 — Issue #321 ← active
