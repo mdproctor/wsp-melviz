@@ -13,3 +13,11 @@ flyway-next-v: none
 
 ## Queue
 - [ ] #294 — Issue #294 ← active
+  - [ ] Batch 1: Gallery UI
+    - [ ] Task 1: Tab switching and status indicator
+  - [ ] Batch 2: Backend
+    - [ ] Task 2: Quarkus server with push WebSocket
+  - [ ] Batch 3: Infrastructure
+    - [ ] Task 3: Docker Compose and webpack proxy
+  - [ ] Batch 4: Dashboards
+    - [ ] Task 4: 4 server-dependent YAML samples
