@@ -777,7 +777,7 @@ Refs #294"
 **Files:**
 - Create: `examples/samples/Server/live-events.dash.yaml`
 - Create: `examples/samples/Server/reconnect-replay.dash.yaml`
-- Create: `examples/samples/Server/reconnect-replay.ts`
+- Create: `../../examples/samples/Server/Reconnect Replay.ts`
 - Create: `examples/samples/Server/persistence.dash.yaml`
 - Create: `examples/samples/Server/multi-topic.dash.yaml`
 - Modify: `examples/samples.json` — add Server category with `requiresServer: true`
@@ -853,7 +853,7 @@ pages:
                 lookup: { dataSetId: events }
 ```
 
-`examples/samples/Server/reconnect-replay.ts`:
+`../../examples/samples/Server/Reconnect Replay.ts`:
 
 ```typescript
 // Companion script — adds disconnect/reconnect controls

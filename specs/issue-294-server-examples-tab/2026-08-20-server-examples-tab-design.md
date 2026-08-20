@@ -215,7 +215,7 @@ pages:
 
 **4b. Reconnect Replay** (`reconnect-replay.yaml`)
 - Same `demo:events` subscription
-- Companion TypeScript file (`reconnect-replay.ts`) provides disconnect/reconnect logic via a `hostPanel` that controls the WebSocket lifecycle
+- Companion TypeScript file (`Reconnect Replay.ts`) provides disconnect/reconnect logic via a `hostPanel` that controls the WebSocket lifecycle
 - On reconnect, the `listen` message includes `since: { "demo:events": lastSeq }` — EventStore replays missed events
 
 **4c. Persistence Demo** (`persistence.yaml`)
