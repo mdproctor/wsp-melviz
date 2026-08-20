@@ -1,0 +1,15 @@
+# Work Plan — issue-294-server-examples-tab
+
+## State
+branch: issue-294-server-examples-tab
+state: scaffolded
+project-sha: 9af818478a3b23447a752bc7ed2586d79a704773
+date: 2026-08-20
+issue-repo: casehubio/casehub-pages
+covers: 294
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] #294 — Issue #294 ← active
