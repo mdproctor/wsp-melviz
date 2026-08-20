@@ -60,3 +60,4 @@
 | [2026-08-18-mdp01-closing-the-dsl-surface-gap.md](2026-08-18-mdp01-closing-the-dsl-surface-gap.md) | 2026-08-18 | DSL composition gaps — 7 missing builders, metric sparklines, event timeline component, master-detail wiring |
 | [2026-08-18-mdp02-two-packaging-fixes-and-a-weakmap.md](2026-08-18-mdp02-two-packaging-fixes-and-a-weakmap.md) | 2026-08-18 | Dynamic import for @drdreo/heatmap barrel crash fix; shadow-aware CSS injection with per-root WeakMap ref-counting in graph-renderer |
 | [2026-08-18-mdp03-three-properties-and-a-raw-import.md](2026-08-18-mdp03-three-properties-and-a-raw-import.md) | 2026-08-18 | GraphCanvas public nodes/edges properties, stencil dimension constraints, React Flow CSS bundled into shadow-aware injection |
+| [2026-08-20-mdp01-gallery-needed-a-server.md](2026-08-20-mdp01-gallery-needed-a-server.md) | 2026-08-20 | Server tab for examples gallery — push WebSocket, Docker Compose, and a coordinate bug caught at review |
