@@ -1,0 +1,2 @@
+{"summary": "GraphQLModelScanner not renamed to DomainScanner in platform#243", "status": "deferred", "source": "loose-ends"}
+{"summary": "Garden feedback not flowing \u2014 needs engine-side automatic GE-ID tracking", "status": "deferred", "source": "loose-ends"}
