@@ -60,11 +60,11 @@ A nest button (visually distinct from the tab-strip `+` — uses a "⊞" icon or
 When the nest button is clicked on entry `E` in Container `C`:
 
 1. Dispose `E.contentElement` via `E.contentDispose()` (do NOT transfer the DOM element — re-mounting triggers disconnectedCallback/connectedCallback on web components, losing ephemeral state)
-2. Create a wrapped entry `W = { key: E.key + '-wrapped', label: E.label }` (no contentElement — the content factory re-creates it)
+2. Create a wrapped entry `W = { key: generateKey(), label: E.label }` (no contentElement — the content factory re-creates it). Copy content identity: `W._content = E._content` (the `_content` property carries the `Component` descriptor that the content factory uses to reconstruct the element)
 3. Create a new empty entry `N = { key: generateKey(), label: 'Tab 2' }`
-4. Create a child Container `child = createContainer({ entries: [W, N], layout: 'tabbed', depth: C.depth + 1, policy: C.policy, contentFactory: ... })`
+4. Create a child Container `child = createContainer({ entries: [W, N], layout: 'tabbed', depth: C.depth + 1, policy: C.policy, contentFactory: ..., onCollapse: (remaining) => flattenEntry(E, remaining) })`
 5. Set `E.childContainer = child`
-6. Clear `E.contentElement` and `E.contentDispose`
+6. Clear `E.contentElement`, `E.contentDispose`, and `E._content`
 7. Mount the child Container into the entry's content area — the content factory re-creates `W`'s content in the new location
 
 The user sees their existing content (re-created via content factory) in the first tab of a new nested tabbed Container, plus an empty second tab. The data pipeline re-delivers datasets via `pages-data-request`, so data state recovers. Ephemeral state (scroll position, ECharts highlights) is lost — acceptable for a one-time structural operation, consistent with cross-tab frame transfer (workspace-compositor D3).
@@ -93,7 +93,9 @@ The current codebase has inconsistent maxDepth values: `createLeafContainer` har
 
 Resolution:
 - `DEFAULT_POLICY.maxDepth` changes from 3 to **5**
-- All containers reference `DEFAULT_POLICY` instead of hardcoded inline values
+- `DEFAULT_POLICY.allowedLayouts` stays as `["free", "tabbed", "accordion"]` — leaf containers
+- A separate `SPLIT_POLICY` constant adds `["splith", "splitv"]` to the allowed set — split containers use this because their layout is set at creation time, not via the user-facing layout switcher
+- All containers reference these constants instead of hardcoded inline values
 - This allows root(1)→split(2)→leaf(3)→entry-nest(4)→entry-nest(5) — two levels of explicit nesting beyond a split
 
 ## 4. Collapse — Auto-Flatten (D6)
@@ -103,11 +105,11 @@ When a nested Container's last sibling entry is closed and only one child remain
 ### flattenEntry(parentEntry, remainingChildEntry)
 
 1. Unmount the child Container
-2. Set `parentEntry.contentElement = remainingChildEntry.contentElement`
-3. Set `parentEntry.contentDispose = remainingChildEntry.contentDispose`
+2. Copy content identity: `parentEntry._content = remainingChildEntry._content`
+3. Dispose the remaining child's content element (do NOT transfer DOM — same rationale as containerizeEntry)
 4. Set `parentEntry.childContainer = undefined`
 5. Dispose the child Container
-6. Re-mount the parent entry's content into its tab area
+6. Re-create content via the content factory in the parent's tab area (the factory reads `_content` to reconstruct the element)
 
 This mirrors the existing split collapse pattern (`group-organiser-backend.ts:297-311`) where the surviving child's Container replaces the split Container as `state.rootContainer`.
 
@@ -143,18 +145,21 @@ function findLeafContainer(
   container: Container,
   predicate?: (c: Container) => boolean,
 ): Container | null {
+  // Recurse into any child containers first
   for (const entry of container.entries) {
     if (entry.childContainer) {
       const found = findLeafContainer(entry.childContainer, predicate);
       if (found) return found;
     }
   }
-  if (!hasChildren(container) && (!predicate || predicate(container))) return container;
+  // A container is a leaf target if it has any leaf entries (entries without childContainer)
+  const hasLeafEntries = container.entries.some(e => !e.childContainer);
+  if (hasLeafEntries && (!predicate || predicate(container))) return container;
   return null;
 }
 ```
 
-Where `hasChildren(container)` checks if any entry has a `childContainer`. This replaces `isSplitLayout()` as the branching test — a Container with children is non-leaf regardless of its layout type.
+**Mixed containers:** A tabbed container can have both leaf entries (no childContainer) and non-leaf entries (with childContainer). This is the normal state after nesting — only one entry is nested, its siblings remain leaves. The leaf test checks for leaf **entries**, not whether the container has **any** children. A container with 3 tabs where 1 is nested and 2 are leaves is still a valid leaf target for tab operations — the 2 leaf entries are directly visible content.
 
 ### Affected helpers
 
@@ -222,14 +227,22 @@ onCollapse: (remainingEntry) => {
 
 ## 7. Persistence (D5)
 
+### Cross-package type placement
+
+`Layout` is a simple string union (`"free" | "tabbed" | ...`) with no runtime dependencies. It moves from `pages-runtime/src/frame-sandbox/types.ts` to `pages-component/src/model/types.ts` alongside the persistence types that need it (`ContainerState`, `FrameLayout`). `pages-runtime` re-exports it for backward compatibility. This avoids a circular package dependency (pages-component → pages-runtime → pages-component).
+
 ### Type extension
 
 ```typescript
+// In pages-component/src/model/types.ts
+
+export type Layout = "free" | "tabbed" | "accordion" | "splith" | "splitv" | "content";
+
 export interface FrameTabConfig {
   readonly key: string;
   readonly label: string;
-  readonly content: Component;
-  readonly children?: ContainerState;  // NEW
+  readonly content: Component | null;  // null for non-leaf entries
+  readonly children?: ContainerState;  // NEW — present for non-leaf entries
 }
 
 export interface ContainerState {
@@ -237,27 +250,49 @@ export interface ContainerState {
   readonly tabs: readonly FrameTabConfig[];
   readonly layoutState?: unknown;
 }
+
+export interface FrameLayout {
+  // ... existing fields ...
+  readonly containerTree?: ContainerState;  // NEW — full recursive tree including root layout
+}
 ```
 
-When `children` is present, the tab is non-leaf and its content is the serialized child Container. When absent, the tab is a leaf. This matches the runtime Entry model.
+**Root layout persistence (R1-03):** `FrameLayout` gains `containerTree?: ContainerState`. When present, it captures the full Container tree including the root container's layout type (which may be `splith`/`splitv` — unrepresentable in `viewMode`). When absent, the flat `tabs` array and `viewMode` are used (backward compat). `containerTree` supersedes `tabs` when present.
+
+**FrameTabConfig.content (R1-09):** Changed to `Component | null`. Non-leaf entries serialize `content: null` — the child Container owns the content, not the entry.
 
 `ContainerState.layout` can be any `Layout` value including `splith`/`splitv` — this handles both entry nesting AND split nesting persistence. Frame-level splits were NOT previously persisted; this design fixes that as a side effect. `ContainerState.layoutState` carries layout-specific state (split ratios, accordion heights, etc.).
 
+### Engine-backend persistence bridge
+
+The engine and backend are architecturally separated: the engine manages `FrameLayout` state, the backend manages the runtime Container tree. To bridge this for persistence:
+
+`FloatingFrameBackend` gains a new method:
+```typescript
+captureContainerTree(frameKey: string): ContainerState | undefined;
+```
+
+The backend walks `FrameState.rootContainer` recursively, serializing each Container and its entries into `ContainerState`. Returns `undefined` for flat single-container frames (no nesting or splits).
+
+`captureLayout()` in the engine calls `backend.captureContainerTree(frameKey)` for each frame and sets `FrameLayout.containerTree` from the result.
+
+`restoreLayout()` passes `containerTree` to the backend's `renderFrame()`, which recursively creates the Container tree from the serialized state.
+
 ### Capture
 
-`captureLayout()` in the engine walks the Container tree recursively. For each entry:
-- Leaf: serialize as `{ key, label, content }` (unchanged)
+`captureContainerTree()` in the backend walks the Container tree recursively. For each entry:
+- Leaf: serialize as `{ key, label, content: entry._content }` (unchanged)
 - Non-leaf: serialize as `{ key, label, content: null, children: { layout, tabs: [...recurse...], layoutState } }`
 
 ### Restore
 
-`restoreLayout()` walks the serialized tree. For each tab:
+`renderFrame()` in the backend reads `containerTree`. For each level:
 - No `children`: create leaf entry with content factory (unchanged)
 - Has `children`: create child Container from `children.layout` and `children.tabs`, set on entry
 
 ### Backward compatibility
 
-Existing saved layouts have no `children` field on any tab. They load as flat tab lists — exactly as today. No migration needed.
+Existing saved layouts have no `containerTree` or `children` fields. They load via the existing flat `tabs` + `viewMode` path — exactly as today. No migration needed.
 
 ## 8. Testing Strategy
 
@@ -281,16 +316,16 @@ Existing saved layouts have no `children` field on any tab. They load as flat ta
 
 | File | Change |
 |------|--------|
-| **packages/pages-runtime** | |
-| `src/frame-sandbox/types.ts` | Move `Container` interface here (from container.ts). Add `childContainer?: Container` to `Entry`. Add `ContainerConfig` interface. Update `DEFAULT_POLICY.maxDepth` to 5. |
-| `src/frame-sandbox/container.ts` | Remove `Container`/`ContainerConfig` interface definitions (moved to types.ts). Add `containerizeEntry()` and `flattenEntry()` helpers. Content factory checks `entry.childContainer`. |
-| `src/group-organiser-backend.ts` | Remove `childContainers` from `FrameState`. Refactor tree-walking helpers (remove `childMap` param). Refactor `createSplitContainer`, `splitFrame`, `handleEmptyLeaf`. Add content-area + button injection. |
 | **packages/pages-component** | |
-| `src/model/types.ts` | Add `children?: ContainerState` to `FrameTabConfig`. Add `ContainerState` interface. |
+| `src/model/types.ts` | Move `Layout` type here (from pages-runtime). Add `ContainerState` interface. Add `containerTree?: ContainerState` to `FrameLayout`. Add `children?: ContainerState` to `FrameTabConfig`. Change `FrameTabConfig.content` to `Component \| null`. |
 | **packages/pages-runtime** | |
-| `src/floating-frame-engine.ts` | Update `captureLayout()` / `restoreLayout()` for recursive serialization |
+| `src/frame-sandbox/types.ts` | Move `Container` interface here (from container.ts). Add `childContainer?: Container` to `Entry`. Add `ContainerConfig` interface. Remove `Layout` (re-export from pages-component). Update `DEFAULT_POLICY.maxDepth` to 5. Add `SPLIT_POLICY`. |
+| `src/frame-sandbox/container.ts` | Remove `Container`/`ContainerConfig` interface definitions (moved to types.ts). Add `containerizeEntry()` and `flattenEntry()` helpers. Content factory checks `entry.childContainer`. |
+| `src/group-organiser-backend.ts` | Remove `childContainers` from `FrameState`. Refactor tree-walking helpers (remove `childMap` param, fix mixed-container leaf detection). Refactor `createSplitContainer`, `splitFrame`, `handleEmptyLeaf`. Add nest button injection. Add `captureContainerTree()` to backend API. |
+| `src/floating-frame-engine.ts` | Update `captureLayout()` to call `backend.captureContainerTree()`. Update `restoreLayout()` to pass `containerTree` to backend. |
+| `src/floating-frame-backend.ts` | Add `captureContainerTree(frameKey: string): ContainerState \| undefined` to `FloatingFrameBackend` interface. |
 
-**Total: 5 modified files, 0 new files.**
+**Total: 6 modified files, 0 new files.**
 
 ## References
 
