@@ -13,13 +13,5 @@ flyway-next-v: unknown
 queue_override: 
 
 ## Queue
-- [ ] casehubio/casehub-pages#354 — [pages] Create pages-filter-bar component ← active
-  - [x] Batch 1: pages-filter-bar
-    - [x] Task 1: Package scaffold + types + chip filter
-    - [x] Task 2: Entity dropdown keyboard nav tests
-    - [x] Task 3: Date range + build integration
-  - [x] Batch 2: blocks-event-trail
-    - [x] Task 4: Cross-repo wiring + component
-  - [x] Batch 3: audit-trail-refactor
-    - [x] Task 5: Compose blocks-event-trail + regression
-- [ ] casehubio/blocks-ui#126 — Issue #126
+- [x] casehubio/casehub-pages#354 — [pages] Create pages-filter-bar component
+- [x] casehubio/blocks-ui#126 — Issue #126
