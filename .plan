@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-126-event-trail-base
-state: closing:verified
+state: closing:pushed
 project-sha: slot-creation
 date: 2026-08-23
 issue-repo: casehubio/blocks-ui
