@@ -13,3 +13,15 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#345 — Issue #345 ← active
+  - [ ] Batch 1: Type Foundation
+    - [ ] Task 1: Move Layout type to pages-component
+    - [ ] Task 2: Move Container to types.ts and extend Entry
+  - [ ] Batch 2: Tree-Walking Refactor
+    - [ ] Task 3: Refactor helpers and eliminate childContainers map
+  - [ ] Batch 3: Nesting Operations
+    - [ ] Task 4: Implement containerizeEntry and flattenEntry
+    - [ ] Task 5: Add nest button to content area
+  - [ ] Batch 4: Persistence
+    - [ ] Task 6: Add captureContainerTree and wire to engine
+  - [ ] Batch 5: Integration
+    - [ ] Task 7: Full integration test and type check
