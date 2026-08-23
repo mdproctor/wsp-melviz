@@ -1,0 +1,297 @@
+# Recursive Container Model — Design Spec
+
+**Date:** 2026-08-23
+**Issue:** #345
+**Scope:** Entry-level Container nesting, tree-walking refactor, persistence
+
+## Overview
+
+The Container migration (#312) landed the i3-style Container model at the frame level — each frame has a `rootContainer` with split-based child Containers. But entries within a Container are still flat `Entry` objects (`{ key, label, contentElement }`). This creates a gap: when a user clicks `+` inside a tabbed container's content area, they get a sibling tab, not a child inside the active tab.
+
+This design closes the gap by giving `Entry` an optional `childContainer`, making the full tree self-describing. A leaf entry renders content directly; a non-leaf entry renders its child Container. The external `FrameState.childContainers: Map<string, Container>` is eliminated in favour of Entry-owned children.
+
+### Constraints
+
+- Backward compatible — existing layouts without nesting load and render unchanged
+- Unified depth model — `maxDepth` applies to the full tree regardless of nesting source
+- Content-agnostic — nesting is a layout concern, not a content concern (per content-agnostic-workbench protocol)
+- Consistent collapse — auto-flatten follows the same pattern as split collapse
+
+## 1. Entry Extension (D1)
+
+`Entry` gains an optional field:
+
+```typescript
+export interface Entry {
+  readonly key: string;
+  readonly label: string;
+  contentElement?: HTMLElement | undefined;
+  contentDispose?: (() => void) | undefined;
+  meta?: PerLayoutMeta;
+  childContainer?: Container | undefined;  // NEW
+}
+```
+
+When `childContainer` is set:
+- The entry is a **non-leaf** — it renders its child Container instead of raw content
+- `contentElement` and `contentDispose` are cleared (the child Container manages its own content)
+- The child Container receives `depth: parentContainer.depth + 1`
+
+When `childContainer` is absent or undefined:
+- The entry is a **leaf** — it renders content via the `ContentFactory` as today
+
+### Leaf/non-leaf invariant
+
+An entry is always in one of two states: leaf (has contentElement, no childContainer) or non-leaf (has childContainer, no contentElement). The conversion functions enforce this — `containerizeEntry()` clears content before setting childContainer, and `flattenEntry()` clears childContainer before re-creating content via the factory.
+
+## 2. Nesting Trigger — Content-Area + Button (D2, D3)
+
+### User gesture
+
+A `+` button appears inside each leaf tab's content area. The tab-strip `+` remains "add sibling tab."
+
+- **Visible:** when the entry is a leaf AND `depth < maxDepth`
+- **Hidden:** when the entry is already non-leaf (it already has a nested Container with its own tab strip) OR when `depth >= maxDepth`
+
+### Conversion: leaf → non-leaf (containerizeEntry)
+
+When the content-area `+` is clicked on entry `E` in Container `C`:
+
+1. Detach `E.contentElement` from the DOM (preserve the element reference)
+2. Create a wrapped entry `W = { key: E.key + '-wrapped', label: E.label, contentElement: E.contentElement, contentDispose: E.contentDispose }`
+3. Create a new empty entry `N = { key: generateKey(), label: 'Tab 2' }`
+4. Create a child Container `child = createContainer({ entries: [W, N], layout: 'tabbed', depth: C.depth + 1, policy: C.policy, contentFactory: ... })`
+5. Set `E.childContainer = child`
+6. Clear `E.contentElement` and `E.contentDispose`
+7. Mount the child Container into the entry's content area
+
+The user sees their existing content in the first tab of a new nested tabbed Container, plus an empty second tab.
+
+### Content factory delegation
+
+The `contentFactory` for the child Container delegates to the parent's factory for leaf entries. For non-leaf entries (recursive nesting), it mounts the entry's `childContainer`. This is the same pattern used by `createSplitContainer` today — its content factory checks `childContainers.get(entry.key)` and mounts the child. After D1, the check becomes `entry.childContainer`.
+
+## 3. Depth Enforcement (D4)
+
+`ContainerPolicy.maxDepth` counts the full tree depth from root to deepest leaf, regardless of nesting source (split or entry). The existing check in `createContainer()`:
+
+```typescript
+if (depth > policy.maxDepth) {
+  throw new Error(`Cannot create group at depth ${depth} — maximum nesting depth is ${policy.maxDepth}`);
+}
+```
+
+...already enforces this. Child Containers created via `Entry.childContainer` pass `parentContainer.depth + 1` as their depth, just as split children do.
+
+The content-area `+` button hides itself when `container.depth >= container.policy.maxDepth`, preventing the user from attempting nesting that would fail.
+
+### DEFAULT_POLICY adjustment
+
+`DEFAULT_POLICY.maxDepth` is currently 3. With unified depth counting across splits and entry nesting, consider whether this is still appropriate. A root with one split and one level of entry nesting is already at depth 3. The spec does not prescribe a specific value — this is a policy concern, not architectural.
+
+## 4. Collapse — Auto-Flatten (D6)
+
+When a nested Container's last sibling entry is closed and only one child remains, the entry auto-flattens:
+
+### flattenEntry(parentEntry, remainingChildEntry)
+
+1. Unmount the child Container
+2. Set `parentEntry.contentElement = remainingChildEntry.contentElement`
+3. Set `parentEntry.contentDispose = remainingChildEntry.contentDispose`
+4. Set `parentEntry.childContainer = undefined`
+5. Dispose the child Container
+6. Re-mount the parent entry's content into its tab area
+
+This mirrors the existing split collapse pattern (`group-organiser-backend.ts:297-311`) where the surviving child's Container replaces the split Container as `state.rootContainer`.
+
+### Collapse callback
+
+The child Container is created with an `onCollapse` callback (same mechanism splits use) that triggers `flattenEntry()`. When the child's organiser detects it has collapsed to one entry, it calls `onCollapse(remainingEntry)` — the parent intercepts and flattens.
+
+## 5. Tree-Walking Refactor (D7)
+
+All tree-walking helpers are refactored to walk via `Entry.childContainer`, eliminating the `childMap` parameter:
+
+### Before (current)
+
+```typescript
+function findLeafContainer(
+  container: Container,
+  childMap: Map<string, Container>,
+  predicate?: (c: Container) => boolean,
+): Container | null {
+  if (isSplitLayout(layout)) {
+    for (const entry of container.entries) {
+      const child = childMap.get(entry.key);
+      if (child) { /* recurse */ }
+    }
+  }
+}
+```
+
+### After
+
+```typescript
+function findLeafContainer(
+  container: Container,
+  predicate?: (c: Container) => boolean,
+): Container | null {
+  for (const entry of container.entries) {
+    if (entry.childContainer) {
+      const found = findLeafContainer(entry.childContainer, predicate);
+      if (found) return found;
+    }
+  }
+  if (!hasChildren(container) && (!predicate || predicate(container))) return container;
+  return null;
+}
+```
+
+Where `hasChildren(container)` checks if any entry has a `childContainer`. This replaces `isSplitLayout()` as the branching test — a Container with children is non-leaf regardless of its layout type.
+
+### Affected helpers
+
+| Helper | Change |
+|--------|--------|
+| `findLeafContainer` | Remove `childMap` param, walk `entry.childContainer` |
+| `findContainerWithTab` | Remove `childMap` param, walk `entry.childContainer` |
+| `forEachLeafContainer` | Remove `childMap` param, walk `entry.childContainer` |
+| `findParentSplitEntry` | Remove `childMap` param, walk `entry.childContainer`. Rename to `findParentEntry` since it's no longer split-specific |
+
+### Call site migration
+
+All call sites in `group-organiser-backend.ts` (~15 locations) drop the `state.childContainers` argument. The `state.childContainers` field is removed from `FrameState`.
+
+## 6. Split Creation Refactor
+
+`createSplitContainer` currently stores child Containers in `state.childContainers`. After D1, it stores them on the entries:
+
+### Before
+
+```typescript
+for (const { key, child } of childEntries) {
+  state.childContainers.set(key, child);
+}
+```
+
+### After
+
+```typescript
+const entries: Entry[] = childEntries.map(({ key, child }) => ({
+  key,
+  label: key,
+  childContainer: child,
+}));
+```
+
+The content factory for the split Container changes from `state.childContainers.get(entry.key)` to `entry.childContainer`:
+
+```typescript
+contentFactory: (entry: Entry) => {
+  if (entry.childContainer) {
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;flex-direction:column;height:100%;';
+    entry.childContainer.mount(el);
+    return { element: el, dispose: () => entry.childContainer!.dispose() };
+  }
+  return { element: document.createElement('div') };
+},
+```
+
+### Split collapse refactor
+
+The `onCollapse` callback changes from reading `state.childContainers.get(remainingEntry.key)` to reading `remainingEntry.childContainer`:
+
+```typescript
+onCollapse: (remainingEntry) => {
+  const remainingChild = remainingEntry.childContainer;
+  if (remainingChild) {
+    remainingChild.unmount();
+    remainingEntry.childContainer = undefined;
+    // ... promote remainingChild as rootContainer
+  }
+}
+```
+
+## 7. Persistence (D5)
+
+### Type extension
+
+```typescript
+export interface FrameTabConfig {
+  readonly key: string;
+  readonly label: string;
+  readonly content: Component;
+  readonly children?: ContainerState;  // NEW
+}
+
+export interface ContainerState {
+  readonly layout: Layout;
+  readonly tabs: readonly FrameTabConfig[];
+  readonly layoutState?: unknown;
+}
+```
+
+When `children` is present, the tab is non-leaf and its content is the serialized child Container. When absent, the tab is a leaf. This matches the runtime Entry model.
+
+### Capture
+
+`captureLayout()` in the engine walks the Container tree recursively. For each entry:
+- Leaf: serialize as `{ key, label, content }` (unchanged)
+- Non-leaf: serialize as `{ key, label, content: null, children: { layout, tabs: [...recurse...], layoutState } }`
+
+### Restore
+
+`restoreLayout()` walks the serialized tree. For each tab:
+- No `children`: create leaf entry with content factory (unchanged)
+- Has `children`: create child Container from `children.layout` and `children.tabs`, set on entry
+
+### Backward compatibility
+
+Existing saved layouts have no `children` field on any tab. They load as flat tab lists — exactly as today. No migration needed.
+
+## 8. Testing Strategy
+
+### Unit tests
+
+| File | Coverage |
+|------|----------|
+| `container.test.ts` | Entry.childContainer lifecycle, containerize/flatten, depth propagation |
+| `group-organiser-backend.test.ts` | Refactored tree-walking helpers, split creation with entry-owned children, cross-frame drag with nested trees |
+
+### Integration tests
+
+- Leaf → non-leaf conversion preserves existing content
+- Non-leaf → leaf auto-flatten on last sibling close
+- Nested depth enforcement (+ button hidden at maxDepth)
+- Split + entry nesting combined (split at depth 2, entry-nest at depth 3)
+- Persistence round-trip: nested layout saves and restores correctly
+- Backward compat: old flat layout loads unchanged
+
+## 9. File Impact Summary
+
+| File | Change |
+|------|--------|
+| **packages/pages-runtime** | |
+| `src/frame-sandbox/types.ts` | Add `childContainer?: Container` to `Entry` |
+| `src/frame-sandbox/container.ts` | Add `containerizeEntry()` and `flattenEntry()` helpers. Content factory checks `entry.childContainer`. |
+| `src/group-organiser-backend.ts` | Remove `childContainers` from `FrameState`. Refactor tree-walking helpers (remove `childMap` param). Refactor `createSplitContainer`, `splitFrame`, `handleEmptyLeaf`. Add content-area + button injection. |
+| **packages/pages-component** | |
+| `src/model/types.ts` | Add `children?: ContainerState` to `FrameTabConfig`. Add `ContainerState` interface. |
+| **packages/pages-runtime** | |
+| `src/floating-frame-engine.ts` | Update `captureLayout()` / `restoreLayout()` for recursive serialization |
+
+**Total: 5 modified files, 0 new files.**
+
+## References
+
+- Issue #345 — Recursive Container model
+- Issue #312 — Container tree migration (predecessor, landed)
+- `packages/pages-runtime/src/frame-sandbox/types.ts` — Entry, ContainerPolicy, Layout types
+- `packages/pages-runtime/src/frame-sandbox/container.ts` — Container interface, createContainer
+- `packages/pages-runtime/src/frame-sandbox/split-strategy.ts` — split layout with collapse callback
+- `packages/pages-runtime/src/group-organiser-backend.ts` — FrameState, tree-walking helpers, split creation
+- `packages/pages-component/src/model/types.ts` — FrameLayout, FrameTabConfig persistence types
+- `docs/protocols/casehub/content-agnostic-workbench.md` — content-agnostic principle
+- `docs/protocols/casehub/workbench-integration-pattern.md` — three-package integration pattern
+- Workspace compositor spec — D1-D6 predecessor decisions
