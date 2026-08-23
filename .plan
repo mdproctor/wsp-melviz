@@ -1,0 +1,17 @@
+# Work Plan — issue-126-event-trail-base
+
+## State
+branch: issue-126-event-trail-base
+state: scaffolded
+project-sha: slot-creation
+date: 2026-08-23
+issue-repo: casehubio/blocks-ui
+covers: 126
+design-repo: project
+design-section-hashes: 
+flyway-next-v: unknown
+queue_override: 
+
+## Queue
+- [ ] casehubio/casehub-pages#354 — [pages] Create pages-filter-bar component ← active
+- [ ] casehubio/blocks-ui#126 — Issue #126
