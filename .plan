@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-345-recursive-container-model
-state: scaffolded
+state: closing:review
 project-sha: 8ed842db20aa4c5565f7b4f1bf6271a5f387894f
 date: 2026-08-23
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#345 — Issue #345 ← active
   - [x] Batch 1: Type Foundation
