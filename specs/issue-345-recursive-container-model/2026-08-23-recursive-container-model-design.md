@@ -19,6 +19,8 @@ This design closes the gap by giving `Entry` an optional `childContainer`, makin
 
 ## 1. Entry Extension (D1)
 
+The `Container` interface moves from `container.ts` to `types.ts` to co-locate it with `Entry` and avoid a circular type dependency. Both are pure interfaces with no runtime imports.
+
 `Entry` gains an optional field:
 
 ```typescript
@@ -48,24 +50,24 @@ An entry is always in one of two states: leaf (has contentElement, no childConta
 
 ### User gesture
 
-A `+` button appears inside each leaf tab's content area. The tab-strip `+` remains "add sibling tab."
+A nest button (visually distinct from the tab-strip `+` — uses a "⊞" icon or "Nest" label to avoid confusion with the sibling-add and compositor-tab buttons) appears inside each leaf tab's content area. The tab-strip `+` remains "add sibling tab."
 
 - **Visible:** when the entry is a leaf AND `depth < maxDepth`
 - **Hidden:** when the entry is already non-leaf (it already has a nested Container with its own tab strip) OR when `depth >= maxDepth`
 
 ### Conversion: leaf → non-leaf (containerizeEntry)
 
-When the content-area `+` is clicked on entry `E` in Container `C`:
+When the nest button is clicked on entry `E` in Container `C`:
 
-1. Detach `E.contentElement` from the DOM (preserve the element reference)
-2. Create a wrapped entry `W = { key: E.key + '-wrapped', label: E.label, contentElement: E.contentElement, contentDispose: E.contentDispose }`
+1. Dispose `E.contentElement` via `E.contentDispose()` (do NOT transfer the DOM element — re-mounting triggers disconnectedCallback/connectedCallback on web components, losing ephemeral state)
+2. Create a wrapped entry `W = { key: E.key + '-wrapped', label: E.label }` (no contentElement — the content factory re-creates it)
 3. Create a new empty entry `N = { key: generateKey(), label: 'Tab 2' }`
 4. Create a child Container `child = createContainer({ entries: [W, N], layout: 'tabbed', depth: C.depth + 1, policy: C.policy, contentFactory: ... })`
 5. Set `E.childContainer = child`
 6. Clear `E.contentElement` and `E.contentDispose`
-7. Mount the child Container into the entry's content area
+7. Mount the child Container into the entry's content area — the content factory re-creates `W`'s content in the new location
 
-The user sees their existing content in the first tab of a new nested tabbed Container, plus an empty second tab.
+The user sees their existing content (re-created via content factory) in the first tab of a new nested tabbed Container, plus an empty second tab. The data pipeline re-delivers datasets via `pages-data-request`, so data state recovers. Ephemeral state (scroll position, ECharts highlights) is lost — acceptable for a one-time structural operation, consistent with cross-tab frame transfer (workspace-compositor D3).
 
 ### Content factory delegation
 
@@ -85,9 +87,14 @@ if (depth > policy.maxDepth) {
 
 The content-area `+` button hides itself when `container.depth >= container.policy.maxDepth`, preventing the user from attempting nesting that would fail.
 
-### DEFAULT_POLICY adjustment
+### DEFAULT_POLICY and maxDepth unification
 
-`DEFAULT_POLICY.maxDepth` is currently 3. With unified depth counting across splits and entry nesting, consider whether this is still appropriate. A root with one split and one level of entry nesting is already at depth 3. The spec does not prescribe a specific value — this is a policy concern, not architectural.
+The current codebase has inconsistent maxDepth values: `createLeafContainer` hardcodes `maxDepth: 3`, `createSplitContainer` hardcodes `maxDepth: 10`. With unified depth counting, maxDepth:3 blocks entry nesting whenever splits are present (root→split→leaf = depth 3, at limit).
+
+Resolution:
+- `DEFAULT_POLICY.maxDepth` changes from 3 to **5**
+- All containers reference `DEFAULT_POLICY` instead of hardcoded inline values
+- This allows root(1)→split(2)→leaf(3)→entry-nest(4)→entry-nest(5) — two levels of explicit nesting beyond a split
 
 ## 4. Collapse — Auto-Flatten (D6)
 
@@ -160,7 +167,7 @@ Where `hasChildren(container)` checks if any entry has a `childContainer`. This 
 
 ### Call site migration
 
-All call sites in `group-organiser-backend.ts` (~15 locations) drop the `state.childContainers` argument. The `state.childContainers` field is removed from `FrameState`.
+All ~15 call sites in `group-organiser-backend.ts` need updated logic, not just parameter drops. The `isSplitLayout()` gate that currently controls recursion disappears — the new condition is `entry.childContainer` presence. A tabbed container whose entries have childContainers is no longer a leaf. Each call site must be individually verified. The `state.childContainers` field is removed from `FrameState`.
 
 ## 6. Split Creation Refactor
 
@@ -234,6 +241,8 @@ export interface ContainerState {
 
 When `children` is present, the tab is non-leaf and its content is the serialized child Container. When absent, the tab is a leaf. This matches the runtime Entry model.
 
+`ContainerState.layout` can be any `Layout` value including `splith`/`splitv` — this handles both entry nesting AND split nesting persistence. Frame-level splits were NOT previously persisted; this design fixes that as a side effect. `ContainerState.layoutState` carries layout-specific state (split ratios, accordion heights, etc.).
+
 ### Capture
 
 `captureLayout()` in the engine walks the Container tree recursively. For each entry:
@@ -273,8 +282,8 @@ Existing saved layouts have no `children` field on any tab. They load as flat ta
 | File | Change |
 |------|--------|
 | **packages/pages-runtime** | |
-| `src/frame-sandbox/types.ts` | Add `childContainer?: Container` to `Entry` |
-| `src/frame-sandbox/container.ts` | Add `containerizeEntry()` and `flattenEntry()` helpers. Content factory checks `entry.childContainer`. |
+| `src/frame-sandbox/types.ts` | Move `Container` interface here (from container.ts). Add `childContainer?: Container` to `Entry`. Add `ContainerConfig` interface. Update `DEFAULT_POLICY.maxDepth` to 5. |
+| `src/frame-sandbox/container.ts` | Remove `Container`/`ContainerConfig` interface definitions (moved to types.ts). Add `containerizeEntry()` and `flattenEntry()` helpers. Content factory checks `entry.childContainer`. |
 | `src/group-organiser-backend.ts` | Remove `childContainers` from `FrameState`. Refactor tree-walking helpers (remove `childMap` param). Refactor `createSplitContainer`, `splitFrame`, `handleEmptyLeaf`. Add content-area + button injection. |
 | **packages/pages-component** | |
 | `src/model/types.ts` | Add `children?: ContainerState` to `FrameTabConfig`. Add `ContainerState` interface. |

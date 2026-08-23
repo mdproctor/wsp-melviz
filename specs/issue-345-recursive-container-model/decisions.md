@@ -5,10 +5,11 @@
 - Dual model: Entry declares, external map backs — avoids touching split creation/collapse but creates two sources of truth
 - Keep external map, extend to arbitrary entry keys — minimal type changes but doesn't achieve the "Entry as Container" model
 **Rationale:** Matches the i3 spec's "everything is a Container" principle. Single source of truth. Tree structure is self-describing — no external registry needed to understand parent-child relationships. The existing `childContainers` map was a stopgap for the split-only case (#312).
-**Trade-offs:** Requires refactoring all split creation/collapse logic in `group-organiser-backend.ts` to use `Entry.childContainer` instead of the map. Moderate diff but the split logic already creates child Containers — the change is where they're stored, not how they're created.
+**Trade-offs:** Requires refactoring all split creation/collapse logic in `group-organiser-backend.ts` to use `Entry.childContainer` instead of the map. Moderate diff but the split logic already creates child Containers — the change is where they're stored, not how they're created. Creates a circular type reference (Entry → Container → Entry) — resolved by moving the Container interface definition to `types.ts` alongside Entry, since Container is a pure interface with no runtime dependencies.
 **Sources:** `packages/pages-runtime/src/frame-sandbox/types.ts` (Entry interface), `packages/pages-runtime/src/frame-sandbox/container.ts` (Container interface), `packages/pages-runtime/src/group-organiser-backend.ts` (FrameState.childContainers)
 **Exploration:** quick
-**Status:** captured
+**Review:** R1-04 — circular type dependency acknowledged. Resolution: move Container interface to types.ts. Both Entry and Container are data-shape interfaces with no runtime imports; co-locating them in types.ts eliminates the cycle without coupling data and runtime layers.
+**Status:** revised
 
 ## D2: Nesting trigger — content-area + button
 
@@ -17,11 +18,12 @@
 - Right-click context menu on tab header — more discoverable options but requires context menu infrastructure not yet built
 - Tab-strip dropdown splitting "add tab" vs "add nested tab" — adds a click to the common case (sibling add)
 **Rationale:** Direct, single-click gesture. Content-area placement makes the spatial relationship clear: "I'm adding inside this tab." Consistent with the issue's design direction. Tab-strip + remains the fast path for the common case (sibling).
-**Trade-offs:** Requires injecting a + button into each leaf tab's content area. The button must hide when the entry is already non-leaf (it already has a nested Container with its own tab strip). Must respect `maxDepth` — hidden when depth limit reached.
+**Trade-offs:** Requires injecting a + button into each leaf tab's content area. The button must hide when the entry is already non-leaf (it already has a nested Container with its own tab strip). Must respect `maxDepth` — hidden when depth limit reached. Three levels of + buttons exist (compositor tab bar, frame tab strip, content area) — the content-area button should use a distinct icon or label (e.g., "⊞" or "Nest") to differentiate from sibling-add buttons.
 **Depends on:** D1 (Entry owns children — the + creates a childContainer on the active entry)
 **Sources:** Issue #345 body (design direction section)
+**Review:** R1-08 — visual differentiation acknowledged. Content-area nest button uses distinct affordance.
 **Exploration:** quick
-**Status:** captured
+**Status:** revised
 
 ## D3: Content wrapping — existing content becomes first child
 
@@ -29,12 +31,13 @@
 **Alternatives:**
 - Replace with empty Container — simpler but destructive, user loses current content
 - Keep as background, overlay Container — complex and confusing
-**Rationale:** Non-destructive. The user clicked + to add something alongside their content, not to replace it. Content factory can re-render if needed, but preserving the existing DOM element avoids unnecessary re-renders.
-**Trade-offs:** The content element's parent changes, which may affect CSS scoping or event listeners that assume a specific DOM ancestry. Mitigated by the content factory pattern — content is already designed to be mountable in any container.
+**Rationale:** Non-destructive. The user clicked + to add something alongside their content, not to replace it.
+**Trade-offs:** Moving a DOM element triggers `disconnectedCallback`/`connectedCallback` on web components — ephemeral state (scroll position, selections, ECharts highlights) is lost. To avoid this, the content factory re-creates the content in the child container rather than transferring the DOM element. The data pipeline re-delivers datasets via `pages-data-request`, so data state recovers. Ephemeral state loss is acceptable for this one-time structural operation — consistent with cross-tab frame transfer (workspace-compositor D3) which also accepts re-creation cost.
 **Depends on:** D1, D2
 **Sources:** `packages/pages-runtime/src/frame-sandbox/container.ts` (contentFactory pattern, Entry.contentElement lifecycle)
+**Review:** R1-07 — DOM lifecycle effects acknowledged. Changed from element transfer to content factory re-creation to avoid disconnectedCallback/connectedCallback side effects.
 **Exploration:** quick
-**Status:** captured
+**Status:** revised
 
 ## D4: Depth semantics — full tree depth, unified
 
@@ -42,10 +45,11 @@
 **Alternatives:**
 - Separate depth counters for split nesting vs entry nesting — more flexible but two concepts to reason about, harder to enforce a global limit
 **Rationale:** Uniform depth model. The user doesn't care whether nesting came from a split or a tab — depth is depth. The existing `depth` field on Container and the `maxDepth` check in `createContainer()` already implement this correctly for splits; entry nesting plugs into the same mechanism.
-**Trade-offs:** A maxDepth of 3 may feel restrictive when combining splits and entry nesting (root → split → entry-nest = depth 3, already at limit). May need to increase DEFAULT_POLICY.maxDepth. But this is a policy value, not an architectural constraint.
-**Sources:** `packages/pages-runtime/src/frame-sandbox/types.ts:3-6` (ContainerPolicy), `packages/pages-runtime/src/frame-sandbox/container.ts:148-153` (depth check)
+**Trade-offs:** The current codebase has inconsistent maxDepth: leaf containers hardcode maxDepth:3, split containers hardcode maxDepth:10. With unified depth counting, maxDepth:3 blocks entry nesting whenever splits are present (root→split→leaf = depth 3, at limit). Resolution: unify all containers to maxDepth:5 via DEFAULT_POLICY. This allows root(1)→split(2)→leaf(3)→entry-nest(4)→entry-nest(5) — two levels of explicit nesting beyond a split, which covers practical use cases without enabling unbounded depth. The hardcoded policies in `group-organiser-backend.ts` should reference DEFAULT_POLICY instead of inline values.
+**Sources:** `packages/pages-runtime/src/frame-sandbox/types.ts:3-6` (ContainerPolicy), `packages/pages-runtime/src/frame-sandbox/container.ts:148-153` (depth check), `packages/pages-runtime/src/group-organiser-backend.ts:260,296` (inconsistent hardcoded maxDepth)
+**Review:** R1-02 — maxDepth=3 confirmed unusable with splits. Upgraded from footnote to explicit resolution: unify to maxDepth:5, eliminate hardcoded policies.
 **Exploration:** quick
-**Status:** captured
+**Status:** revised
 
 ## D5: Persistence — recursive FrameTabConfig
 
@@ -53,12 +57,13 @@
 **Alternatives:**
 - Separate `containerTree?` field on FrameLayout replacing `tabs` — bigger migration, cleaner separation but more work for backward compat
 - Rename `tabs` to `entries` with inline recursion — breaks backward compat for field name
-**Rationale:** Minimal, backward-compatible extension. Existing layouts without `children` load correctly as flat tab lists. New layouts serialize the full tree. The recursion is natural — a tab's children are just more tabs in a Container.
-**Trade-offs:** `FrameTabConfig` gains responsibility for tree structure. The type name ("TabConfig") is slightly misleading for non-leaf entries, but renaming it would break the existing API surface.
+**Rationale:** Minimal, backward-compatible extension. Existing layouts without `children` load correctly as flat tab lists. New layouts serialize the full tree. The recursion is natural — a tab's children are just more tabs in a Container. With D1 eliminating the external childContainers map, this also handles split persistence — `ContainerState.layout` can be `splith`/`splitv` and `ContainerState.layoutState` carries split ratios. Frame-level splits were NOT previously persisted; this design fixes that as a side effect.
+**Trade-offs:** `FrameTabConfig` gains responsibility for tree structure. The type name ("TabConfig") is slightly misleading for non-leaf entries — consider renaming to `FrameEntryConfig` in a follow-up cleanup issue.
 **Depends on:** D1 (Entry.childContainer defines the runtime tree that must be serialized)
 **Sources:** `packages/pages-component/src/model/types.ts:91-111` (FrameLayout), workspace-compositor spec §8 (CompositorState pattern)
+**Review:** R1-03 — split persistence gap confirmed. ContainerState now explicitly handles both entry nesting AND split nesting (layout can be any Layout including splith/splitv, layoutState carries ratios). This is a scope expansion but a welcome one — previously splits were lost on save/restore.
 **Exploration:** quick
-**Status:** captured
+**Status:** revised
 
 ## D6: Collapse — auto-flatten on single child
 
@@ -79,9 +84,10 @@
 **Alternatives:**
 - Adapter pattern: build temporary childMap from Entry.childContainer fields — smaller diff but maintains two mental models and the adapter rebuilds on every mutation
 - New helpers alongside old with gradual deprecation — safest migration but code duplication
-**Rationale:** One traversal pattern for the entire tree. The helpers are already recursive — the change is parameter removal, not logic rewrite. With Entry owning children (D1), there's no reason for an external map parameter.
-**Trade-offs:** All call sites in `group-organiser-backend.ts` must be updated (approximately 15 call sites). The refactor touches a large file but each change is mechanical — drop the map argument, change the child lookup from `childMap.get(entry.key)` to `entry.childContainer`.
+**Rationale:** One traversal pattern for the entire tree. With Entry owning children (D1), there's no reason for an external map parameter.
+**Trade-offs:** The refactor is more than parameter removal — the `isSplitLayout()` gate that currently controls recursion disappears. The new recursion condition is: "if any entry has `childContainer`, recurse into it." A tabbed container whose entries have childContainers is no longer a leaf. The leaf detection semantic changes from "not a split layout" to "no entries have children." All ~15 call sites need updated logic, not just parameter drops. `findParentSplitEntry` is renamed to `findParentEntry` since it's no longer split-specific.
 **Depends on:** D1 (Entry.childContainer is the traversal mechanism)
 **Sources:** `packages/pages-runtime/src/group-organiser-backend.ts:55-128` (existing helpers)
+**Review:** R1-01 — refactor complexity acknowledged. Updated from "parameter removal" to accurate description of logic changes. The new traversal is simpler (one condition instead of layout-type branching) but it IS a logic change at every call site, not just a signature change.
 **Exploration:** quick
-**Status:** captured
+**Status:** revised
