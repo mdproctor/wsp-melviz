@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-126-event-trail-base
-state: scaffolded
+state: active
 project-sha: slot-creation
 date: 2026-08-23
 issue-repo: casehubio/blocks-ui
@@ -14,4 +14,12 @@ queue_override:
 
 ## Queue
 - [ ] casehubio/casehub-pages#354 — [pages] Create pages-filter-bar component ← active
+  - [ ] Batch 1: pages-filter-bar
+    - [ ] Task 1: Package scaffold + types + chip filter
+    - [ ] Task 2: Entity dropdown keyboard nav tests
+    - [ ] Task 3: Date range + build integration
+  - [ ] Batch 2: blocks-event-trail
+    - [ ] Task 4: Cross-repo wiring + component
+  - [ ] Batch 3: audit-trail-refactor
+    - [ ] Task 5: Compose blocks-event-trail + regression
 - [ ] casehubio/blocks-ui#126 — Issue #126
