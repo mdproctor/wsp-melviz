@@ -145,18 +145,18 @@ export default defineConfig({
 `packages/pages-filter-bar/src/types.ts`:
 ```typescript
 export interface FilterState {
-  selectedChips: Set<string>;
-  selectedEntity: string | null;
-  dateFrom: string;
-  dateTo: string;
+  readonly selectedChips: readonly string[];
+  readonly selectedEntity: string | null;
+  readonly dateFrom: string;
+  readonly dateTo: string;
 }
 
-export const EMPTY_FILTER_STATE: FilterState = {
-  selectedChips: new Set(),
+export const EMPTY_FILTER_STATE: FilterState = Object.freeze({
+  selectedChips: Object.freeze([] as string[]),
   selectedEntity: null,
   dateFrom: '',
   dateTo: '',
-};
+});
 ```
 
 - [ ] **Step 3: Create index.ts with exports**
@@ -260,7 +260,7 @@ describe('PagesFilterBar', () => {
 
       expect(handler).toHaveBeenCalledOnce();
       const detail = handler.mock.calls[0][0].detail as FilterState;
-      expect(detail.selectedChips.has('COMMAND')).toBe(true);
+      expect(detail.selectedChips.includes('COMMAND')).toBe(true);
     });
 
     it('toggles chip off on second click', async () => {
@@ -278,7 +278,7 @@ describe('PagesFilterBar', () => {
 
       expect(handler).toHaveBeenCalledTimes(2);
       const detail = handler.mock.calls[1][0].detail as FilterState;
-      expect(detail.selectedChips.has('COMMAND')).toBe(false);
+      expect(detail.selectedChips.includes('COMMAND')).toBe(false);
     });
 
     it('sets aria-checked on selected chips', async () => {
@@ -335,7 +335,7 @@ export class PagesFilterBar extends LitElement {
   @property({ type: String }) dateFromLabel = 'From';
   @property({ type: String }) dateToLabel = 'To';
 
-  @state() private _selectedChips = new Set<string>();
+  @state() private _selectedChips: readonly string[] = [];
   @state() private _selectedEntity: string | null = null;
   @state() private _dateFrom = '';
   @state() private _dateTo = '';
@@ -480,7 +480,7 @@ export class PagesFilterBar extends LitElement {
       bubbles: true,
       composed: true,
       detail: {
-        selectedChips: new Set(this._selectedChips),
+        selectedChips: [...this._selectedChips],
         selectedEntity: this._selectedEntity,
         dateFrom: this._dateFrom,
         dateTo: this._dateTo,
@@ -489,13 +489,10 @@ export class PagesFilterBar extends LitElement {
   }
 
   private _handleChipClick(value: string): void {
-    const next = new Set(this._selectedChips);
-    if (next.has(value)) {
-      next.delete(value);
-    } else {
-      next.add(value);
-    }
-    this._selectedChips = next;
+    const idx = this._selectedChips.indexOf(value);
+    this._selectedChips = idx >= 0
+      ? this._selectedChips.filter(v => v !== value)
+      : [...this._selectedChips, value];
     this._emitFilterChange();
   }
 
@@ -578,7 +575,7 @@ export class PagesFilterBar extends LitElement {
         ${values.map(val => html`
           <button class="chip"
             role="checkbox"
-            aria-checked="${this._selectedChips.has(val)}"
+            aria-checked="${this._selectedChips.includes(val)}"
             @click=${() => this._handleChipClick(val)}
           >${val}</button>
         `)}
@@ -603,6 +600,7 @@ export class PagesFilterBar extends LitElement {
             aria-expanded="${this._dropdownOpen}"
             aria-haspopup="listbox"
             aria-label="${label} filter"
+            aria-activedescendant="${this._dropdownOpen && this._focusedIndex >= 0 ? `entity-option-${this._focusedIndex}` : ''}"
             @click=${() => this._toggleDropdown()}
             @keydown=${this._handleDropdownKeyDown}>
             <span>${triggerText}</span>
@@ -1185,7 +1183,7 @@ describe('BlocksEventTrail', () => {
         bubbles: true,
         composed: true,
         detail: {
-          selectedChips: new Set(['EVENT']),
+          selectedChips: ['EVENT'],
           selectedEntity: null,
           dateFrom: '',
           dateTo: '',
@@ -1209,7 +1207,7 @@ describe('BlocksEventTrail', () => {
         bubbles: true,
         composed: true,
         detail: {
-          selectedChips: new Set(),
+          selectedChips: [],
           selectedEntity: 'alice',
           dateFrom: '',
           dateTo: '',
@@ -1295,17 +1293,12 @@ import { DataSourceMixin } from '@casehubio/pages-component';
 import { fromRows } from '@casehubio/pages-data';
 import type { TypedDataSet, TypedRow, ColumnId, ColumnType } from '@casehubio/pages-data';
 import type { TableColumnConfig, ColumnRenderer } from '@casehubio/pages-table';
-import type { FilterState } from '@casehubio/pages-filter-bar';
+import { EMPTY_FILTER_STATE, type FilterState } from '@casehubio/pages-filter-bar';
 import type { DataSource, DataSink } from '@casehubio/pages-data';
 import '@casehubio/pages-table';
 import '@casehubio/pages-filter-bar';
 
-export interface ColDef<R = unknown> {
-  readonly id: ColumnId;
-  readonly name?: string;
-  readonly type: ColumnType;
-  readonly getValue: (row: R) => unknown;
-}
+type ColDef = Parameters<typeof fromRows>[1][number];
 
 @customElement('blocks-event-trail')
 export class BlocksEventTrail extends DataSourceMixin(LitElement) {
@@ -1322,12 +1315,7 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
   @property({ type: Object }) getRowKey?: (row: TypedRow) => string;
 
   @state() private _rawEntries: unknown[] = [];
-  @state() private _filterState: FilterState = {
-    selectedChips: new Set(),
-    selectedEntity: null,
-    dateFrom: '',
-    dateTo: '',
-  };
+  @state() private _filterState: FilterState = EMPTY_FILTER_STATE;
   @state() private _filteredDataSet?: TypedDataSet;
   @state() private _expandedKey: string | null = null;
 
@@ -1351,6 +1339,11 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
               this._rawEntries = entries;
               const dataset = fromRows(entries, this.columnDefs);
               sink.apply({ type: 'snapshot', dataset });
+              this._applyFilters();
+              this.dispatchEvent(new CustomEvent('data-loaded', {
+                bubbles: true, composed: true,
+                detail: { entries },
+              }));
             })
             .catch(err => {
               if (signal.aborted || err.name === 'AbortError') return;
@@ -1377,6 +1370,10 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
       this._rawEntries = this.data;
       this.dataSet = fromRows(this.data, this.columnDefs);
       this._applyFilters();
+      this.dispatchEvent(new CustomEvent('data-loaded', {
+        bubbles: true, composed: true,
+        detail: { entries: this.data },
+      }));
     }
   }
 
@@ -1411,8 +1408,8 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
       : undefined;
 
     const filtered = this._rawEntries.filter(entry => {
-      if (this._filterState.selectedChips.size > 0 && chipGetter) {
-        if (!this._filterState.selectedChips.has(String(chipGetter(entry)))) return false;
+      if (this._filterState.selectedChips.length > 0 && chipGetter) {
+        if (!this._filterState.selectedChips.includes(String(chipGetter(entry)))) return false;
       }
       if (this._filterState.selectedEntity && entityGetter) {
         if (String(entityGetter(entry)) !== this._filterState.selectedEntity) return false;
@@ -1449,7 +1446,10 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
 
   override render() {
     if (this.loading) return html`<div class="loading" aria-busy="true">Loading...</div>`;
-    if (this.error) return html`<div class="error" role="alert">${this.error}</div>`;
+    if (this.error) return html`<div class="error" role="alert">
+      <p>${this.error}</p>
+      <button @click=${() => this.syncEndpoint()}>Retry</button>
+    </div>`;
 
     const hasFilters = this.chipField || this.chipValues || this.entityField || this.showDateRange;
     const activeDataSet = this._filteredDataSet ?? this.dataSet;
@@ -1475,6 +1475,7 @@ export class BlocksEventTrail extends DataSourceMixin(LitElement) {
         detailMode="single"
         .expandedDetailKeys=${this._expandedKey ? [this._expandedKey] : []}
         client-sort
+        client-filter
         @detail-change=${this._handleDetailChange}
       ></pages-table>
     `;
@@ -1566,6 +1567,7 @@ override render(): TemplateResult {
       .getRowDetail=${this._getRowDetail}
       .getRowKey=${(row: TypedRow) => row.text(ID_COL)}
       @detail-change=${this._handleDetailChange}
+      @data-loaded=${this._handleDataLoaded}
     ></blocks-event-trail>
   `;
 }
@@ -1585,16 +1587,43 @@ private _buildLedgerEndpoint(): string | undefined {
 
 Remove `entries` DataSourceAdapter — the component no longer manages entry fetching.
 
-The refactored component keeps its own `_entries` array populated via a `@entries-loaded` event listener on `blocks-event-trail` (or via the `_getRowDetail` callback which receives `TypedRow`). Since `_getRowDetail` already receives `TypedRow` and the attestation fetch uses `entryId` from the row, the `_entries` array is only needed if `renderEntryPayload` is used. For backward compat, store entries from the event-trail's data.
+The refactored component listens for the `data-loaded` custom event from `blocks-event-trail` to receive raw `LedgerEntry[]`. This is needed because `_getRowDetail` accesses raw entry objects for attestation rendering and `renderEntryPayload`:
+
+```typescript
+private _handleDataLoaded(e: CustomEvent<{ entries: unknown[] }>): void {
+  this._entries = e.detail.entries as LedgerEntry[];
+}
+```
+
+Add `@data-loaded=${this._handleDataLoaded}` to the `<blocks-event-trail>` element in the render method.
 
 - [ ] **Step 3: Run existing regression tests**
 
 Run: `yarn workspace @casehubio/blocks-ui-audit-trail-viewer run test`
 Expected: Tests pass (verify filter, verification banner, attestation tests still work after refactor)
 
-- [ ] **Step 4: Fix any broken tests, update for new DOM structure**
+- [ ] **Step 4: Fix broken tests — shadow DOM query migration**
 
-Tests that query for `.filter-controls`, `.chip`, or `select` elements will need updating to query through `blocks-event-trail > pages-filter-bar` shadow DOM instead.
+Tests that query for `.filter-controls`, `.chip`, or `select` elements will break — these now live inside nested shadow DOMs. Migration pattern:
+
+```typescript
+// Before (direct shadow DOM query):
+const chip = el.shadowRoot!.querySelector('.chip');
+
+// After (nested shadow DOM traversal):
+const eventTrail = el.shadowRoot!.querySelector('blocks-event-trail');
+const filterBar = eventTrail?.shadowRoot?.querySelector('pages-filter-bar');
+const chip = filterBar?.shadowRoot?.querySelector('[role="checkbox"]');
+```
+
+Key tests to update:
+- Filter chip toggle tests → query through `blocks-event-trail > pages-filter-bar`
+- Actor dropdown tests → same nested query path
+- Date range input tests → same nested query path
+- Table rendering tests → query through `blocks-event-trail > pages-table`
+- Verification banner tests → still direct (stays in audit-trail-viewer)
+- Attestation tests → still direct (stays in audit-trail-viewer)
+- `data-loaded` event test → new test: verify `_entries` populated after event
 
 - [ ] **Step 5: Verify build**
 
