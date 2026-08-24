@@ -1,12 +1,18 @@
 # Session Handover — casehub-pages
 
-**Branch:** `issue-294-server-examples-tab`
-**Issue:** #294 — server-dependent examples tab in showcase gallery
-**Date:** 2026-08-21
+**Branch:** `issue-334-dsl-and-scenario`
+**Slot:** 152 (pages + examples/helpdesk)
+**Date:** 2026-08-24
 
-## Cross-repo commits (from blocks-ui session)
+## Last Session
 
-- `997c44fb` — fix(graph-renderer): top-left anchored fitView with custom fit button (Closes #339)
-- `aea5558d` — fix(graph-renderer): reactive bounds-based fit replaces timer delay (Refs #339)
+Completed 6 DSL and scenario engine issues: mutableRestSource re-export (#335), schemaForm builder (#334, moved FieldSchema/SchemaFormProps to pages-component), actionButton builder (#336), formScope composable form layout (#337, new layout type with blur validation), RestStep for REST-only scenario consumers (#356, Java sealed interface + parser + dispatcher), and spotlight ARIA-targeted callout overlay (#357, browser-side clip-path overlay with dismiss). Created narrated helpdesk demo scenarios using all three new capabilities. Attempted to run the full helpdesk app end-to-end but hit a CDI wiring failure in `casehubio/examples/helpdesk` — `TicketCreationHandler` can't inject `classifier` because `DemoTicketClassifier` is `@Vetoed`. Filed #358 for the integration work.
 
-Both commits on branch `issue-294-server-examples-tab`. Replace centered ReactFlow fitView with reactive top-left anchored fit using store subscription for node measurement changes. Custom fit button replaces default centered fit.
+## Immediate Next Step
+
+Fix the helpdesk CDI issue in `casehubio/examples/helpdesk`, start the app, and verify the scenario engine drives the demo end-to-end with spotlight overlays, REST steps, and the scenario controller UI. The slot covers both repos — pages for platform code, examples/helpdesk for the consumer app.
+
+## Cross-Module
+
+**Blocking** (helpdesk app needs pages-scenario with RestStep):
+- `casehub-pages-scenario` — RestStep must be published as SNAPSHOT for helpdesk pom.xml to resolve (gates examples#helpdesk) · XS · Low
