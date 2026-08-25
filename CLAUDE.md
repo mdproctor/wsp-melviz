@@ -164,10 +164,6 @@ yarn workspace @casehubio/pages-examples run serve
 
 # Dev mode with file watching
 yarn workspace @casehubio/pages-examples run dev
-
-# Server-dependent examples (requires Docker)
-# Start Quarkus demo server + Postgres, then use Server tab in gallery
-cd examples && docker compose up
 ```
 
 ## Architecture Overview
@@ -177,22 +173,20 @@ cd examples && docker compose up
 - **`packages/`** — Core TypeScript libraries for dashboard rendering
 - **`components/`** — Iframe-isolated React microfrontend visualization components
 - **`webapp/`** — Webpack orchestrator; assembles final application bundle
-- **`examples/`** — Interactive dashboard examples gallery (Client tab: static; Server tab: requires `docker compose up`)
-- **`examples/server/`** — Quarkus demo server for push WebSocket, event replay, persistence demos
+- **`examples/`** — Interactive dashboard examples gallery
 - **`_legacy/`** — Former Java/GWT core (reference only, not built)
 
 ### Package Overview
 
 **Core Packages** (`packages/`):
-- `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. `pulseAnimation` (CSS keyframe with prefers-reduced-motion). Must build before `pages-viz`.
-- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection). Group extraction (`extractGroupBoundaries`, `extractGroupTree`). `SourceConnector` — data source lifecycle primitive (connect/disconnect/replace/refresh with stale-source guard). `fetchSource` (HTTP fetch → TypedDataSet via extraction pipeline), `createTypedFetchSource` (typed fetch with custom handler callback), `EMPTY_DATASET` constant, `TrendPoint`/`extractTrendPoints` (time-series extraction from TypedDataSet).
-- `@casehubio/pages-ui-components` — Primitive UI web components: `PagesInput`, `PagesSelect`, `PagesTextarea`, `PagesCheckbox`, `PagesButton`, `PagesBadge`, `PagesStatusDot`. `PagesConfirmDialog` (modal confirmation with reason textarea, focus trap, 3 variants). `renderSparkline` (SVG sparkline with gradient fill). `renderPropertyTree`/`propertyTreeStyles` (recursive JSON property renderer).
+- `@casehubio/pages-ui-tokens` — OKLCH 12-step design tokens: colour scales, spacing, typography, elevation, motion, radius. Theme generation and injection. Must build before `pages-viz`.
+- `@casehubio/pages-data` — DataSet model, operations engine, external data extraction, JSONata. Push wire protocol (`EventConnection`, `PushSource`, `WebSocketSource`). General-purpose `SSEManager` (connection pooling, named event support, reconnection). Group extraction (`extractGroupBoundaries`, `extractGroupTree`). `SourceConnector` — data source lifecycle primitive (connect/disconnect/replace/refresh with stale-source guard).
 - `@casehubio/pages-ui` — YAML parser, DashBuilder backward compat, component model
-- `@casehubio/pages-viz` — Web Component chart/grid-table/metric wrappers (ECharts + `@drdreo/heatmap`). `PagesHeatmapChart` (`pages-heatmap-chart`, type `heatmap-chart`) — ECharts grid heatmap with visualMap color scale. `PagesTreemapChart` (`pages-treemap-chart`, type `treemap-chart`) — ECharts treemap (flat + hierarchical). `PagesDensityHeatmap` (`pages-density-heatmap`, type `density-heatmap`) — spatial density via `@drdreo/heatmap`. `PagesGridTable` (`pages-grid-table`, type `grid-table`) — lightweight information grid with togglable column/row headers (cross-matrix support) and per-column cell display modes (text, boolean, color, badge, number). Builder: `gridTable()`. `PagesEventTimeline` (`pages-event-timeline`, type `event-timeline`) — strategy-pattern event list with vertical/horizontal/compact renderers, node expansion, category filtering. Static strategy registry via `PagesEventTimeline.registerStrategy()`. Builder: `eventTimeline()`.
-- `@casehubio/pages-component` — CSS grid layout renderer, interactive containers, `DataSourceController` (Declaration + VizTarget, delegates lifecycle to `SourceConnector`), `createStandaloneConnector` (wires controller + connector + DataSetManager for non-pipeline use). `DataSourceAdapter` (Lit ReactiveController wrapping DataSourceController), `DataSourceMixin` (Lit mixin with endpoint property, automatic fetch lifecycle), `EventStreamController` (Lit ReactiveController wrapping EventStream), `SharedTimerController` (global 1s timer with visibility pause/subscribe/unsubscribe), `TrendSourceMixin` (Lit mixin for time-series trend data with inline/DataSource modes)
+- `@casehubio/pages-viz` — Web Component chart/grid-table/metric wrappers (ECharts + `@drdreo/heatmap`). `PagesHeatmapChart` (`pages-heatmap-chart`, type `heatmap-chart`) — ECharts grid heatmap with visualMap color scale. `PagesTreemapChart` (`pages-treemap-chart`, type `treemap-chart`) — ECharts treemap (flat + hierarchical). `PagesDensityHeatmap` (`pages-density-heatmap`, type `density-heatmap`) — spatial density via `@drdreo/heatmap`. `PagesGridTable` (`pages-grid-table`, type `grid-table`) — lightweight information grid with togglable column/row headers (cross-matrix support) and per-column cell display modes (text, boolean, color, badge, number). Builder: `gridTable()`.
+- `@casehubio/pages-component` — CSS grid layout renderer, interactive containers, `DataSourceController` (Declaration + VizTarget, delegates lifecycle to `SourceConnector`), `createStandaloneConnector` (wires controller + connector + DataSetManager for non-pipeline use)
 - `@casehubio/pages-primitives` — Lit-dependent UI primitives: a11y mixins (LiveRegionMixin, FocusTrapMixin, RovingTabindexMixin, KeyboardShortcutMixin). Depends on `lit`. Migrated from blocks-ui-core in blocks-ui#48.
 - `@casehubio/pages-table` — `PagesDataTable` (`pages-data-table`, type `data-table`) — interactive data table: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility (`hiddenColumns`), multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation, native `groupBy` (interleaved group headers). Builder: `dataTable()`. Depends on `lit`. Migrated from blocks-ui in blocks-ui#48.
-- `@casehubio/pages-filter-bar` — Standalone filter bar: type chips (auto-extracted or explicit), custom entity dropdown with keyboard navigation, date range inputs. `FilterState` interface, `filter-change` event, `EMPTY_FILTER_STATE` constant. ARIA toolbar with combobox/checkbox patterns. Depends on `lit`, `pages-data`.
+- `@casehubio/pages-aria` — ARIA-based browser automation for scenario demos. Tree walker, command executor (`click`, `fill`, `select`, `assertState`, `waitFor`), scenario handler (push wire dispatch), visual feedback (highlights, typing animation), YAML viewer component with syntax highlighting and position tracking, scenario controller component (compact overlay, transport controls, dock/undock, detach). Depends on `lit`, `yaml`.
 - `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
 
 **Iframe Component API** (`packages/`):
@@ -208,6 +202,21 @@ cd examples && docker compose up
 **Backend (Java)** (`backend/`):
 - `casehub-pages-push` — Typed wire protocol SDK: `PushMessage` (server→client builders), `PushRequest` (sealed client→server parser with ack/error correlation), `TopicRegistry` (wildcard-aware connection tracking), `EventStore` SPI + `InMemoryEventStore` (bounded per-topic event replay). jackson-core only, no Quarkus.
 - `casehub-pages-push-runtime` — CDI producers for EventBroadcaster, TopicRegistry, EventStore. @DefaultBean InMemoryEventStore with configurable capacity. Consumer provides SessionSender. Quarkus Arc, no JPA.
+
+### J2CL Compatibility (backend Java)
+
+Backend Java modules are written to be J2CL-transpilable (casehub-pages#344). Core logic must avoid JVM-only constructs so J2CL can compile it to JS for browser-only and Node.js deployment modes.
+
+**In core logic modules** (scenario, push protocol types, orchestrator):
+- Use records and sealed interfaces (J2CL handles these)
+- No reflection (`java.lang.reflect`) — use interface dispatch
+- No CDI annotations in logic — keep `@ApplicationScoped`/`@Inject` on thin adapter classes
+- No Jackson directly — use `JsonReader`/`JsonWriter` SPI (extraction pending)
+- No `ConcurrentHashMap` — use plain `HashMap`; JVM adapters add concurrency
+- No `Thread`, `Lock`, `synchronized` — keep concurrency in SPI impls
+- Prefer `List.of()`, `Map.of()`, `Map.copyOf()` — immutable collections J2CL supports
+
+**CDI adapters and JVM-only code** (push-runtime, REST resources) are exempt — they don't transpile.
 
 ### Data Flow
 
