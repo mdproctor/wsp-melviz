@@ -38,8 +38,8 @@ One system. Mode transitions are `rootContainer.setLayout()`. DnD lives in the f
 
 | Layer | Responsibility | State |
 |-------|---------------|-------|
-| **Container** | Entry lifecycle, layout delegation, toolbar, state capture | entries array |
-| **LayoutStrategy** | Rendering, interaction, layout-specific behavior | strategy closure |
+| **Container** | Entry lifecycle (`addEntry`, `removeEntry`, `detachEntry`), layout delegation, toolbar, state capture | entries array |
+| **LayoutStrategy** | Rendering, interaction, layout-specific behavior; implements `detachEntry`, optional `hideEntry`/`showEntry` | strategy closure |
 | **Shared primitives** | Stateless DOM creation, pure math | none |
 
 SETTLED: No facade layer — consumers migrate to the Container API directly (revised from D2)
@@ -74,8 +74,26 @@ The free-layout strategy grows to absorb all frame interaction:
 - **Tab drag between entries** — move tabs from one entry's child container to another
 - **Cross-entry drop** — drop tab onto another entry's tab strip
 - **Edge split preview** — visual overlay showing where the split will land
-- **`detachEntry(key): Entry | null`** — removes an entry from the strategy WITHOUT disposing its content. Unmounts `childContainer` (detaches from DOM) but does not dispose it. Does not call `entry.contentDispose`. Returns the live entry for transfer to another container. This is the safe primitive for DnD entry transfer — `removeEntry` calls `contentDispose` which destroys child containers (verified: `wrapContentFactory` sets `dispose: () => { child.dispose(); }` for entries with `childContainer`).
 - **`hideEntry(key)` / `showEntry(key)`** — entry visibility for detach support. Added as optional methods on the `LayoutStrategy` interface so the detach handler can call `rootContainer.organiser.hideEntry(key)` without type-casting. Each strategy implements meaningfully: free-layout removes/re-adds the frame element from DOM (preserving entryState); tabbed removes/re-adds the tab button; accordion collapses and locks the section.
+
+### Interface additions: `detachEntry` on Container and LayoutStrategy
+
+`detachEntry(key): Entry | null` is added to both the `Container` interface and the `LayoutStrategy` interface, alongside `removeEntry`. The free-layout strategy orchestrates DnD, but calls `detachEntry` on **child containers** — which are typically tabbed, accordion, or split. Every strategy must implement it.
+
+Semantics (identical across all strategies):
+- Removes the entry from the strategy's rendering and entries array
+- Does NOT call `entry.contentDispose` — content survives for transfer
+- Does NOT fire `onEntryClose` or `onCollapse` callbacks — the caller manages post-transfer cleanup
+- If `entry.childContainer` exists, calls `childContainer.unmount()` (detach from DOM) but does NOT dispose it
+- Returns the live entry (or null if not found)
+
+Per-strategy DOM cleanup differs:
+- **Tabbed:** removes tab button from strip, clears active content area
+- **Accordion:** removes section element
+- **Split:** removes pane element
+- **Free-layout:** removes frame element, clears entryState/frameElements/zOrder tracking
+
+`Container.detachEntry(key)` delegates to `this.organiser.detachEntry(key)`. This is the safe primitive for DnD entry transfer — `removeEntry` calls `contentDispose` which destroys child containers (verified: `wrapContentFactory` sets `dispose: () => { child.dispose(); }` for entries with `childContainer`).
 
 ### DnD Architecture
 
@@ -93,9 +111,9 @@ Parent free-layout strategy
     → outside all entries but inside host: show new-entry preview
     → outside host bounds entirely: fire pages-tab-escaped   [depth escape]
   → pointerup: execute drop
-    → cross-entry: detachEntry from source, addEntry to target
-    → edge split: detachEntry + childContainerFactory + refreshEntry
-    → new entry: detachEntry + childContainerFactory at drop position
+    → cross-entry: detachEntry from source, addEntry to target, collapse if source empty
+    → edge split: detachEntry + childContainerFactory + refreshEntry, collapse if source empty
+    → new entry: detachEntry + childContainerFactory at drop position, collapse if source empty
 ```
 
 All spatial detection uses `entryState` (positions, sizes) already in the strategy. No external coordinator needed.
@@ -135,6 +153,25 @@ container.addEntry(newEntry);
 ```
 
 This replaces the engine's `createFrame` + backend's `renderFrame`. The `childContainerFactory` corresponds to the backend's current `createLeafContainer(frameKey, entries)` function, which captures the same configuration in its closure.
+
+### Post-transfer empty-container collapse
+
+After every `detachEntry` transfer, the source child container may be empty. An empty container must be collapsed to prevent orphaned empty containers in the tree:
+
+```
+if (sourceContainer.entries.length === 0) {
+  const parentInfo = findParentOf(rootContainer, sourceContainer);
+  if (parentInfo) {
+    // Nested: remove the parent entry that held this empty container
+    parentInfo.container.removeEntry(parentInfo.entry.key);
+  } else {
+    // Root-level: remove the free-layout entry entirely
+    rootContainer.removeEntry(entryKeyForSource);
+  }
+}
+```
+
+This corresponds to the backend's current `handleEmptyLeaf(frameKey, leafContainer)` function, which uses `findParentOf` (from `container-tree-ops.ts`) to locate and remove empty containers. The same `findParentOf` function is reused — no new tree traversal code needed.
 
 ## Persistence
 
