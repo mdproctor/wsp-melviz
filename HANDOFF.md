@@ -10,7 +10,7 @@ Massive session implementing #365 show-markdown end-to-end, then designing and b
 
 ## Immediate Next Step
 
-Fresh session needed for regression testing. Start by resetting the helpdesk server, hard-refreshing the browser, and stepping through the full scenario to verify: (1) Start Demo works, (2) modal slides pause and show correctly with TOC, (3) Guide tab receives content, (4) spotlights don't dim the controller/viewer, (5) click-to-advance works. If regressions are found, the unit tests (167 passing) constrain the fix space — the issues are integration/deployment, not logic.
+Fresh session needed for regression testing. Kill ALL server processes on 8090, delete `target/`, rebuild, and use an **incognito browser** (ES modules cache aggressively — even Cmd+Shift+R doesn't clear them). Added `Cache-Control: no-store` filter for `/scenario/*` paths in application.properties — verify the header appears after restart. Then step through the full scenario to verify: (1) Start Demo works, (2) modal slides pause and show 2-slide deck with dots/TOC, (3) Guide tab receives content, (4) spotlights don't dim the controller/viewer, (5) click-to-advance works.
 
 ## Known Issues
 
