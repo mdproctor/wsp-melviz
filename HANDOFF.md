@@ -14,6 +14,7 @@ Continue iterating on the helpdesk demo. Open items: outline type icons need ser
 
 ## Known Issues
 
+- **Work item → case context feedback broken** — completing a work item via REST (`PUT /workitems/{id}/complete`) does not apply the humanTask `outputMapping` back to the case context. The case stays at `TRIAGED` instead of advancing to `RESOLVED`, so the `notify-resolution` binding never fires and the Notifications panel stays empty. Filed as casehubio/engine#988. The helpdesk demo fails at "Spotlight the resolution" because of this.
 - **ES module caching** — `controller.js` import now uses `import('...?_=' + Date.now())` for cache busting. Works but re-parses the module on every load. A content-hash filename would be better long-term.
 - **Controller push state** — the controller's `ScenarioConnectionController` creates its own connection before the module script runs. The module script polls for `_conn._ownConnection` and creates the handler on it. Works reliably but is fragile — accessing internal properties.
 - **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
