@@ -100,27 +100,48 @@ indicator, dot navigation, Next button.
 **Flow:**
 
 1. First modal step arrives in `executeAriaCommand`
-2. Handler checks `stepQueue` for consecutive modal steps and pulls them
-   all (deck look-ahead from the queue, not the outline)
-3. All pulled steps' step-results are sent back to the server immediately
-   (the steps completed from the server's perspective)
-4. Handler creates the overlay, renders slide 1
-5. **Next** advances to next slide (client-side, no server roundtrip)
-6. Last slide's Next dismisses the overlay
-7. **Escape** or **Back on slide 1** dismisses the entire deck
+2. Handler checks the scenario outline for consecutive modal steps at the
+   current position — determines deck size (N) and slide labels
+3. Handler creates the overlay, renders slide 1, shows "Slide 1 of N"
+4. Handler sets `_activeDeck` state on the handler instance
+5. Step-result sent, returns void (non-blocking)
+6. Server dispatches the next step (next modal slide)
+7. Handler's `executeAriaCommand` detects `_activeDeck` is set and the
+   incoming step is `display: modal` — updates the overlay content to the
+   next slide instead of creating a new overlay
+8. **Next** button dispatches step/resume via the eventTarget to advance
+   the scenario (triggers server to dispatch the next step)
+9. Last slide's Next or a non-modal step arriving → dismisses overlay,
+   clears `_activeDeck`
+10. **Escape** or **Back on slide 1** → dismisses overlay, clears
+    `_activeDeck`, remaining deck steps execute silently (no overlay)
 
 The modal returns void (non-blocking from `executeSequence`'s perspective).
 The overlay manages its own lifecycle. When dismissed, it dispatches
 `scenario-narrative-dismiss` for consistency.
 
-**Deck look-ahead:** The handler peeks at `stepQueue` for consecutive
-show-markdown commands with `display: modal`. It shifts them all out of
-the queue, builds the deck, and sends step-results for each. This is
-simpler than outline-based look-ahead — the queue already has the steps.
+**Deck metadata from outline:** The outline (already fetched by the
+controller) provides step labels and action types. The handler receives
+the outline data via a shared reference or re-fetches it. When a modal
+step arrives, it scans forward in the outline from the current position
+to count consecutive `show-markdown` + `display: modal` steps. This
+gives the mini controller its total count and slide labels without
+requiring the server to batch steps.
 
-**Correction from D7:** The outline look-ahead was the original decision,
-but queue-based look-ahead is simpler — the dispatch already groups steps
-into the queue. The outline approach is fallback if steps aren't pre-queued.
+**Single-slide deck:** When N=1, simplify the UI — no dot navigation,
+just content with a dismiss button. The mini controller is omitted.
+
+**Handler state:**
+
+```typescript
+interface ActiveDeck {
+  total: number;
+  current: number;
+  labels: string[];
+  overlay: HTMLElement;
+}
+let _activeDeck: ActiveDeck | null = null;
+```
 
 ### Outline Type Icons
 
@@ -164,14 +185,24 @@ PagesScenarioYamlViewer (Guide tab)
 ### Modal mode
 
 ```
-YAML step (display: modal)
+First YAML step (display: modal)
   → scenario-handler.ts executeAriaCommand
-  → peek stepQueue for consecutive modal steps
-  → shift all modal steps, send step-results for each
-  → create full-screen overlay with deck
-  → user clicks Next → advance slide
-  → last Next or Escape → dismiss overlay
-  → return void (non-blocking)
+  → check outline for consecutive modal steps → deck size N
+  → create overlay, render slide 1, set _activeDeck
+  → return void (non-blocking), send step-result
+
+Subsequent modal steps (while _activeDeck is set)
+  → executeAriaCommand detects _activeDeck
+  → update overlay content to next slide
+  → return void, send step-result
+
+Next button in mini controller
+  → dispatch step/resume on eventTarget
+  → server dispatches next step → cycle continues
+
+Non-modal step arrives (or Escape)
+  → dismiss overlay, clear _activeDeck
+  → execute non-modal step normally
 ```
 
 ## Files Changed
