@@ -14,7 +14,7 @@ Fresh session needed for regression testing. Kill ALL server processes on 8090, 
 
 ## Known Issues
 
-- **Browser module caching** — the helpdesk serves `controller.js` as a static resource imported via ES module. Browser caches the module aggressively. Hard refresh or incognito required after updates. Consider adding a build hash to the filename.
+- **Browser module caching** — the helpdesk serves `controller.js` as a static resource imported via ES module. Browser caches the module aggressively — even Cmd+Shift+R doesn't clear ES module cache. Use incognito window after updates. Attempted `quarkus.http.filter` for `Cache-Control: no-store` but that property doesn't exist in this Quarkus version. Need a JAX-RS `@Provider` `ContainerResponseFilter` to add the header, or a build hash in the filename.
 - **Controller push state** — the controller's `ScenarioConnectionController` creates its own WebSocket before the module script sets the shared `eventTarget`. State updates sometimes don't reach the controller UI. The fix in `_ensureConnection` (reuse `opts.eventTarget` when available) works when the module script runs before `firstUpdated`, but timing varies.
 - **Outline icons** — the `ACTION_ICONS` map and `_renderNode` icon code are in place, but the server's `/scenario/outline` endpoint doesn't return an `action` field on leaf nodes. Icons show as ○ until the Java endpoint is extended.
 - **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
