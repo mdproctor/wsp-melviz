@@ -62,7 +62,31 @@
 - Inline SVG — pixel-perfect but more code
 - CSS letter badges — minimal but less recognizable
 **Rationale:** Lightweight, no asset dependencies. Icons replace ○ for pending steps; ✓ and ● stay for completed/current.
-**Trade-offs:** Unicode rendering varies across OS. Acceptable for dev-facing tooling.
+**Trade-offs:** Unicode rendering varies across OS. Acceptable for dev-facing tooling. Unmapped types (select, expand, collapse, wait, assert, ready, navigate) keep ○ as fallback.
 **Sources:** User direction
+**Exploration:** quick
+**Status:** captured
+
+## D7: Deck dispatch strategy
+
+**Choice:** Outline look-ahead — browser uses the already-fetched scenario outline to determine deck boundaries
+**Alternatives:**
+- Server batch dispatch — more accurate but requires orchestrator changes
+- Progressive deck — simplest but no total count in mini controller
+**Rationale:** The outline is already fetched by the controller. When a modal step arrives, the browser scans consecutive show-markdown labels in the outline to determine deck size. No server changes needed.
+**Trade-offs:** Relies on outline labels matching step names. If outline isn't loaded yet, deck shows without total (progressive fallback).
+**Depends on:** D5 (auto-grouping definition)
+**Sources:** Decision review finding — D4/D5 tension
+**Exploration:** quick
+**Status:** captured
+
+## D8: Modal escape behavior
+
+**Choice:** Escape closes the modal deck entirely and skips remaining slides, resuming from the next non-modal step
+**Alternatives:**
+- No escape — must click through all slides
+**Rationale:** Clean exit for users who don't want to read slides. Forcing engagement is frustrating.
+**Trade-offs:** Users might accidentally dismiss. Low risk — Escape is intentional.
+**Sources:** Decision review finding
 **Exploration:** quick
 **Status:** captured
