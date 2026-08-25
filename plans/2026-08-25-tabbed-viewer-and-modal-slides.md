@@ -611,23 +611,33 @@ deck. Single-slide decks show simplified UI.
 
 - [ ] **Step 1: Write failing test — modal show-markdown creates overlay**
 
+Use the same dispatch pattern as the existing scenario-handler tests:
 ```typescript
-it('show-markdown with display: modal creates full-screen overlay', () => {
+it('show-markdown with display: modal creates full-screen overlay', async () => {
   const eventTarget = new EventTarget();
-  const handler = createTestHandler(eventTarget);
+  const conn = createMockConnection();
+  const handler = createScenarioHandler(conn, eventTarget);
   
-  handler.executeCommand({
-    action: 'show-markdown',
-    value: '## Slide 1',
-    state: { display: 'modal', content: '## Slide 1' },
+  eventTarget.dispatchEvent(new CustomEvent('scenario-dispatch', {
+    detail: {
+      op: 'dispatch-sequence',
+      sessionId: 'test-session',
+      speed: 1, paused: false,
+      steps: [{
+        name: 'slide-1', label: 'Slide 1',
+        commands: [{ action: 'show-markdown', value: '## Slide 1', state: { display: 'modal', content: '## Slide 1' } }],
+      }],
+    },
+  }));
+  
+  await vi.waitFor(() => {
+    const overlay = document.querySelector('.scenario-modal-overlay');
+    expect(overlay).toBeTruthy();
+    expect(overlay!.querySelector('h2')!.textContent).toBe('Slide 1');
   });
   
-  const overlay = document.querySelector('.scenario-modal-overlay');
-  expect(overlay).toBeTruthy();
-  expect(overlay!.querySelector('h2')!.textContent).toBe('Slide 1');
-  
-  // Cleanup
-  overlay!.remove();
+  document.querySelector('.scenario-modal-overlay')?.remove();
+  handler.dispose();
 });
 ```
 
@@ -826,49 +836,59 @@ function showModalDeck(
 ```
 
 Note: The `showModalDeck` function receives pre-collected slides. The
-`executeAriaCommand` caller needs to peek at `stepQueue` for consecutive
-modal steps. This requires passing `stepQueue` into the handler or
-restructuring. For this task, the deck look-ahead happens in
-`executeSequence` — when a modal step is detected, it collects
-consecutive modal steps from the queue before calling `showModalDeck`.
+deck detection happens BEFORE the command loop in `executeSequence` —
+when a step's first command is `show-markdown` with `display: modal`,
+skip the normal command execution path entirely.
 
-Update `executeSequence` to handle modal deck collection:
+Update `executeSequence` to handle modal deck collection — add this
+block BEFORE the `for (const cmd of step.commands)` loop:
+
 ```typescript
-// Inside the step execution loop, before calling executeAriaCommand:
-for (const cmd of step.commands) {
-  if (cmd.action === 'show-markdown') {
-    const props = cmd.state ?? cmd.data ?? {};
-    if ((props.display as string) === 'modal') {
-      const slides = [{ markdown: cmd.value ?? (props.content as string) ?? '', label: step.label ?? step.name }];
-      // Peek ahead in stepQueue for consecutive modal steps
-      while (stepQueue.length > 0) {
-        const nextStep = stepQueue[0];
-        const nextCmd = nextStep.commands[0];
-        if (nextCmd?.action !== 'show-markdown') break;
-        const nextProps = nextCmd.state ?? nextCmd.data ?? {};
-        if ((nextProps.display as string) !== 'modal') break;
-        stepQueue.shift();
-        slides.push({
-          markdown: nextCmd.value ?? (nextProps.content as string) ?? '',
-          label: nextStep.label ?? nextStep.name,
-        });
-        sendStepResult(connection, sessionId!, nextStep.name, true, null);
-      }
-      showModalDeck(slides, eventTarget);
-      continue; // skip normal executeAriaCommand
+// In executeSequence, after shifting the step from the queue:
+const step = stepQueue.shift()!;
+
+// Modal deck detection — before the command loop
+const firstCmd = step.commands[0];
+if (firstCmd?.action === 'show-markdown') {
+  const firstProps = firstCmd.state ?? firstCmd.data ?? {};
+  if ((firstProps.display as string) === 'modal') {
+    const slides = [{
+      markdown: firstCmd.value ?? (firstProps.content as string) ?? '',
+      label: step.label ?? step.name,
+    }];
+    // Look ahead: consume consecutive modal steps from queue
+    while (stepQueue.length > 0) {
+      const nextStep = stepQueue[0];
+      const nextCmd = nextStep.commands[0];
+      if (nextCmd?.action !== 'show-markdown') break;
+      const nextProps = nextCmd.state ?? nextCmd.data ?? {};
+      if ((nextProps.display as string) !== 'modal') break;
+      const consumed = stepQueue.shift()!;
+      slides.push({
+        markdown: nextCmd.value ?? (nextProps.content as string) ?? '',
+        label: consumed.label ?? consumed.name,
+      });
+      // Send step-result for each consumed step
+      sendStepResult(connection, sessionId!, consumed.name, true, null);
     }
-  }
-  // Normal path
-  try {
-    const result = executeAriaCommand(cmd, speed, paused, calloutMsPerChar, eventTarget);
-    if (result) await result;
-  } catch (err) {
-    stepOk = false;
-    stepError = (err as Error).message;
-    break;
+    showModalDeck(slides, eventTarget);
+    // Send step-result for the original step
+    sendStepResult(connection, sessionId!, step.name, true, null);
+    // Skip the normal command loop — continue to next step in queue
+    continue;
   }
 }
+
+// Normal path: execute commands
+let stepOk = true;
+let stepError: string | null = null;
+for (const cmd of step.commands) {
+  // ... existing command execution ...
+}
 ```
+
+This avoids the double step-result issue — the modal path sends its own
+result and `continue`s past the normal path which would send a second.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -878,66 +898,88 @@ Expected: PASS
 - [ ] **Step 5: Write test — multi-slide deck from queue**
 
 ```typescript
-it('collects consecutive modal steps into a deck', () => {
+it('collects consecutive modal steps into a deck', async () => {
   const eventTarget = new EventTarget();
-  // This test needs to verify deck collection from stepQueue
-  // Use the handler's executeSequence with multiple queued modal steps
-  // The overlay should show "Slide 1 of 2" with both slides navigable
+  const conn = createMockConnection();
+  const handler = createScenarioHandler(conn, eventTarget);
   
-  const handler = createTestHandler(eventTarget);
-  handler.dispatchSteps([
-    { name: 's1', label: 'Intro', commands: [{ action: 'show-markdown', value: '## Slide 1', state: { display: 'modal', content: '## Slide 1' } }] },
-    { name: 's2', label: 'Details', commands: [{ action: 'show-markdown', value: '## Slide 2', state: { display: 'modal', content: '## Slide 2' } }] },
-  ]);
+  eventTarget.dispatchEvent(new CustomEvent('scenario-dispatch', {
+    detail: {
+      op: 'dispatch-sequence',
+      sessionId: 'test-session',
+      speed: 1, paused: false,
+      steps: [
+        { name: 's1', label: 'Intro', commands: [{ action: 'show-markdown', value: '## Slide 1', state: { display: 'modal', content: '## Slide 1' } }] },
+        { name: 's2', label: 'Details', commands: [{ action: 'show-markdown', value: '## Slide 2', state: { display: 'modal', content: '## Slide 2' } }] },
+      ],
+    },
+  }));
   
-  const overlay = document.querySelector('.scenario-modal-overlay');
-  expect(overlay).toBeTruthy();
-  const dots = overlay!.querySelectorAll('.scenario-modal-dot');
-  expect(dots.length).toBe(2);
-  const pos = overlay!.querySelector('.scenario-modal-position');
-  expect(pos!.textContent).toBe('Slide 1 of 2');
+  await vi.waitFor(() => {
+    const overlay = document.querySelector('.scenario-modal-overlay');
+    expect(overlay).toBeTruthy();
+    const dots = overlay!.querySelectorAll('.scenario-modal-dot');
+    expect(dots.length).toBe(2);
+    const pos = overlay!.querySelector('.scenario-modal-position');
+    expect(pos!.textContent).toBe('Slide 1 of 2');
+  });
   
-  overlay!.remove();
+  document.querySelector('.scenario-modal-overlay')?.remove();
+  handler.dispose();
 });
 ```
 
 - [ ] **Step 6: Write test — Escape dismisses overlay**
 
 ```typescript
-it('Escape key dismisses modal overlay', () => {
+it('Escape key dismisses modal overlay', async () => {
   const eventTarget = new EventTarget();
-  const handler = createTestHandler(eventTarget);
+  const conn = createMockConnection();
+  const handler = createScenarioHandler(conn, eventTarget);
   
-  handler.executeCommand({
-    action: 'show-markdown',
-    value: '## Test',
-    state: { display: 'modal', content: '## Test' },
-  });
+  eventTarget.dispatchEvent(new CustomEvent('scenario-dispatch', {
+    detail: {
+      op: 'dispatch-sequence',
+      sessionId: 'test-session',
+      speed: 1, paused: false,
+      steps: [{ name: 's1', label: 'Slide', commands: [{ action: 'show-markdown', value: '## Test', state: { display: 'modal', content: '## Test' } }] }],
+    },
+  }));
   
-  expect(document.querySelector('.scenario-modal-overlay')).toBeTruthy();
+  await vi.waitFor(() => expect(document.querySelector('.scenario-modal-overlay')).toBeTruthy());
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
   expect(document.querySelector('.scenario-modal-overlay')).toBeFalsy();
+  
+  handler.dispose();
 });
 ```
 
 - [ ] **Step 7: Write test — single slide has no dots or position**
 
 ```typescript
-it('single-slide modal has no dot navigation', () => {
+it('single-slide modal has no dot navigation', async () => {
   const eventTarget = new EventTarget();
-  const handler = createTestHandler(eventTarget);
+  const conn = createMockConnection();
+  const handler = createScenarioHandler(conn, eventTarget);
   
-  handler.executeCommand({
-    action: 'show-markdown',
-    value: '## Solo',
-    state: { display: 'modal', content: '## Solo' },
+  eventTarget.dispatchEvent(new CustomEvent('scenario-dispatch', {
+    detail: {
+      op: 'dispatch-sequence',
+      sessionId: 'test-session',
+      speed: 1, paused: false,
+      steps: [{ name: 's1', label: 'Solo', commands: [{ action: 'show-markdown', value: '## Solo', state: { display: 'modal', content: '## Solo' } }] }],
+    },
+  }));
+  
+  await vi.waitFor(() => {
+    const overlay = document.querySelector('.scenario-modal-overlay');
+    expect(overlay).toBeTruthy();
+    expect(overlay!.querySelector('.scenario-modal-dots')).toBeFalsy();
+    expect(overlay!.querySelector('.scenario-modal-position')).toBeFalsy();
   });
   
-  const overlay = document.querySelector('.scenario-modal-overlay');
-  expect(overlay!.querySelector('.scenario-modal-dots')).toBeFalsy();
-  expect(overlay!.querySelector('.scenario-modal-position')).toBeFalsy();
-  
-  overlay!.remove();
+  document.querySelector('.scenario-modal-overlay')?.remove();
+  handler.dispose();
 });
 ```
 
