@@ -1,26 +1,18 @@
 # HANDOFF — casehub-pages
 
-Branch: `issue-345-recursive-container-model`
-Issue: #345 — Recursive Container model — entries as nested Containers
+Branch: `issue-367-container-toolbar-unification`
+Issue: #367, #368, #369 — Container toolbar unification + workspace as root Container
 
 ## Last Session
 
-Implemented the core recursive Container model (Entry.childContainer, containerizeEntry/flattenEntry, tree-walking refactor, persistence bridge). Then spent significant time fixing pre-existing floating workspace UX bugs exposed by testing the feature in the browser: frame resize on viewport change, toolbar position stability across mode cycles, workspace mode switching rendering real content instead of placeholder headings, and eliminating split-brain state between free-mode frames and workspace-mode containers. 20+ commits on the branch.
+Closed #345 (recursive container model — Tasks 9-15, squash, merge, push). Closed #366 (split divider resize). Implemented #367 (arrange button at all depths) and #368 (toolbar position top). Brainstormed #369 (workspace centre as root Container) — 8 decisions captured, spec written and reviewed (standard, 3 rounds, 15 issues). Implementation plan written. Started Batch 1 execution: Task 1 (layout-math.ts extracted), Task 2 (detachEntry on all strategies), Task 3 (hideEntry/showEntry on free-layout). 1019 tests pass.
 
 ## Immediate Next Step
 
-The workspace mode switching still has issues — after cycling through modes (free→tabbed→accordion→free), the Preview frame loses its tab strip toolbar actions (☰ +). The root cause: `injectStripActions` in `renderFrame` runs once at initial render but isn't re-invoked when frames are hidden/shown by `applyWorkspaceMode`. The fix needs `injectStripActions` to run after frames are shown again (in the `showFrames` path), or the strip actions need to be part of the Container's own lifecycle rather than externally injected DOM.
-
-Broader remaining work on #345:
-- Robust frame toolbar lifecycle across workspace mode switches
-- TDD for mode cycling, state preservation, toolbar persistence
-- `restoreLayout` path for containerTree (capture works, restore from persistence not wired)
-- Nest button re-injection after mode cycle round-trips
-- Frame Sandbox example fix (`free-layout` YAML alias not desugared to `free`)
+Continue plan at **Batch 2, Task 4 (pages-tab-drag-start event protocol)** — the DnD batch. This is the largest batch: tab drag events, cross-entry drop, edge splits, depth escape. Run `/work continue` to resume.
 
 ## References
 
-- Design spec: `docs/specs/issue-345-recursive-container-model/`
-- Decisions: `docs/specs/issue-345-recursive-container-model/decisions.md`
-- Plan: `plans/2026-08-23-recursive-container-model.md` (workspace)
-- Key files changed: `packages/pages-runtime/src/frame-sandbox/container.ts`, `types.ts`, `group-organiser-backend.ts`, `wire-floating-workspace.ts`, `container-toolbar.ts`, `floating-frame-engine.ts`, `floating-frame-backend.ts`, `activation.ts`
+- Spec: `specs/issue-367-container-toolbar-unification/2026-08-25-workspace-as-container-design.md`
+- Decisions: `specs/issue-367-container-toolbar-unification/decisions.md` (D1-D8)
+- Plan: `plans/2026-08-25-workspace-as-container.md`
