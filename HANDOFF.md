@@ -6,25 +6,14 @@
 
 ## Last Session
 
-Massive session implementing #365 show-markdown end-to-end, then designing and building the tabbed viewer (Source + Guide tabs), modal slide deck with progressive loading, outline type icons, and helpdesk tutorial content. Many incremental fixes to eventTarget timing, z-index layering, dock alignment, auto-pause, and browser module caching. The session accumulated regressions that need a clean verification pass.
+Implemented #365 show-markdown end-to-end, then built the tabbed viewer (Source + Guide tabs), modal slide deck with progressive loading, and helpdesk tutorial content. Extensive debugging of three root causes: (1) `executeSequence` bricking from stale push events after reload (fixed with try-finally), (2) dual WebSocket connections (fixed by reusing controller's connection via poll), (3) modal auto-pause racing with server Resume command in Play mode (fixed by removing auto-pause and using activeDeck guard). All verified in Playwright across multiple Reset cycles.
 
 ## Immediate Next Step
 
-Fresh session needed for regression testing. Kill ALL server processes on 8090, delete `target/`, rebuild, and use an **incognito browser** (ES modules cache aggressively — even Cmd+Shift+R doesn't clear them). Added `Cache-Control: no-store` filter for `/scenario/*` paths in application.properties — verify the header appears after restart. Then step through the full scenario to verify: (1) Start Demo works, (2) modal slides pause and show 2-slide deck with dots/TOC, (3) Guide tab receives content, (4) spotlights don't dim the controller/viewer, (5) click-to-advance works.
+Continue iterating on the helpdesk demo. Open items: outline type icons need server-side `action` field in `/scenario/outline` endpoint (Java change), "run through" auto-advance mode for slides (word-count timer), and blocks-ui case viewer diagram (replacing the hand-coded SVG).
 
 ## Known Issues
 
-- **Browser module caching** — the helpdesk serves `controller.js` as a static resource imported via ES module. Browser caches the module aggressively — even Cmd+Shift+R doesn't clear ES module cache. Use incognito window after updates. Attempted `quarkus.http.filter` for `Cache-Control: no-store` but that property doesn't exist in this Quarkus version. Need a JAX-RS `@Provider` `ContainerResponseFilter` to add the header, or a build hash in the filename.
-- **Controller push state** — the controller's `ScenarioConnectionController` creates its own WebSocket before the module script sets the shared `eventTarget`. State updates sometimes don't reach the controller UI. The fix in `_ensureConnection` (reuse `opts.eventTarget` when available) works when the module script runs before `firstUpdated`, but timing varies.
-- **Outline icons** — the `ACTION_ICONS` map and `_renderNode` icon code are in place, but the server's `/scenario/outline` endpoint doesn't return an `action` field on leaf nodes. Icons show as ○ until the Java endpoint is extended.
+- **ES module caching** — `controller.js` import now uses `import('...?_=' + Date.now())` for cache busting. Works but re-parses the module on every load. A content-hash filename would be better long-term.
+- **Controller push state** — the controller's `ScenarioConnectionController` creates its own connection before the module script runs. The module script polls for `_conn._ownConnection` and creates the handler on it. Works reliably but is fragile — accessing internal properties.
 - **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
-
-## What Was Built
-
-- `show-markdown` action (panel + modal display modes)
-- Tabbed YAML viewer (Source + Guide tabs) with event wiring
-- Modal slide deck: progressive loading, click/keyboard/button advance, auto-pause, scroll indicator, slide TOC
-- SVG case lifecycle diagram + fenced code block renderer + image markdown support
-- Outline type icons (code ready, needs server `action` field)
-- Bottom-aligned dock, resize snap, z-index above spotlights
-- 4 tutorial slides in helpdesk YAML (2 platform concepts, 2 work items)
