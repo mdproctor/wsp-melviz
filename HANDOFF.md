@@ -2,17 +2,18 @@
 
 **Branch:** `issue-334-dsl-and-scenario`
 **Slot:** 152 (pages + examples/helpdesk)
-**Date:** 2026-08-24
+**Date:** 2026-08-25
 
 ## Last Session
 
-Completed 6 DSL and scenario engine issues: mutableRestSource re-export (#335), schemaForm builder (#334, moved FieldSchema/SchemaFormProps to pages-component), actionButton builder (#336), formScope composable form layout (#337, new layout type with blur validation), RestStep for REST-only scenario consumers (#356, Java sealed interface + parser + dispatcher), and spotlight ARIA-targeted callout overlay (#357, browser-side clip-path overlay with dismiss). Created narrated helpdesk demo scenarios using all three new capabilities. Attempted to run the full helpdesk app end-to-end but hit a CDI wiring failure in `casehubio/examples/helpdesk` — `TicketCreationHandler` can't inject `classifier` because `DemoTicketClassifier` is `@Vetoed`. Filed #358 for the integration work.
+Implemented #363 (callout duration slider), #364 (progressive word-based fill), #365 (show-markdown action). Fixed multiple scenario engine bugs: runTo name/label mismatch, runTo speed override (now 10x not 1000x), onDispatch speed override on same-session dispatches, triggered step dispatch after runTo completion. Tuned progressive fill (5 char, 5x1 word, 6x2 word, 7x4 word, rest 5-word chunks), spotlight word-based duration (250ms/word), click delay (900ms). Set up helpdesk demo with `-Dquarkus.profile=demo` build requirement, disabled static resource caching, fixed duplicate YAML speed.
 
 ## Immediate Next Step
 
-Fix the helpdesk CDI issue in `casehubio/examples/helpdesk`, start the app, and verify the scenario engine drives the demo end-to-end with spotlight overlays, REST steps, and the scenario controller UI. The slot covers both repos — pages for platform code, examples/helpdesk for the consumer app.
+Pick up #365 end-to-end — the `show-markdown` action is implemented in the handler and narrative component but never tested with real content. Add `show-markdown` steps to the helpdesk YAML with inline or file-referenced .md content at key tutorial points. The narrative component already renders markdown; the action blocks until step/resume.
 
-## Cross-Module
+## Known Issues
 
-**Blocking** (helpdesk app needs pages-scenario with RestStep):
-- `casehub-pages-scenario` — RestStep must be published as SNAPSHOT for helpdesk pom.xml to resolve (gates examples#helpdesk) · XS · Low
+- **Push wire state broadcasting** — the controller doesn't receive `scenario:state` push events from the orchestrator. Controller state must be force-synced via REST fetch. Pre-existing, not caused by this session's changes.
+- **Helpdesk demo build** — must build with `-Dquarkus.profile=demo` for the local executor connector to activate (`@IfBuildProfile("demo")`).
+- **Helpdesk YAML duplication** — two copies exist at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
