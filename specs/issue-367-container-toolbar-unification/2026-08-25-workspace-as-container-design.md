@@ -74,7 +74,8 @@ The free-layout strategy grows to absorb all frame interaction:
 - **Tab drag between entries** — move tabs from one entry's child container to another
 - **Cross-entry drop** — drop tab onto another entry's tab strip
 - **Edge split preview** — visual overlay showing where the split will land
-- **Entry visibility** — `hideEntry(key)` / `showEntry(key)` for detach support (entry stays in entries list but frame element is hidden/removed from DOM)
+- **`detachEntry(key): Entry | null`** — removes an entry from the strategy WITHOUT disposing its content. Unmounts `childContainer` (detaches from DOM) but does not dispose it. Does not call `entry.contentDispose`. Returns the live entry for transfer to another container. This is the safe primitive for DnD entry transfer — `removeEntry` calls `contentDispose` which destroys child containers (verified: `wrapContentFactory` sets `dispose: () => { child.dispose(); }` for entries with `childContainer`).
+- **`hideEntry(key)` / `showEntry(key)`** — entry visibility for detach support. Added as optional methods on the `LayoutStrategy` interface so the detach handler can call `rootContainer.organiser.hideEntry(key)` without type-casting. Each strategy implements meaningfully: free-layout removes/re-adds the frame element from DOM (preserving entryState); tabbed removes/re-adds the tab button; accordion collapses and locks the section.
 
 ### DnD Architecture
 
@@ -92,9 +93,9 @@ Parent free-layout strategy
     → outside all entries but inside host: show new-entry preview
     → outside host bounds entirely: fire pages-tab-escaped   [depth escape]
   → pointerup: execute drop
-    → cross-entry: remove from source, add to target
-    → edge split: refreshEntry with new split container
-    → new entry: create entry at drop position
+    → cross-entry: detachEntry from source, addEntry to target
+    → edge split: detachEntry + childContainerFactory + refreshEntry
+    → new entry: detachEntry + childContainerFactory at drop position
 ```
 
 All spatial detection uses `entryState` (positions, sizes) already in the strategy. No external coordinator needed.
@@ -106,23 +107,34 @@ When free-layout containers nest (D4), each strategy only handles drags from its
 1. **Claim on intercept:** The innermost free-layout strategy receives `pages-tab-drag-start`, calls `event.stopPropagation()`, and enters drag mode. No ancestor free-layout strategy sees the event.
 
 2. **Depth escape:** If the pointer exits the inner strategy's host bounds entirely during drag, the inner strategy:
-   - Removes the tab from its source entry
-   - Fires `pages-tab-escaped` (DOM event, bubbles) with `{ tabKey, label, content, position }` on its host element
+   - Calls `detachEntry(tabKey)` on the source container — removes the entry WITHOUT disposing its content (child containers survive unmounted; leaf entries retain their `component` descriptor)
+   - Fires `pages-tab-escaped` (DOM event, bubbles) with `{ entry }` carrying the live detached entry on its host element
    - Exits drag mode
 
-3. **Parent pickup:** The parent free-layout strategy listens for `pages-tab-escaped` on its host. On receipt, it enters drag mode for the escaped tab — the user continues dragging seamlessly into the parent's scope.
+3. **Parent pickup:** The parent free-layout strategy listens for `pages-tab-escaped` on its host. On receipt, it calls `event.stopPropagation()` (prevents further ancestors from also claiming the escaped tab at 3+ nesting levels), then enters drag mode for the escaped tab — the user continues dragging seamlessly into the parent's scope. If the tab escapes the parent too, the parent fires its own `pages-tab-escaped`, and the grandparent picks it up via the same chain.
 
-This gives clean ownership transfer without race conditions. Each strategy handles exactly one drag at a time. The `pages-tab-escaped` event is analogous to the existing `pages-tab-drag-out` mechanism in `wireFloatingWorkspace` — both handle "tab leaves its container's scope."
+This gives clean ownership transfer without race conditions. Each strategy handles exactly one drag at a time. Both `pages-tab-drag-start` and `pages-tab-escaped` handlers call `stopPropagation()` to ensure exactly one strategy claims each event. The `pages-tab-escaped` event is analogous to the existing `pages-tab-drag-out` mechanism in `wireFloatingWorkspace` — both handle "tab leaves its container's scope."
+
+Note: In the depth escape scenario, the dragged item is always a leaf tab entry from a child tabbed strategy — it has `component` but not `childContainer`. The `detachEntry` primitive is used for safety and correctness (the #345 surgical replant invariant: "the container tree is never destroyed and recreated"), even though the disposal bug in `removeEntry` would only manifest if an entry with `childContainer` were transferred.
 
 ### Tab drag out (entry creation)
 
-When a tab is dragged outside all entries but inside the host, the free-layout strategy creates a new entry at the drop position:
+When a tab is dragged outside all entries but inside the host, the free-layout strategy creates a new entry at the drop position. Creating a leaf Container requires configuration (ContentFactory, LayoutCallbacks, ContainerPolicy, depth) that the strategy doesn't own — this is provided via a `childContainerFactory` callback:
+
 ```
-const newEntry = { key: generateKey(), label: tab.label, childContainer: newLeafContainer };
+childContainerFactory: (entries: Entry[]) => Container
+```
+
+Provided by `wireFloatingWorkspace` during root Container configuration, capturing the correct content factory, policy, and callbacks in its closure. The free-layout strategy's DnD handler calls it during tab drag out and edge splits:
+
+```
+const detached = sourceContainer.detachEntry(tabKey);
+const leafContainer = childContainerFactory([detached]);
+const newEntry = { key: generateKey(), label: detached.label, childContainer: leafContainer };
 container.addEntry(newEntry);
 ```
 
-This replaces the engine's `createFrame` + backend's `renderFrame`.
+This replaces the engine's `createFrame` + backend's `renderFrame`. The `childContainerFactory` corresponds to the backend's current `createLeafContainer(frameKey, entries)` function, which captures the same configuration in its closure.
 
 ## Persistence
 
@@ -173,9 +185,11 @@ The detach handler currently uses 4 engine methods. Migration mapping:
 | Engine method | Container equivalent |
 |---|---|
 | `engine.frames.get(key)` | `rootContainer.entries.find(e => e.key === key)` + strategy `entryState` for position/size |
-| `engine.hideFrame(key)` | `strategy.hideEntry(key)` — removes frame element from DOM, preserves entryState |
-| `engine.showFrame(key)` | `strategy.showEntry(key)` — re-renders frame element from preserved entryState |
+| `engine.hideFrame(key)` | `rootContainer.organiser.hideEntry(key)` — removes frame element from DOM, preserves entryState |
+| `engine.showFrame(key)` | `rootContainer.organiser.showEntry(key)` — re-renders frame element from preserved entryState |
 | `engine.setDetached(key, bool)` | Entry metadata flag on the entry object |
+
+`hideEntry` and `showEntry` are optional methods on the `LayoutStrategy` interface (see §Free-Layout Strategy Changes). The detach handler calls them through `rootContainer.organiser` — no type-cast needed because the methods are on the base interface.
 
 The detach handler signature changes from `createFrameDetachHandler(engine, container, contentFactory, signal)` to `createFrameDetachHandler(rootContainer, container, contentFactory, signal)`.
 
