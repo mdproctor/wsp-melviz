@@ -6,14 +6,25 @@
 
 ## Last Session
 
-Implemented #363 (callout duration slider), #364 (progressive word-based fill), #365 (show-markdown action). Fixed multiple scenario engine bugs: runTo name/label mismatch, runTo speed override (now 10x not 1000x), onDispatch speed override on same-session dispatches, triggered step dispatch after runTo completion. Tuned progressive fill (5 char, 5x1 word, 6x2 word, 7x4 word, rest 5-word chunks), spotlight word-based duration (250ms/word), click delay (900ms). Set up helpdesk demo with `-Dquarkus.profile=demo` build requirement, disabled static resource caching, fixed duplicate YAML speed.
+Massive session implementing #365 show-markdown end-to-end, then designing and building the tabbed viewer (Source + Guide tabs), modal slide deck with progressive loading, outline type icons, and helpdesk tutorial content. Many incremental fixes to eventTarget timing, z-index layering, dock alignment, auto-pause, and browser module caching. The session accumulated regressions that need a clean verification pass.
 
 ## Immediate Next Step
 
-Pick up #365 end-to-end — the `show-markdown` action is implemented in the handler and narrative component but never tested with real content. Add `show-markdown` steps to the helpdesk YAML with inline or file-referenced .md content at key tutorial points. The narrative component already renders markdown; the action blocks until step/resume.
+Fresh session needed for regression testing. Start by resetting the helpdesk server, hard-refreshing the browser, and stepping through the full scenario to verify: (1) Start Demo works, (2) modal slides pause and show correctly with TOC, (3) Guide tab receives content, (4) spotlights don't dim the controller/viewer, (5) click-to-advance works. If regressions are found, the unit tests (167 passing) constrain the fix space — the issues are integration/deployment, not logic.
 
 ## Known Issues
 
-- **Push wire state broadcasting** — the controller doesn't receive `scenario:state` push events from the orchestrator. Controller state must be force-synced via REST fetch. Pre-existing, not caused by this session's changes.
-- **Helpdesk demo build** — must build with `-Dquarkus.profile=demo` for the local executor connector to activate (`@IfBuildProfile("demo")`).
-- **Helpdesk YAML duplication** — two copies exist at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
+- **Browser module caching** — the helpdesk serves `controller.js` as a static resource imported via ES module. Browser caches the module aggressively. Hard refresh or incognito required after updates. Consider adding a build hash to the filename.
+- **Controller push state** — the controller's `ScenarioConnectionController` creates its own WebSocket before the module script sets the shared `eventTarget`. State updates sometimes don't reach the controller UI. The fix in `_ensureConnection` (reuse `opts.eventTarget` when available) works when the module script runs before `firstUpdated`, but timing varies.
+- **Outline icons** — the `ACTION_ICONS` map and `_renderNode` icon code are in place, but the server's `/scenario/outline` endpoint doesn't return an `action` field on leaf nodes. Icons show as ○ until the Java endpoint is extended.
+- **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
+
+## What Was Built
+
+- `show-markdown` action (panel + modal display modes)
+- Tabbed YAML viewer (Source + Guide tabs) with event wiring
+- Modal slide deck: progressive loading, click/keyboard/button advance, auto-pause, scroll indicator, slide TOC
+- SVG case lifecycle diagram + fenced code block renderer + image markdown support
+- Outline type icons (code ready, needs server `action` field)
+- Bottom-aligned dock, resize snap, z-index above spotlights
+- 4 tutorial slides in helpdesk YAML (2 platform concepts, 2 work items)
