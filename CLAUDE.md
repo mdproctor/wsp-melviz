@@ -167,7 +167,7 @@ yarn workspace @casehubio/pages-examples run dev
 
 # Server-dependent examples — the backend runs in casehub-examples, NOT here.
 # In the casehub-examples repo (slot sibling):
-#   JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl helpdesk -Dquarkus.http.port=8090 -s slot-settings.xml
+#   JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl helpdesk -Dquarkus.http.port=8090 -Dquarkus.profile=demo -s .mvn/slot-settings.xml
 # Then serve the frontend gallery here:
 #   yarn workspace @casehubio/pages-examples run serve
 ```
