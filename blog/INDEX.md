@@ -9,3 +9,4 @@
 | [2026-08-21-mdp02-scenario-controller-ui.md](2026-08-21-mdp02-scenario-controller-ui.md) | 2026-08-21 | Building the presenter remote — scenario controller UI with push wire state broadcast, shared reactive controller, and standalone remote page |
 | [2026-08-23-mdp01-scenario-engine-live.md](2026-08-23-mdp01-scenario-engine-live.md) | 2026-08-23 | Browser automation + distributed executors driving the helpdesk demo end-to-end, compact controller overlay, trigger-aware dispatch fix, PushRequestHandler SPI |
 | [2026-08-26-mdp01-dnd-protocol-and-the-engine-boundary.md](2026-08-26-mdp01-dnd-protocol-and-the-engine-boundary.md) | 2026-08-26 | DnD event protocol for nested containers, edge splits via pure composition, and the engine boundary ahead |
+| [2026-08-26-mdp02-killing-the-engine.md](2026-08-26-mdp02-killing-the-engine.md) | 2026-08-26 | Engine elimination — 4036 lines deleted as triple-state architecture becomes single root Container |
