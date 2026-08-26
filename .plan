@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-374-duration-editor
-state: scaffolded
+state: closing:review
 project-sha: 41e84796ea3a0c482bba4a8f4e851b90bdb9376c
 date: 2026-08-26
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#374 — Issue #374 ← active
   - [x] Batch 1: Component
