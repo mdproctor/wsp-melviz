@@ -75,18 +75,18 @@
 **Exploration:** quick
 **Status:** revised (R1-06: added containment cascade handling, EditPolicy override path, and domain topology consideration)
 
-## D7: Interaction coordination — per-handler with shared utilities
+## D7: Interaction coordination — per-handler architecture
 
-**Choice:** Per-interaction handlers for custom interactions (palette drag, edge insertion, empty-space creation) sharing utility functions (ghost element factory, hit-testing, viewport transform). React Flow's event system handles native interactions (connections, node drag, pan/zoom, selection).
+**Choice:** One custom drag handler (palette drag) with its own utilities (ghost element, hit-testing, viewport transform). Two click-to-popover flows (edge insertion via `onEdgeClick`, empty-space creation via `onPaneClick`) that trigger the node chooser (D5). React Flow's event system handles native interactions (connections, node drag, pan/zoom, selection, edge reconnection).
 **Alternatives:**
 - Single InteractionCoordinator managing ALL interactions via state machine — creates dual-control problem with React Flow's internal interaction management; forces negotiation with React Flow's pointer capture for every native interaction
-- Separate coordinator per interaction — self-contained but duplicates shared concerns
-- No coordinator, event handlers on canvas — simplest but no shared utilities
-**Rationale:** React Flow IS already a coordinator for its native interactions: node selection, node drag, pan/zoom, box selection, and connections (per revised D4). Adding another coordinator on top creates two competing interaction managers. The custom interactions (palette drag, edge insertion, empty-space creation) share some infrastructure (ghost element rendering, hit-testing helpers, viewport transform utilities) but not enough to justify a state machine. Each handler manages its own lifecycle: pointerdown → track → commit/cancel. Escape cancels any active custom interaction and cleans up ghost elements. Mutual exclusion is simple: a boolean flag (`customInteractionActive`) prevents starting a second custom interaction while one is in progress. React Flow's `onPaneClick`, `onEdgeClick` provide the event routing for empty-space and edge interactions. If custom interaction count grows beyond 5, extract a coordinator.
-**Trade-offs:** Shared code lives in utility functions rather than a coordinator class. For 3 custom interactions, per-handler is right-sized.
+- Per-handler with shared utilities across 3 "custom interactions" — overstates the shared infrastructure; edge insertion and empty-space creation are click handlers, not drag interactions, and don't need ghost elements or hit-testing
+- No coordinator, event handlers on canvas — simplest but no structured handler for palette drag
+**Rationale:** React Flow IS already a coordinator for its native interactions: node selection, node drag, pan/zoom, box selection, connections, and edge reconnection (per revised D4). Only palette drag is a true custom drag interaction — it starts outside the canvas (in the Lit palette component), crosses the DOM boundary into the React Flow viewport, needs ghost element rendering, hit-testing against canvas nodes, and viewport transform compensation. Edge insertion and empty-space creation are click→popover flows: React Flow fires the event callback (`onEdgeClick`/`onPaneClick`), the handler opens the node chooser popover (D5), the user selects a type, and the mutation commits. No drag state, no ghost, no hit-testing. Escape cancels the palette drag (cleans up ghost) or dismisses the node chooser popover. A boolean flag (`paletteDragActive`) prevents palette drag from starting during an open popover or vice versa.
+**Trade-offs:** Ghost element, hit-testing, and viewport transform utilities are palette-drag-specific rather than shared. This is simpler — no premature abstraction across unlike interaction shapes.
 **Sources:** GE-20260825-309197 (coordinator pattern), GE-20260826-ee71b5 (DOM event scoping)
 **Exploration:** quick
-**Status:** revised (R1-05: scoped to custom interactions only, deferred monolithic coordinator; R1-15: added escape handling and mutual exclusion design)
+**Status:** revised (R1-05: scoped to custom interactions only; R1-15: escape handling; R2-02: clarified palette drag as the only true custom drag interaction)
 
 ## D8: EditPolicy SPI
 
@@ -111,21 +111,24 @@
 
 Per-interaction analysis:
 
-| Interaction | Owner | Mechanism |
-|---|---|---|
-| Connection drawing | React Flow | `onConnect`/`isValidConnection` + existing Handles |
-| Node selection | React Flow | `onNodeClick` (already wired) |
-| Node moving | React Flow | `onNodeDrag` → re-layout on drop |
-| Pan/zoom | React Flow | Built-in (already working) |
-| Box selection | React Flow | `selectionOnDrag` (already enabled) |
-| Palette drag | Custom | Pointer events + ghost (crosses DOM boundary) |
-| Edge insertion | Custom | `onEdgeClick` → node chooser popover |
-| Empty-space creation | Custom | `onPaneClick` → node chooser popover |
+| Interaction | Category | Owner | Mechanism |
+|---|---|---|---|
+| Connection drawing | Drag | React Flow | `onConnect`/`isValidConnection` + existing Handles |
+| Edge reconnection | Drag | React Flow | `reconnectEdges` prop + `onReconnect` callbacks |
+| Node moving | Drag | React Flow | `onNodeDrag` → re-layout on drop |
+| Node selection | Click | React Flow | `onNodeClick` (already wired) |
+| Pan/zoom | Gesture | React Flow | Built-in (already working) |
+| Box selection | Drag | React Flow | `selectionOnDrag` (already enabled) |
+| Palette drag | Drag | Custom | Pointer events + ghost (crosses DOM boundary) |
+| Edge insertion | Click→popover | React Flow event | `onEdgeClick` → node chooser (D5) |
+| Empty-space creation | Click→popover | React Flow event | `onPaneClick` → node chooser (D5) |
 
-**Trade-offs:** Custom interactions must respect React Flow's pointer capture for native interactions. Clean boundary: Handle-initiated drags are React Flow's; everything else is custom.
+Note: Edge insertion and empty-space creation use React Flow's event routing (`onEdgeClick`, `onPaneClick`) but are not React Flow "native" interactions — they trigger application-level popover flows. They are not drag interactions and do not need ghost elements, hit-testing, or viewport transform utilities. Only palette drag is a true custom drag interaction.
+
+**Trade-offs:** Custom drag interactions (palette drag only) must respect React Flow's pointer capture for native interactions. Clean boundary: Handle-initiated drags are React Flow's; palette-initiated drags are custom; click events route through React Flow callbacks to application logic.
 **Sources:** `packages/graph-renderer/src/bridge/ReactFlowApp.tsx`, `packages/graph-renderer/src/stencil-wrapper.tsx`
 **Exploration:** N/A (implicit decision surfaced by review)
-**Status:** captured
+**Status:** revised (R2-01: added edge reconnection; R2-02: clarified interaction categories — edge insertion and empty-space creation are click→popover flows, not drag interactions)
 
 ## D10: graph-core architectural boundary — pure data
 
