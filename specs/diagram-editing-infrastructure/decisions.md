@@ -7,92 +7,144 @@
 - New phase after Phase 4 — Phase 4 lands basic structural editing first, then this adds interactions later. Delays the full editing UX.
 - Standalone infrastructure spec — diagram-agnostic primitives only. Loses the integration context.
 **Rationale:** The interactions are complementary to Phase 4's existing add/remove/replace scope. Auto-layout means these drag interactions are tractable — every mutation ends with re-layout, not free-position reconciliation.
-**Trade-offs:** Larger Phase 4 scope. But the interactions share infrastructure (constraint checking, re-layout, undo) so building them together avoids duplication.
+**Trade-offs:** Larger Phase 4 scope. But the interactions share infrastructure (constraint checking, re-layout, undo) so building them together avoids duplication. Implementation can be phased (4a: basic structural editing via toolbar/context menu, 4b: drag interactions) without splitting the design.
 **Sources:** `docs/specs/2026-08-01-visual-diagram-editor-design.md` Phase 4
 **Exploration:** quick
 **Status:** captured
 
 ## D2: Palette home
 
-**Choice:** Palette component lives in `graph-renderer` alongside `GraphCanvas`
+**Choice:** Palette component lives in `casehub-diagram` (blocks-ui) as a Lit component with Shadow DOM, consuming stencil registry data from `graph-renderer` via imports
 **Alternatives:**
-- New `pages-diagram-palette` package — more isolation but another package; palette is tightly coupled to stencil registry anyway
-- `graph-core` — splits concern but graph-core is currently rendering-free and should stay that way
-**Rationale:** Palette consumes `StencilDescriptor[]` from the stencil registry and `WorkStencil[]` from work-registry. Both registries are in or consumed by graph-renderer. Keeps all rendering infrastructure together. Domain stencil packages just register — they don't own palette UI.
-**Trade-offs:** graph-renderer grows. But palette is a rendering concern, not a data model concern.
-**Sources:** `packages/graph-renderer/src/registry/stencil-registry.ts`, `packages/graph-work-registry/`
+- `graph-renderer` — collocates palette with registry but puts a Lit component in a React-centric package, creating an architectural misfit
+- New `pages-diagram-palette` package — more isolation; follows the `pages-property-palette` precedent but adds a package for a component that is inherently tied to the diagram shell
+- `graph-core` — splits concern but graph-core is rendering-free and should stay that way
+**Rationale:** The spec's §3.1 architecture places `<casehub-diagram-palette>` under `casehub-diagram` (blocks-ui), not under graph-renderer. graph-renderer is React-centric (React 18, ReactDOM, JSX) — a Lit component with Shadow DOM doesn't belong there. The palette is a UI shell component that composes data from `getAllStencils()` and work-registry — it's a consumer of graph-renderer, not part of it. This aligns with the established pattern: `pages-property-palette` is a standalone Lit component that consumes schema data from external sources.
+**Trade-offs:** Palette and canvas are in different packages. But data dependency ≠ package co-location — the palette imports from `@casehubio/graph-renderer`, same as any other consumer.
+**Sources:** `packages/graph-renderer/src/registry/stencil-registry.ts`, `packages/pages-property-palette/`, spec §3.1
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-03: moved from graph-renderer to casehub-diagram to align with spec §3.1 architecture and avoid Lit/React package misfit)
 
-## D3: Constraint SPI — extend StencilGrammar
+## D3: Constraint SPI — static grammar only
 
-**Choice:** Extend `StencilGrammar` with an optional `validateConnection(source, target, model): boolean` callback
+**Choice:** Keep `StencilGrammar` as a pure data interface — static connection rules and containment only. No runtime callbacks.
 **Alternatives:**
-- Separate `ConnectionConstraint` SPI — cleaner separation but doubles registration surface; stencil authors must register both grammar and constraint provider
-- Static rules only — all constraint logic in the domain adapter. Simpler but loses standardised drop-zone feedback in graph-renderer
-**Rationale:** Static rules (allowedTo/From, cardinality) remain the fast path for most stencils. The dynamic validator only runs for stencils that register one, enabling domain-specific logic (e.g., "this Binding already has a capability target, so no more outbound connections") without leaving graph-core.
-**Trade-offs:** graph-core gains a callback type. But it's optional — stencils without dynamic constraints are unaffected.
+- Add optional `validateConnection(source, target, model): boolean` callback to StencilGrammar — enables domain-specific validation in graph-core but breaks the pure-data contract and creates two-layer dynamic validation confusion with EditPolicy (D8)
+- Separate `ConnectionConstraint` SPI in graph-core — cleaner separation but still adds behavioral logic to the data model tier
+**Rationale:** `StencilGrammar` (grammar.ts) is a pure data interface: `type`, `connections`, `containment`. The validator (validator.ts) does purely structural validation using these static rules. This purity is architecturally valuable — pure data models are trivially testable, serializable, and have zero framework dependencies. All dynamic validation (context-dependent, runtime-aware) belongs in `EditPolicy.canConnect()` (D8), which has full access to the model and domain knowledge. EditPolicy can consult StencilGrammar's static rules as a first pass before applying domain logic.
+**Trade-offs:** Stencil authors can't register dynamic constraints at the grammar level. But dynamic constraints are inherently domain-specific — they belong in the domain adapter's EditPolicy implementation, not in the type-level grammar.
 **Sources:** `packages/graph-core/src/grammar.ts`, `packages/graph-core/src/validator.ts`
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-02: removed validateConnection callback to preserve graph-core's pure data contract; dynamic validation consolidated in EditPolicy D8)
 
-## D4: Drag interaction model — pointer events with ghost
+## D4: Drag interaction model — hybrid React Flow + custom pointer events
 
-**Choice:** Pointer events (pointerdown/pointermove/pointerup) with ghost element
+**Choice:** Use React Flow's built-in connection system for node-to-node connections; custom pointer events with ghost element for interactions React Flow doesn't handle (palette drag, edge insertion, empty-space creation)
 **Alternatives:**
+- Custom pointer events for ALL interactions — full control but reimplements viewport transform compensation, connection line rendering, and handle integration that React Flow already provides
 - HTML5 Drag API — browser handles ghost but no custom styling during drag, drop coordinates don't account for React Flow's viewport transform, and pan-on-drag conflicts
-- React Flow's built-in connection system — native for node-to-node connections but only covers that one interaction; palette drag, edge insertion, and empty-space drop need a separate system
-**Rationale:** Full control over visual feedback (valid/invalid indicators, snap previews). Works inside React Flow's canvas coordinate system with viewport transform compensation. Consistent with the existing dock-drag system in pages-runtime. All 11 interactions use the same pointer event foundation.
-**Trade-offs:** More code than HTML5 drag. But the ghost element, hit-testing, and visual feedback are all custom anyway.
-**Sources:** `packages/pages-runtime/src/dock-drag.ts`, GE-20260826-ee71b5 (DOM event scoping), GE-20260825-309197 (coordinator pattern)
+- React Flow's connection system for everything — only covers node-to-node connections; palette drag, edge insertion, and empty-space drop need a separate system regardless
+**Rationale:** React Flow Handle components are already rendered on every node (stencil-wrapper.tsx) — source handles and target handles at all four cardinal positions, gated by grammar rules. React Flow v12's connection system provides viewport transform compensation, connection line rendering during drag, `isValidConnection` callback for constraint checking, and integration with these existing Handle components. Using it for connections avoids reimplementing this infrastructure. Custom pointer events remain necessary for interactions that cross DOM boundaries (palette drag starts outside the canvas) or don't involve node handles (edge insertion, empty-space creation).
+**Trade-offs:** Two interaction mechanisms on the same canvas. But they don't conflict — React Flow's system owns handle-initiated connections, custom events own everything else. The boundary is clean: if a drag starts on a Handle, React Flow owns it; otherwise, custom events own it.
+**Sources:** `packages/graph-renderer/src/stencil-wrapper.tsx` (Handle rendering), `packages/graph-renderer/src/bridge/ReactFlowApp.tsx` (connection callbacks available but unwired)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-04: adopted hybrid approach leveraging existing Handle infrastructure and React Flow's connection system for node-to-node connections)
 
 ## D5: Node chooser — inline popover at interaction point
 
-**Choice:** Inline popover appearing at the click/drop point with filtered search
+**Choice:** Inline popover appearing at the click/drop point with filtered search, rendered in DOM space with viewport-compensated positioning
 **Alternatives:**
 - Palette highlights valid types — reuses palette UI but user must look away from insertion point
 - Modal dialog — most discoverable but heaviest; breaks flow for a quick selection
-**Rationale:** Stays in context — user sees where the node will go. Small floating panel shows valid node types grouped by category. Dismisses on selection or Escape. For diagrams with many stencil types (case + marketplace work stencils), filtered search prevents overwhelming the user.
+- React Flow coordinate space (moves with pan/zoom) — technically possible but popovers should stay fixed on screen for usability
+**Rationale:** Stays in context — user sees where the node will go. Small floating panel shows valid node types grouped by category. Dismisses on selection or Escape. Renders in DOM space (outside React Flow's viewport transform) with position computed from `reactFlowInstance.flowToScreenPosition()` at the interaction point. Does NOT move with pan/zoom — it's a transient UI overlay, not a graph element. Shares type data source with palette: both consume `EditPolicy.getCreatableTypes()` and `EditPolicy.getInsertableTypes()` (D8) for context-appropriate filtering. The palette shows all types; the node chooser filters based on interaction context (edge insertion → insertable types at that edge, empty-space → creatable types).
 **Trade-offs:** New component to build. But it's a simple filtered list — not a complex widget.
 **Sources:** None (standard UX pattern)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-09: specified DOM-space rendering with viewport compensation; R1-14: clarified shared data source with palette via EditPolicy)
 
 ## D6: Delete UX — context-dependent auto-decision with undo
 
-**Choice:** Auto-join when node has exactly 1 inbound + 1 outbound edge; auto-disconnect otherwise with dangling edge cleanup. Undo reverses any wrong choice. Popover with options only for ambiguous multi-edge cases.
+**Choice:** Auto-join when leaf node has exactly 1 inbound + 1 outbound edge; auto-disconnect otherwise with dangling edge cleanup. Undo reverses any wrong choice. Popover with options only for ambiguous multi-edge cases. EditPolicy.getDeleteStrategy() can override the default heuristic per domain.
 **Alternatives:**
 - Always show popover with options — explicit but adds a click to every delete, even for terminal nodes
 - Keyboard modifier (Delete = join, Shift+Delete = disconnect) — fastest for power users but undiscoverable
-**Rationale:** The common case (linear chain: A → B → C, delete B, auto-join A → C) is unambiguous and should be instant. Terminal nodes (no outbound) just delete with inbound edge cleanup. Multi-edge nodes (2+ inbound or 2+ outbound) present a brief popover because the join target is ambiguous.
-**Trade-offs:** Auto-decision might surprise users who expected to disconnect. Undo is the safety net.
-**Sources:** `packages/graph-core/src/edit.ts` (removeNode with cascade)
+**Rationale:** The common case (linear chain: A → B → C, delete B, auto-join A → C) is unambiguous and should be instant. Terminal nodes (no outbound) just delete with inbound edge cleanup. Multi-edge nodes (2+ inbound or 2+ outbound) present a brief popover because the join target is ambiguous. For containment nodes (nodes with children), deletion cascades the subtree (existing `removeNode` behavior in edit.ts) — auto-join only fires on leaf nodes without children. `EditPolicy.getDeleteStrategy()` (D8) allows domain adapters to override the default heuristic when the auto-join topology rarely applies (e.g., Case definitions where Workers typically have multiple inbound Binding edges). Domain adapters can opt into "always popover" if preferred.
+**Trade-offs:** Auto-decision might surprise users who expected to disconnect. Undo is the safety net. Domain adapters can override via EditPolicy if the topology makes auto-join rare.
+**Sources:** `packages/graph-core/src/edit.ts` (removeNode with subtree cascade)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-06: added containment cascade handling, EditPolicy override path, and domain topology consideration)
 
-## D7: Interaction coordinator — single with modes
+## D7: Interaction coordination — per-handler with shared utilities
 
-**Choice:** Single `InteractionCoordinator` managing all drag interactions via a state machine: idle → connecting / inserting / moving / palette-drag
+**Choice:** Per-interaction handlers for custom interactions (palette drag, edge insertion, empty-space creation) sharing utility functions (ghost element factory, hit-testing, viewport transform). React Flow's event system handles native interactions (connections, node drag, pan/zoom, selection).
 **Alternatives:**
-- Separate coordinator per interaction — self-contained but shared concerns (ghost element, hit-testing, drop zone highlighting) get duplicated
-- No coordinator, event handlers on canvas — simpler for few interactions but hard to extract later
-**Rationale:** One coordinator = one place for pointer capture, ghost management, and cleanup. Each mode implements a common interface with its own visual feedback and hit-test logic. Follows the garden entry's advice: design the coordinator interface before the state machine grows.
-**Trade-offs:** Single coordinator is larger. But mode implementations are separate — the coordinator is a dispatcher, not a monolith.
+- Single InteractionCoordinator managing ALL interactions via state machine — creates dual-control problem with React Flow's internal interaction management; forces negotiation with React Flow's pointer capture for every native interaction
+- Separate coordinator per interaction — self-contained but duplicates shared concerns
+- No coordinator, event handlers on canvas — simplest but no shared utilities
+**Rationale:** React Flow IS already a coordinator for its native interactions: node selection, node drag, pan/zoom, box selection, and connections (per revised D4). Adding another coordinator on top creates two competing interaction managers. The custom interactions (palette drag, edge insertion, empty-space creation) share some infrastructure (ghost element rendering, hit-testing helpers, viewport transform utilities) but not enough to justify a state machine. Each handler manages its own lifecycle: pointerdown → track → commit/cancel. Escape cancels any active custom interaction and cleans up ghost elements. Mutual exclusion is simple: a boolean flag (`customInteractionActive`) prevents starting a second custom interaction while one is in progress. React Flow's `onPaneClick`, `onEdgeClick` provide the event routing for empty-space and edge interactions. If custom interaction count grows beyond 5, extract a coordinator.
+**Trade-offs:** Shared code lives in utility functions rather than a coordinator class. For 3 custom interactions, per-handler is right-sized.
 **Sources:** GE-20260825-309197 (coordinator pattern), GE-20260826-ee71b5 (DOM event scoping)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (R1-05: scoped to custom interactions only, deferred monolithic coordinator; R1-15: added escape handling and mutual exclusion design)
 
-## D8: Full EditPolicy SPI
+## D8: EditPolicy SPI
 
-**Choice:** A single `EditPolicy` SPI interface that the domain adapter implements: `canConnect()`, `getInsertableTypes()`, `getCreatableTypes()`, `canDelete()`, `getDeleteStrategy()`. graph-renderer calls these during interactions.
+**Choice:** An `EditPolicy` SPI interface defined in `graph-renderer`, implemented by the domain adapter (e.g., graph-stencil-case). Methods: `canConnect()`, `getInsertableTypes()`, `getCreatableTypes()`, `canDelete()`, `getDeleteStrategy()`. graph-renderer calls these during interactions to determine valid targets, insertable types, and delete strategies. Registered via `setEditPolicy(policy)` — a simple setter on graph-renderer's module scope.
 **Alternatives:**
-- Grammar-only inference — derive everything from StencilGrammar rules. Simpler but can't express domain rules beyond grammar (e.g., "Goals are always terminal" is in grammar, but "this worker already has 3 bindings and the team convention is max 3" is not)
+- Grammar-only inference — derive everything from StencilGrammar rules. Simpler but can't express domain rules beyond grammar (e.g., "this worker already has 3 bindings and the team convention is max 3")
 - Callbacks on palette items — each stencil knows where it can go. Distributed, hard to compose cross-stencil rules
-**Rationale:** Centralises all domain-specific editing logic in one interface. graph-renderer is the consumer — it calls EditPolicy during drag interactions to determine valid targets, insertable types, and delete strategies. The domain adapter (e.g., graph-stencil-case) implements EditPolicy with full knowledge of the domain model.
+- Define EditPolicy in graph-core — would add behavioral dependency to the pure data tier
+**Rationale:** Centralises all domain-specific editing logic in one interface. EditPolicy is DEFINED in graph-renderer (the framework tier that owns the editing interactions) and IMPLEMENTED by the domain adapter (graph-stencil-case, which has full domain knowledge). `canConnect()` subsumes all dynamic validation — it can consult `getGrammar()` for static rules, then apply domain logic. This consolidates the validation that was previously split across D3 and D8. Signatures may be refined during implementation as interactions are built; the interface shape (what questions interactions ask of the domain) is stable even if parameter types evolve.
 **Trade-offs:** New SPI to implement per domain. But the alternative is scattered constraint logic across stencils and grammar.
-**Depends on:** D3 (StencilGrammar extension provides the static layer; EditPolicy provides the dynamic layer)
 **Sources:** `packages/graph-core/src/grammar.ts`, `packages/graph-core/src/validator.ts`, `packages/graph-core/src/edit.ts`
 **Exploration:** quick
+**Status:** revised (R1-02: consolidated dynamic validation from D3; R1-07: specified DI mechanism via setEditPolicy; R1-12: EditPolicy defined in graph-renderer, not graph-core — preserves graph-core purity)
+
+## D9: React Flow interaction layer usage
+
+**Choice:** Use React Flow's native interaction APIs where they apply; custom interactions only for what React Flow doesn't handle
+**Alternatives:**
+- Bypass React Flow's interaction layer entirely — reimplement connections, node drag, pan/zoom with custom pointer events
+- Use React Flow for everything — not possible since palette drag, edge insertion, and empty-space creation aren't React Flow concepts
+**Rationale:** React Flow provides well-tested, viewport-aware interaction handling for connections (`onConnect`/`onConnectStart`/`onConnectEnd`/`isValidConnection`), node movement (`onNodeDrag`), pan/zoom, and selection. Reimplementing these creates maintenance burden and viewport transform bugs. The Handle components rendered on every node (stencil-wrapper.tsx) are the entry point for React Flow's connection system — they should be connected, not bypassed.
+
+Per-interaction analysis:
+
+| Interaction | Owner | Mechanism |
+|---|---|---|
+| Connection drawing | React Flow | `onConnect`/`isValidConnection` + existing Handles |
+| Node selection | React Flow | `onNodeClick` (already wired) |
+| Node moving | React Flow | `onNodeDrag` → re-layout on drop |
+| Pan/zoom | React Flow | Built-in (already working) |
+| Box selection | React Flow | `selectionOnDrag` (already enabled) |
+| Palette drag | Custom | Pointer events + ghost (crosses DOM boundary) |
+| Edge insertion | Custom | `onEdgeClick` → node chooser popover |
+| Empty-space creation | Custom | `onPaneClick` → node chooser popover |
+
+**Trade-offs:** Custom interactions must respect React Flow's pointer capture for native interactions. Clean boundary: Handle-initiated drags are React Flow's; everything else is custom.
+**Sources:** `packages/graph-renderer/src/bridge/ReactFlowApp.tsx`, `packages/graph-renderer/src/stencil-wrapper.tsx`
+**Exploration:** N/A (implicit decision surfaced by review)
+**Status:** captured
+
+## D10: graph-core architectural boundary — pure data
+
+**Choice:** graph-core remains a pure data model package — no runtime callbacks, no framework dependencies, no behavioral logic
+**Alternatives:**
+- Allow callbacks in graph-core (e.g., `validateConnection` on StencilGrammar) — more convenient for stencil authors but breaks testability, serializability, and graph-core's independence
+- Move EditPolicy SPI to graph-core — centralises all SPIs but adds a behavioral dependency to the data tier
+**Rationale:** graph-core today is pure data and functions: `grammar.ts` (data interface), `model.ts` (data types), `validator.ts` (pure function over data), `edit.ts` (pure functions producing new models). This purity makes it trivially testable (no mocks needed), serializable (grammars can be stored/transmitted), and independent (zero framework dependencies). Behavioral SPIs (EditPolicy) belong in graph-renderer, which owns the interactions that need them. Static structural validation stays in graph-core; dynamic domain validation goes through EditPolicy in graph-renderer.
+**Sources:** `packages/graph-core/src/grammar.ts`, `packages/graph-core/src/model.ts`, `packages/graph-core/src/validator.ts`, `packages/graph-core/src/edit.ts`
+**Exploration:** N/A (implicit decision surfaced by review)
+**Status:** captured
+
+## D11: Undo integration for editing interactions
+
+**Choice:** YAML snapshot pushed to undo stack before each mutation. Compound operations (drag → create → connect → re-layout) are a single undo unit. Cancelled interactions push nothing.
+**Alternatives:**
+- Per-step undo entries for compound operations — fine-grained but can leave the graph in intermediate states on partial undo
+- Coordinator-managed undo — coordinator pushes/pops undo entries around interaction lifecycle. Adds coupling between coordinator and undo stack
+**Rationale:** The spec (§2.6) defines YAML-snapshot undo: each edit pushes the previous YAML string onto the stack. The undo unit is one logical edit operation. For drag interactions, the "logical edit" is the final mutation (create node, add edge, delete node), not the drag gesture itself. Snapshot is taken before the mutation; if the mutation fails or is cancelled, no snapshot is pushed. For compound operations like palette drag (create node + auto-connect + re-layout), only one snapshot is pushed covering the entire compound operation — undoing it restores the graph to the state before the drag started. The `casehub-diagram` component owns the undo stack (per spec §2.6). Interaction handlers call a `pushUndo()` callback before committing their mutations.
+**Sources:** `docs/specs/2026-08-01-visual-diagram-editor-design.md` §2.6
+**Exploration:** N/A (implicit decision surfaced by review)
 **Status:** captured
