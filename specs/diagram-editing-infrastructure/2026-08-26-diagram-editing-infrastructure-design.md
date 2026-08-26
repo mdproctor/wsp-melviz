@@ -63,8 +63,8 @@ Key decisions summarised:
 | 3 | **Edge reconnection** | Drag | React Flow | Drag existing edge endpoint to new target | Reconnect edge (validated), re-layout |
 | 4 | **Edge insertion** | Click→popover | React Flow event | Click on edge → `onEdgeClick` | Node chooser popover at click point showing insertable types; selection splits edge, creates node, re-layout |
 | 5 | **Empty-space creation** | Click→popover | React Flow event | Click empty canvas → `onPaneClick` | Node chooser popover at click point showing creatable types; selection creates node, re-layout |
-| 6 | **Drag-to-empty-space** | Drag | Custom | Drag from node center to empty canvas | Node chooser popover at drop point showing connectable types; selection creates + connects node, re-layout |
-| 7 | **Node-on-edge drop** | Drag | Custom | Drag existing node onto an edge | Remove node from current position, insert at edge point, rewire edges, re-layout |
+| 6 | **Drag-to-empty-space** | Drag→detect | React Flow + app | Drag node (React Flow native), detect empty-space drop via `onNodeDragStop` | Node chooser popover at drop point showing connectable types; selection creates + connects node, re-layout |
+| 7 | **Node-on-edge drop** | Drag→detect | React Flow + app | Drag node (React Flow native), detect edge proximity via `onNodeDragStop` | Remove node from old edges, insert at edge point, rewire edges, re-layout |
 | 8 | **Node deletion** | Action | Application | Delete key or context menu | Auto-join (1-in, 1-out leaf), popover for ambiguous, cascade for containers. Clean up dangling edges. Re-layout |
 | 9 | **Edge deletion** | Action | Application | Context menu on edge | Remove edge, re-layout |
 | 10 | **Context menu** | Click | Application | Right-click node or edge | Show available actions (connect, insert, delete, properties) |
@@ -78,8 +78,8 @@ All new infrastructure goes into existing packages — no new packages created.
 
 | Package | What it gains | Why here |
 |---|---|---|
-| `graph-renderer` | `EditPolicy` SPI interface, `setEditPolicy()` registration, `isValidConnection` wiring, palette drag utilities (ghost, hit-test, viewport transform) | Framework tier — owns interactions and rendering |
-| `graph-core` | No changes | Pure data contract preserved (D10) |
+| `graph-renderer` | `EditPolicy` SPI interface, `setEditPolicy()` registration, `isValidConnection` wiring, palette drag utilities (ghost, hit-test, viewport transform), `GraphEdit` discriminated union, ReactFlowApp API expansion | Framework tier — owns interactions and rendering |
+| `graph-core` | Edge operations: `addEdge`, `removeEdge`, `splitEdge`, `reconnectEdge` | Edit operations that were missing for edge mutations (R1-05) |
 | `casehub-diagram` (blocks-ui) | `<casehub-diagram-palette>` component, `EditPolicy` implementation for case domain, node chooser popover, context menu, keyboard shortcuts | Domain-specific UI shell |
 | `graph-stencil-case` (blocks-ui) | `CaseEditPolicy` implementing `EditPolicy` | Domain adapter with full case definition knowledge |
 
@@ -87,11 +87,11 @@ All new infrastructure goes into existing packages — no new packages created.
 
 ```typescript
 interface EditPolicy {
-  canConnect(source: GraphNode, target: GraphNode, model: GraphModel): boolean;
+  canConnect(source: GraphNode, target: GraphNode, model: GraphModel, edgeType?: string): boolean;
   getInsertableTypes(edge: GraphEdge, model: GraphModel): StencilTypeInfo[];
   getCreatableTypes(nearNode: GraphNode | null, model: GraphModel): StencilTypeInfo[];
   canDelete(node: GraphNode, model: GraphModel): boolean;
-  getDeleteStrategy(node: GraphNode, model: GraphModel): DeleteStrategy;
+  getDeleteStrategy(node: GraphNode, model: GraphModel, deletionSet?: ReadonlySet<string>): DeleteStrategy;
 }
 
 type DeleteStrategy =
@@ -106,12 +106,7 @@ interface DeleteOption {
   targetNodeId?: string;
 }
 
-interface StencilTypeInfo {
-  type: string;
-  label: string;
-  icon: string;
-  group?: string;
-}
+type StencilTypeInfo = Pick<StencilDescriptor, 'type' | 'label' | 'icon'> & { group?: string };
 
 function setEditPolicy(policy: EditPolicy): void;
 function getEditPolicy(): EditPolicy | undefined;
@@ -119,7 +114,11 @@ function getEditPolicy(): EditPolicy | undefined;
 
 `EditPolicy` is the single domain integration point. graph-renderer calls it during interactions. The domain adapter (graph-stencil-case) implements it with full access to `getGrammar()` for static rules plus domain-specific logic.
 
-`StencilTypeInfo` is the shared data contract for the palette and the node chooser popover — both display the same type information, filtered differently by context. The palette shows all registered types; the node chooser filters via `getInsertableTypes()` or `getCreatableTypes()` based on the interaction.
+`canConnect` accepts an optional `edgeType` for domains with multiple edge types (e.g., capability dispatch vs subCase spawn). When omitted, the domain infers the edge type from the source/target node types. The Case domain currently has a single implicit edge type with semantics inferred from node types, so the parameter is optional.
+
+`getDeleteStrategy` accepts an optional `deletionSet` — the set of node IDs being deleted in a batch operation. This allows the strategy to account for batch context: auto-joining to a node that is itself being deleted is wrong, so the strategy downgrades to `disconnect` when the join target is in the deletion set.
+
+`StencilTypeInfo` is derived from `StencilDescriptor` (via `Pick`) to avoid type drift. It is the shared data contract for the palette and the node chooser popover — both display the same type information, filtered differently by context. The palette normalises both `StencilDescriptor` (from stencil registry) and `WorkStencil` (from work registry) into `StencilTypeInfo[]` via a mapping step: `WorkStencil.name` → `type`, `WorkStencil.displayName` → `label`, `WorkStencil.category` → `group`.
 
 `DeleteStrategy` encodes the auto-decision logic from D6. `auto-join` bridges predecessor to successor. `disconnect` removes dangling edges. `prompt` shows a popover with explicit options (for ambiguous multi-edge cases). `cascade` removes the node and its subtree (for container nodes with children).
 
@@ -127,11 +126,11 @@ function getEditPolicy(): EditPolicy | undefined;
 
 graph-renderer provides a `defaultEditPolicy()` that derives all answers from `StencilGrammar` static rules:
 
-- `canConnect`: checks `allowedTo`/`allowedFrom` and cardinality limits
+- `canConnect`: checks `allowedTo`/`allowedFrom` and cardinality limits (ignores `edgeType`)
 - `getInsertableTypes`: returns types whose grammar allows inbound from source type AND outbound to target type of the split edge
-- `getCreatableTypes`: returns all registered stencil types (unfiltered)
+- `getCreatableTypes`: returns stencil types filtered by containment rules — types with `containment.allowedParentTypes` that require a specific parent are excluded from root-level creation to prevent structurally invalid nodes
 - `canDelete`: returns `true` for all nodes
-- `getDeleteStrategy`: auto-join for leaf nodes with 1 inbound + 1 outbound; cascade for nodes with children; disconnect otherwise
+- `getDeleteStrategy`: auto-join for leaf nodes with 1 inbound + 1 outbound (unless join target is in `deletionSet`); cascade for nodes with children; disconnect otherwise
 
 Domain adapters override this default with domain-specific logic. If no EditPolicy is registered, `defaultEditPolicy()` is used as fallback.
 
@@ -155,35 +154,164 @@ ARIA: `role="toolbar"` with `aria-orientation="vertical"`, `aria-label="Node pal
 
 ### 4.5 Node chooser popover
 
-A lightweight Lit component rendered in DOM space (not React Flow coordinate space). Positioned using `reactFlowInstance.flowToScreenPosition()` at the interaction point. Contains a filtered list of `StencilTypeInfo[]` grouped by `group` field. Includes a search input when the list exceeds 8 items. Dismisses on selection, Escape, or click-outside.
+A lightweight Lit component with Shadow DOM, rendered in DOM space (not React Flow coordinate space). Positioned using the viewport bridge (§4.8) to convert flow coordinates to screen coordinates. Contains a filtered list of `StencilTypeInfo[]` grouped by `group` field. Includes a search input when the list exceeds 8 items. Dismisses on selection, Escape, click-outside, or viewport change (pan/zoom).
+
+Dismissing on viewport change is the simplest correct behaviour — the popover is anchored to a screen position, not a graph position, so it would become disconnected from its anchor point during pan/zoom.
 
 ARIA: `role="listbox"` with `role="option"` children. Search input has `role="searchbox"` with `aria-controls` pointing to the listbox.
 
-### 4.6 Interaction wiring
+### 4.6 Interaction wiring and mutation orchestration
+
+The mutation path crosses a package boundary: EditPolicy (graph-renderer) makes editing decisions, but the domain adapter (graph-stencil-case, blocks-ui) executes the YAML mutation. GraphCanvas cannot import from graph-stencil-case — the dependency goes the other way.
+
+The bridge is a **mutation callback** registered on GraphCanvas:
+
+```typescript
+// GraphCanvas exposes a mutation callback property
+@property({ attribute: false })
+onMutation?: (edit: GraphEdit) => void;
+
+// casehub-diagram wires it:
+canvas.onMutation = (edit) => {
+  this._pushUndo();
+  const newYaml = this._adapter.applyEdit(this._currentYaml, edit);
+  this._fullRender(newYaml);
+  this._emitEditEvent(edit);
+};
+```
+
+The flow: React Flow callback (onConnect, onEdgeClick, etc.) → GraphCanvas builds a `GraphEdit` → calls `onMutation(edit)` → casehub-diagram receives it, pushes undo, calls the domain adapter's `applyEdit`, and triggers re-render.
 
 ```
 casehub-diagram (shell)
 ├── palette → pointer events → PaletteDragHandler (ghost, hit-test, drop)
 ├── canvas (GraphCanvas/ReactFlowApp)
-│   ├── onConnect → EditPolicy.canConnect → applyEdit (create edge)
-│   ├── onReconnect → EditPolicy.canConnect → applyEdit (rewire edge)
-│   ├── onEdgeClick → node chooser → applyEdit (split edge, insert node)
-│   ├── onPaneClick → node chooser → applyEdit (create node)
+│   ├── onConnect → EditPolicy.canConnect → onMutation(createEdge)
+│   ├── onReconnect → EditPolicy.canConnect → onMutation(reconnectEdge)
+│   ├── onEdgeClick → node chooser → onMutation(splitEdge + addNode)
+│   ├── onPaneClick → node chooser → onMutation(addNode)
+│   ├── onNodeDragStop → detect edge drop → onMutation(moveNodeToEdge)
 │   └── isValidConnection → EditPolicy.canConnect (drop zone feedback)
-├── keyboard (Delete) → EditPolicy.getDeleteStrategy → applyEdit or popover
+├── keyboard (Delete) → EditPolicy.getDeleteStrategy → onMutation(removeNode/removeEdge)
 ├── context menu (right-click) → available actions from EditPolicy
-└── undo stack → pushUndo() before every applyEdit
+└── undo stack → pushUndo() before every onMutation
 ```
 
-### 4.7 Mutation flow
+### 4.7 GraphEdit discriminated union
+
+All edit operations are described by a `GraphEdit` type. This is the contract between the interaction layer (graph-renderer) and the domain adapter (blocks-ui):
+
+```typescript
+type GraphEdit =
+  | { type: 'addNode'; nodeType: string; properties?: Record<string, unknown> }
+  | { type: 'removeNode'; nodeId: string; strategy: DeleteStrategy }
+  | { type: 'addEdge'; sourceId: string; targetId: string; edgeType?: string }
+  | { type: 'removeEdge'; edgeId: string }
+  | { type: 'reconnectEdge'; edgeId: string; newTargetId: string }
+  | { type: 'splitEdge'; edgeId: string; insertNodeType: string }
+  | { type: 'moveNodeToEdge'; nodeId: string; edgeId: string }
+  | { type: 'compound'; edits: GraphEdit[] };
+```
+
+The `compound` variant groups multiple edits into a single undo unit (e.g., palette drag → addNode + addEdge). The domain adapter's `applyEdit(yaml: string, edit: GraphEdit): string` applies the edit to the YAML string and returns the modified YAML.
+
+### 4.8 Viewport transform bridge (Lit ↔ React)
+
+React Flow's viewport transform methods (`screenToFlowPosition`, `flowToScreenPosition`) are only available via the `useReactFlow()` hook inside a React component. GraphCanvas (Lit) needs these for the palette drag handler and node chooser positioning.
+
+The bridge uses a React component inside ReactFlowApp that captures the instance and exposes it via callback:
+
+```typescript
+// Inside ReactFlowApp.tsx
+function ViewportBridge({ onReactFlowReady }: { onReactFlowReady: (instance: ReactFlowInstance) => void }) {
+  const instance = useReactFlow();
+  useEffect(() => { onReactFlowReady(instance); }, [instance, onReactFlowReady]);
+  return null;
+}
+
+// ReactFlowApp renders it inside the provider:
+<ReactFlowProvider>
+  <ReactFlow ...>
+    <ViewportBridge onReactFlowReady={onReactFlowReady} />
+  </ReactFlow>
+</ReactFlowProvider>
+```
+
+GraphCanvas receives the instance via the `onReactFlowReady` callback prop and stores it:
+
+```typescript
+// GraphCanvas.ts
+private _reactFlowInstance?: ReactFlowInstance;
+
+screenToFlow(screenX: number, screenY: number): { x: number; y: number } | undefined {
+  return this._reactFlowInstance?.screenToFlowPosition({ x: screenX, y: screenY });
+}
+
+flowToScreen(flowX: number, flowY: number): { x: number; y: number } | undefined {
+  return this._reactFlowInstance?.flowToScreenPosition({ x: flowX, y: flowY });
+}
+```
+
+These methods are callable from the Lit shell (casehub-diagram) for palette drag hit-testing and node chooser positioning.
+
+### 4.9 ReactFlowApp API expansion
+
+ReactFlowApp requires 7 new callback props to support the editing interactions:
+
+| Prop | Type | Interaction |
+|---|---|---|
+| `onConnect` | `(connection: Connection) => void` | #2 Connection drawing |
+| `isValidConnection` | `(connection: Connection) => boolean` | #2, #3 Drop zone validation |
+| `onReconnect` | `(oldEdge: Edge, newConnection: Connection) => void` | #3 Edge reconnection |
+| `onPaneClick` | `(event: MouseEvent) => void` | #5 Empty-space creation |
+| `onNodeDragStop` | `(event: MouseEvent, node: Node, nodes: Node[]) => void` | #6, #7 Post-drag detection |
+| `onReactFlowReady` | `(instance: ReactFlowInstance) => void` | Viewport bridge (§4.8) |
+| `onPaneContextMenu` | `(event: MouseEvent) => void` | #10 Canvas context menu |
+
+Additionally, the `ReactFlow` element gains:
+- `reconnectEdges` prop (enables edge endpoint dragging)
+- `onContextMenu` handler on node/edge elements (for right-click menus)
+
+Each callback is threaded through GraphCanvas's `_renderReact()` and exposed as either a Lit `@property` or emitted as a `pages-event`.
+
+### 4.10 Mutation flow
 
 All 11 interactions converge on the same mutation path:
 
 ```
-Interaction → pushUndo(currentYaml) → domain adapter.applyEdit(yaml, edit) → re-parse → ELK layout → React Flow render
+Interaction → GraphCanvas.onMutation(edit) → casehub-diagram._pushUndo() → adapter.applyEdit(yaml, edit) → re-parse → ELK layout → React Flow render → emit pages-event
 ```
 
-Every mutation follows this path: push undo, mutate YAML via CST-preserving domain adapter, re-parse to GraphModel, re-layout with ELK, re-render. Compound operations (palette drag → create + connect) are a single undo unit — one `pushUndo()` call before the compound mutation.
+Compound operations (palette drag → create + connect) use `{ type: 'compound', edits: [...] }` — the domain adapter applies all sub-edits in sequence, and the shell pushes a single undo snapshot before the compound.
+
+### 4.11 Editing events
+
+New `pages-event` topics for mutation notifications (per pages-event-contract, colon-separated):
+
+| Topic | Payload | When |
+|---|---|---|
+| `graph:node:create` | `{ nodeId: string, nodeType: string }` | Node added |
+| `graph:node:delete` | `{ nodeId: string, nodeType: string }` | Node removed |
+| `graph:edge:create` | `{ edgeId: string, sourceId: string, targetId: string }` | Edge added |
+| `graph:edge:delete` | `{ edgeId: string }` | Edge removed |
+| `graph:edge:reconnect` | `{ edgeId: string, oldTargetId: string, newTargetId: string }` | Edge endpoint moved |
+| `graph:edit:undo` | `{}` | Undo executed |
+| `graph:edit:redo` | `{}` | Redo executed |
+
+These are emitted by casehub-diagram after the mutation completes and re-layout finishes. They bubble with `composed: true` per protocol.
+
+### 4.12 Edge operations in graph-core
+
+graph-core's `edit.ts` currently has `addNode`, `removeNode`, `replaceNode`. The following edge operations are added:
+
+```typescript
+function addEdge(model: GraphModel, edge: GraphEdge): EditResult;
+function removeEdge(model: GraphModel, edgeId: string): EditResult;
+function reconnectEdge(model: GraphModel, edgeId: string, newTargetId: string): EditResult;
+function splitEdge(model: GraphModel, edgeId: string, insertNode: GraphNode): EditResult;
+```
+
+Each returns `EditResult { model, violations }` consistent with existing operations. `splitEdge` is a compound operation: remove the original edge, add the new node, add two new edges (source→newNode, newNode→originalTarget). All operations validate against registered grammars.
 
 ## 5. Visual Feedback & Drop Zones
 
@@ -252,7 +380,7 @@ Right-click on a node or edge opens a context menu. Menu items are determined by
 | **Connect to...** | `getCreatableTypes().length > 0` | Opens node chooser with connectable types |
 | **Insert after...** | Node has outbound edges | Opens node chooser with insertable types for first outbound edge |
 | **Delete** | `canDelete(node)` returns true | Executes delete per D6 strategy |
-| **Properties** | Always | Selects node, opens property palette |
+| **Properties** | Property palette registered | Selects node, opens property palette (#373) |
 
 ### 6.2 Edge context menu
 
@@ -282,11 +410,37 @@ ARIA: `role="menu"` with `role="menuitem"` children. Focus trap within the menu 
 
 Escape priority: innermost active UI element dismisses first (context menu > node chooser > palette drag > selection).
 
-## 8. Palette Drag Handler
+### 7.1 Keyboard accessibility for drag interactions
 
-The only true custom drag interaction. All other drag interactions (connection drawing, edge reconnection, box selection, node movement) are handled by React Flow natively.
+Drag interactions (#1 palette drag, #2 connection, #3 reconnect, #6 drag-to-empty, #7 node-on-edge) have no direct keyboard equivalents. The context menu provides keyboard-accessible alternatives for all outcomes:
 
-### 8.1 Lifecycle
+| Drag interaction | Keyboard alternative |
+|---|---|
+| #1 Palette drag (add node) | Palette item click (keyboard-focusable button) or context menu "Connect to..." |
+| #2 Connection drawing | Context menu "Connect to..." on source node |
+| #3 Edge reconnection | Context menu "Delete connection" + context menu "Connect to..." on source |
+| #6 Drag-to-empty-space | Context menu "Connect to..." on source node |
+| #7 Node-on-edge drop | Context menu "Insert after..." on source edge |
+
+Interactions #6 and #7 are mouse-only power-user shortcuts — the context menu and node chooser provide equivalent results via keyboard. This satisfies the aria-interaction-contract (PP-20260817-a11y01) requirement that all interactive elements have accessible alternatives.
+
+## 8. Drag Interaction Details
+
+### 8.0 Interaction #6 and #7 — React Flow node drag with post-drop detection
+
+Interactions #6 (drag-to-empty-space) and #7 (node-on-edge drop) do NOT conflict with React Flow's node drag because they USE it. React Flow handles the node drag natively. On `onNodeDragStop`, application logic inspects the drop position:
+
+1. **Edge proximity check**: convert drop position to flow coordinates, check proximity to each edge (point-to-line-segment distance < threshold). If near a valid edge → interaction #7 (node-on-edge drop).
+2. **Empty-space check**: if the node was dragged to a position away from other nodes and edges, and the node moved beyond a minimum threshold (to distinguish from a click) → interaction #6 (drag-to-empty-space, shows node chooser).
+3. **Normal move**: if neither condition is met, React Flow's default node move applies — but since we use auto-layout, the node snaps back to its ELK-computed position on re-layout. This is the expected behaviour in auto-layout mode.
+
+Since ELK re-layout repositions all nodes anyway, React Flow's node drag acts as a gesture detector, not a position setter. The visual drag provides the user feedback about their intent; the `onNodeDragStop` handler interprets the drop target.
+
+### 8.1 Palette drag handler
+
+The only true custom drag interaction (pointer events managed entirely by application code). All other drag interactions use React Flow's native drag system.
+
+### 8.2 Lifecycle
 
 ```
 pointerdown on palette item
@@ -315,7 +469,7 @@ Escape during drag
   → set paletteDragActive = false
 ```
 
-### 8.2 Hit-testing
+### 8.3 Hit-testing
 
 Hit-testing during palette drag uses the graph model's node positions (from the last ELK layout result) and edge paths:
 
@@ -325,16 +479,9 @@ Hit-testing during palette drag uses the graph model's node positions (from the 
 4. Nearest hit wins (node takes priority over edge)
 5. Validate hit against EditPolicy: node hit → `canConnect(newNode, targetNode)`, edge hit → `getInsertableTypes(edge)` must include the dragged type
 
-### 8.3 Viewport transform utilities
+### 8.4 Viewport transform
 
-```typescript
-interface ViewportUtils {
-  screenToFlow(screenX: number, screenY: number): { x: number; y: number };
-  flowToScreen(flowX: number, flowY: number): { x: number; y: number };
-}
-```
-
-Wraps `reactFlowInstance.screenToFlowPosition()` and `flowToScreenPosition()`. Exposed from GraphCanvas as a method so the palette drag handler (in the Lit shell) can coordinate across the DOM boundary.
+Uses the viewport bridge (§4.8) — `GraphCanvas.screenToFlow()` and `GraphCanvas.flowToScreen()` — to coordinate between the palette's DOM space and the React Flow canvas coordinate system.
 
 ## 9. Multi-Select Batch Delete
 
@@ -345,9 +492,22 @@ When multiple nodes are selected and Delete is pressed:
 3. If any strategy is `prompt`: show a single summary popover listing the ambiguous nodes and their options, then execute all on confirmation
 4. Undo restores the entire batch as a single undo unit
 
-Edge case: if deleting node A would auto-join its neighbours, but neighbour B is also selected for deletion, process in topological order (leaves first, then their parents). This prevents joining to a node that's about to be deleted.
+Batch-aware strategies: `getDeleteStrategy` receives the full `deletionSet` (set of all node IDs being deleted). This allows the strategy to detect when an auto-join target is itself being deleted and downgrade to `disconnect`.
 
-## 10. Implementation Phasing
+Processing order: leaf nodes first (nodes with no children in the containment tree), then their parents. This is a containment-tree ordering, not a topological sort of the edge graph — it doesn't assume the edge graph is a DAG. Case definitions may contain cycles (e.g., mutually-triggering bindings), which is valid; the containment tree is always a tree.
+
+## 10. Shadow DOM Topology (new components)
+
+Extends the parent spec's shadow DOM topology table:
+
+| Component | Shadow DOM | Rationale |
+|---|---|---|
+| `<casehub-diagram-palette>` | Enabled | Self-contained Lit component; Shadow DOM provides CSS encapsulation. Per parent spec §2.2. |
+| Node chooser popover | Enabled | Self-contained Lit overlay; Shadow DOM prevents style bleeding from host. |
+| Context menu | Enabled | Self-contained Lit overlay; Shadow DOM prevents style bleeding. Per §6.3. |
+| Ghost element (palette drag) | None | Plain `HTMLElement` created via `document.createElement`, positioned `fixed`. No shadow root — it's a transient visual artifact, not a component. |
+
+## 11. Implementation Phasing
 
 This spec can be implemented in two sub-phases within Phase 4:
 
@@ -376,13 +536,13 @@ This spec can be implemented in two sub-phases within Phase 4:
 
 **4a and 4b are sequential** — 4b builds on EditPolicy, context menu, and deletion logic from 4a.
 
-## 11. Protocols Consulted
+## 12. Protocols Consulted
 
 - **aria-interaction-contract** (PP-20260817-a11y01) — ARIA roles for palette, context menu, node chooser
 - **pages-event-contract** (PP-20260705-bac842) — event emission patterns
 - **web-component-strategy** (PP-20260705-c7687d) — Lit component conventions, Shadow DOM decisions
 
-## 12. References
+## 13. References
 
 - `docs/specs/2026-08-01-visual-diagram-editor-design.md` — parent visual diagram editor spec (Phases 1–7)
 - `docs/specs/issue-265-graph-renderer/2026-08-03-stencil-registry-design.md` — StencilDescriptor registry
@@ -394,7 +554,7 @@ This spec can be implemented in two sub-phases within Phase 4:
 - `packages/graph-renderer/src/stencil-wrapper.tsx` — Handle component rendering
 - `packages/graph-renderer/src/bridge/ReactFlowApp.tsx` — React Flow wrapper
 - `packages/graph-renderer/src/registry/stencil-registry.ts` — stencil registration
-- `packages/pages-runtime/src/dock-drag.ts` — existing pointer-event drag pattern
+- `packages/pages-runtime/src/dock-drag.ts` — existing drag pattern (uses mouse events; palette drag upgrades to pointer events for consolidated mouse/touch/stylus and pointer capture)
 - GE-20260825-309197 — coordinator pattern for multi-phase interaction state machines
 - GE-20260826-ee71b5 — DOM event bubbling with stopPropagation for nested DnD scoping
 - GE-20260809-2cbc61 — ReactFlow vs D3 for graph rendering (informed D4 hybrid approach)
