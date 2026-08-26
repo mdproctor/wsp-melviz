@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-378-diagram-editing-infra
-state: scaffolded
+state: active
 project-sha: e94c65eee53866ba5d5d1a7e96e7aa53070e06de
 date: 2026-08-26
 issue-repo: casehubio/casehub-pages
@@ -13,3 +13,12 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#378 — Issue #378 ← active
+  - [ ] Batch 1: Edge operations
+    - [ ] Task 1: addEdge and removeEdge
+    - [ ] Task 2: reconnectEdge and splitEdge
+  - [ ] Batch 2: EditPolicy SPI
+    - [ ] Task 3: GraphEdit types and EditPolicy interface
+  - [ ] Batch 3: Viewport bridge
+    - [ ] Task 4: ViewportBridge and ReactFlowApp expansion
+  - [ ] Batch 4: Integration
+    - [ ] Task 5: Full build and cross-package verification
