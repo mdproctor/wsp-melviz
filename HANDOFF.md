@@ -5,14 +5,13 @@ Issue: #367, #368, #369 — Container toolbar unification + workspace as root Co
 
 ## Last Session
 
-Closed #345 (recursive container model — Tasks 9-15, squash, merge, push). Closed #366 (split divider resize). Implemented #367 (arrange button at all depths) and #368 (toolbar position top). Brainstormed #369 (workspace centre as root Container) — 8 decisions captured, spec written and reviewed (standard, 3 rounds, 15 issues). Implementation plan written. Started Batch 1 execution: Task 1 (layout-math.ts extracted), Task 2 (detachEntry on all strategies), Task 3 (hideEntry/showEntry on free-layout). 1019 tests pass.
+Completed Batch 2 (DnD event protocol, cross-entry tab transfer, edge splits + depth escape) and Task 7 of Batch 3 (migrateFrameLayout persistence function). 7 of 10 tasks done on the workspace-as-container plan. Assessed Tasks 8-9 (engine-to-Container migration) — coupled refactor across ~10 files and ~70 tests, deferred to next session. 1038 tests passing.
 
 ## Immediate Next Step
 
-Continue plan at **Batch 2, Task 4 (pages-tab-drag-start event protocol)** — the DnD batch. This is the largest batch: tab drag events, cross-entry drop, edge splits, depth escape. Run `/work continue` to resume.
+Continue plan at **Batch 3, Tasks 8-9 (engine-to-Container migration)**. This is an atomic refactor: rewrite `wireFloatingWorkspace` (~80 lines), migrate `activation.ts` (7 `handle.engine` call sites), rewrite `workspace-content-lifecycle.ts`, migrate `frame-detach-handler.ts` and `frame-keyboard.ts`, delete `floating-frame-engine.ts` (58 tests), `frame-organisers.ts`. Run `/work continue` to resume.
 
 ## References
 
-- Spec: `specs/issue-367-container-toolbar-unification/2026-08-25-workspace-as-container-design.md`
-- Decisions: `specs/issue-367-container-toolbar-unification/decisions.md` (D1-D8)
 - Plan: `plans/2026-08-25-workspace-as-container.md`
+- Blog: `blog/2026-08-26-mdp01-dnd-protocol-and-the-engine-boundary.md`
