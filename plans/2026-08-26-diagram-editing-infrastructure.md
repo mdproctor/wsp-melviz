@@ -11,7 +11,7 @@
 
 **Goal:** Add edge operations to graph-core, define EditPolicy SPI and GraphEdit types in graph-renderer, expand ReactFlowApp's callback surface, and wire the viewport transform bridge — the full pages-side infrastructure for diagram editing interactions.
 
-**Architecture:** graph-core gains four edge mutation functions following the existing addNode/removeNode/replaceNode pattern. graph-renderer gains EditPolicy SPI (interface + default + setter), GraphEdit discriminated union, ViewportBridge React component, and 7 new ReactFlowApp callback props. All work is in the pages repo; blocks-ui domain work (palette component, context menu, CaseEditPolicy) is a follow-on plan.
+**Architecture:** graph-core gains four edge mutation functions following the existing addNode/removeNode/replaceNode pattern. graph-renderer gains EditPolicy SPI (interface + default, registered per-instance on GraphCanvas), GraphEdit discriminated union with `applyGraphEdit` executor, ViewportBridge React component, and 9 new ReactFlowApp callback props. All work is in the pages repo; blocks-ui domain work (palette component, context menu, CaseEditPolicy) is a follow-on plan.
 
 **Tech Stack:** TypeScript 5, Vitest, React 18, @xyflow/react v12, Lit 3.x
 
@@ -190,7 +190,7 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "feat: add addEdge and re
 
 **Interfaces:**
 - Consumes: `GraphModel`, `GraphEdge`, `GraphNode`, `EditResult`, `validateConstraints()`, `edgeById()`, `nodeById()` from graph-core
-- Produces: `reconnectEdge(model: GraphModel, edgeId: string, newTargetId: string): EditResult`, `splitEdge(model: GraphModel, edgeId: string, insertNode: GraphNode): EditResult`
+- Produces: `reconnectEdge(model: GraphModel, edgeId: string, endpoints: { source?: string; target?: string }): EditResult`, `splitEdge(model: GraphModel, edgeId: string, insertNode: GraphNode): EditResult`
 
 - [ ] **Step 1: Write failing tests for reconnectEdge**
 
@@ -206,19 +206,41 @@ describe('reconnectEdge', () => {
   };
 
   it('changes the target of an existing edge', () => {
-    const result = reconnectEdge(model, 'e1', 'n3');
+    const result = reconnectEdge(model, 'e1', { target: 'n3' });
     expect(result.model.edges).toHaveLength(1);
     expect(result.model.edges[0]!.target).toBe('n3');
     expect(result.model.edges[0]!.source).toBe('n1');
     expect(result.model.edges[0]!.id).toBe('e1');
   });
 
+  it('changes the source of an existing edge', () => {
+    const result = reconnectEdge(model, 'e1', { source: 'n3' });
+    expect(result.model.edges).toHaveLength(1);
+    expect(result.model.edges[0]!.source).toBe('n3');
+    expect(result.model.edges[0]!.target).toBe('n2');
+    expect(result.model.edges[0]!.id).toBe('e1');
+  });
+
+  it('changes both endpoints', () => {
+    const result = reconnectEdge(model, 'e1', { source: 'n3', target: 'n3' });
+    expect(result.model.edges[0]!.source).toBe('n3');
+    expect(result.model.edges[0]!.target).toBe('n3');
+  });
+
   it('throws when edge not found', () => {
-    expect(() => reconnectEdge(model, 'missing', 'n3')).toThrow("Edge 'missing' not found");
+    expect(() => reconnectEdge(model, 'missing', { target: 'n3' })).toThrow("Edge 'missing' not found");
   });
 
   it('throws when new target not found', () => {
-    expect(() => reconnectEdge(model, 'e1', 'missing')).toThrow("Target node 'missing' not found");
+    expect(() => reconnectEdge(model, 'e1', { target: 'missing' })).toThrow("Node 'missing' not found");
+  });
+
+  it('throws when new source not found', () => {
+    expect(() => reconnectEdge(model, 'e1', { source: 'missing' })).toThrow("Node 'missing' not found");
+  });
+
+  it('throws when no endpoints specified', () => {
+    expect(() => reconnectEdge(model, 'e1', {})).toThrow('At least one endpoint');
   });
 });
 ```
@@ -268,17 +290,34 @@ Expected: FAIL — `reconnectEdge` and `splitEdge` not exported
 Add to `packages/graph-core/src/edit.ts`:
 
 ```typescript
-export function reconnectEdge(model: GraphModel, edgeId: string, newTargetId: string): EditResult {
+export function reconnectEdge(
+  model: GraphModel,
+  edgeId: string,
+  endpoints: { source?: string; target?: string },
+): EditResult {
   const edge = model.edges.find(e => e.id === edgeId);
   if (!edge) {
     throw new Error(`Edge '${edgeId}' not found`);
   }
-  if (!model.nodes.some(n => n.id === newTargetId)) {
-    throw new Error(`Target node '${newTargetId}' not found`);
+  if (endpoints.source === undefined && endpoints.target === undefined) {
+    throw new Error('At least one endpoint (source or target) must be specified');
+  }
+  if (endpoints.source !== undefined && !model.nodes.some(n => n.id === endpoints.source)) {
+    throw new Error(`Node '${endpoints.source}' not found`);
+  }
+  if (endpoints.target !== undefined && !model.nodes.some(n => n.id === endpoints.target)) {
+    throw new Error(`Node '${endpoints.target}' not found`);
   }
   const newModel: GraphModel = {
     ...model,
-    edges: model.edges.map(e => e.id === edgeId ? { ...e, target: newTargetId } : e),
+    edges: model.edges.map(e => {
+      if (e.id !== edgeId) return e;
+      return {
+        ...e,
+        source: endpoints.source ?? e.source,
+        target: endpoints.target ?? e.target,
+      };
+    }),
   };
   return { model: newModel, violations: validateConstraints(newModel) };
 }
@@ -287,9 +326,6 @@ export function splitEdge(model: GraphModel, edgeId: string, insertNode: GraphNo
   const edge = model.edges.find(e => e.id === edgeId);
   if (!edge) {
     throw new Error(`Edge '${edgeId}' not found`);
-  }
-  if (model.nodes.some(n => n.id === insertNode.id)) {
-    throw new Error(`Duplicate node ID '${insertNode.id}'`);
   }
   const newEdge1: GraphEdge = {
     id: `${edgeId}-pre`,
@@ -303,12 +339,11 @@ export function splitEdge(model: GraphModel, edgeId: string, insertNode: GraphNo
     source: insertNode.id,
     target: edge.target,
   };
-  const newModel: GraphModel = {
-    nodes: [...model.nodes, insertNode],
-    edges: [...model.edges.filter(e => e.id !== edgeId), newEdge1, newEdge2],
-    metadata: model.metadata,
-  };
-  return { model: newModel, violations: validateConstraints(newModel) };
+  let result = removeEdge(model, edgeId);
+  result = addNode(result.model, insertNode);
+  result = addEdge(result.model, newEdge1);
+  result = addEdge(result.model, newEdge2);
+  return result;
 }
 ```
 
@@ -348,7 +383,7 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "feat: add reconnectEdge 
 
 **Interfaces:**
 - Consumes: `GraphModel`, `GraphNode`, `GraphEdge`, `StencilDescriptor` from graph-core and stencil-registry
-- Produces: `GraphEdit` type, `EditPolicy` interface, `StencilTypeInfo` type, `DeleteStrategy` type, `DeleteOption` type, `setEditPolicy(policy)`, `getEditPolicy()`, `defaultEditPolicy(model)`
+- Produces: `GraphEdit` type, `EditPolicy` interface, `StencilTypeInfo` type, `DeleteStrategy` type, `DeleteOption` type, `defaultEditPolicy(): EditPolicy`, `applyGraphEdit(model, edit): EditResult`
 
 - [ ] **Step 1: Create types.ts with GraphEdit, EditPolicy, and supporting types**
 
@@ -387,7 +422,7 @@ export type GraphEdit =
   | { readonly type: 'removeNode'; readonly nodeId: string; readonly strategy: DeleteStrategy }
   | { readonly type: 'addEdge'; readonly sourceId: string; readonly targetId: string; readonly edgeType?: string }
   | { readonly type: 'removeEdge'; readonly edgeId: string }
-  | { readonly type: 'reconnectEdge'; readonly edgeId: string; readonly newTargetId: string }
+  | { readonly type: 'reconnectEdge'; readonly edgeId: string; readonly endpoints: { readonly source?: string; readonly target?: string } }
   | { readonly type: 'splitEdge'; readonly edgeId: string; readonly insertNodeType: string }
   | { readonly type: 'moveNodeToEdge'; readonly nodeId: string; readonly edgeId: string }
   | { readonly type: 'compound'; readonly edits: readonly GraphEdit[] };
@@ -399,10 +434,12 @@ Create `packages/graph-renderer/src/editing/edit-policy.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { defaultEditPolicy, setEditPolicy, getEditPolicy } from './edit-policy.js';
+import { defaultEditPolicy } from './edit-policy.js';
+import { applyGraphEdit } from './apply-graph-edit.js';
 import { registerGrammar, clearGrammarRegistry } from '@casehubio/graph-core';
 import { registerStencil, clearRegistry } from '../registry/stencil-registry.js';
 import type { GraphModel, GraphNode, GraphEdge } from '@casehubio/graph-core';
+import type { EditPolicy } from './types.js';
 import { html } from 'lit';
 
 const dummyRender = () => html`<div>test</div>`;
@@ -438,32 +475,32 @@ describe('defaultEditPolicy', () => {
 
   describe('canConnect', () => {
     it('returns true when no grammar registered', () => {
-      const policy = defaultEditPolicy(model);
+      const policy = defaultEditPolicy();
       expect(policy.canConnect(model.nodes[0]!, model.nodes[1]!, model)).toBe(true);
     });
 
     it('returns false when outbound allowedTo excludes target type', () => {
       registerGrammar(makeGrammar('binding', 1, ['milestone']));
-      const policy = defaultEditPolicy(model);
+      const policy = defaultEditPolicy();
       expect(policy.canConnect(model.nodes[0]!, model.nodes[1]!, model)).toBe(false);
     });
 
     it('returns false when outbound cardinality exceeded', () => {
       registerGrammar(makeGrammar('binding', 1, ['worker']));
-      const policy = defaultEditPolicy(model);
+      const policy = defaultEditPolicy();
       expect(policy.canConnect(model.nodes[0]!, model.nodes[1]!, model)).toBe(false);
     });
   });
 
   describe('canDelete', () => {
     it('returns true for any node', () => {
-      const policy = defaultEditPolicy(model);
+      const policy = defaultEditPolicy();
       expect(policy.canDelete(model.nodes[0]!, model)).toBe(true);
     });
   });
 
   describe('getDeleteStrategy', () => {
-    it('returns auto-join for leaf with 1 inbound + 1 outbound', () => {
+    it('returns auto-join for leaf with 1 inbound + 1 outbound when join is valid', () => {
       const chain: GraphModel = {
         nodes: [
           { id: 'a', type: 'x', properties: {} },
@@ -475,8 +512,31 @@ describe('defaultEditPolicy', () => {
           { id: 'e2', type: 'd', source: 'b', target: 'c' },
         ],
       };
-      const policy = defaultEditPolicy(chain);
+      const policy = defaultEditPolicy();
       expect(policy.getDeleteStrategy(chain.nodes[1]!, chain)).toEqual({ type: 'auto-join' });
+    });
+
+    it('returns disconnect when auto-join would violate grammar', () => {
+      registerGrammar({
+        type: 'a',
+        connections: {
+          inbound: { min: 0, max: 10, allowedFrom: [] },
+          outbound: { min: 0, max: 1, allowedTo: ['b'] },
+        },
+      });
+      const chain: GraphModel = {
+        nodes: [
+          { id: 'a', type: 'a', properties: {} },
+          { id: 'b', type: 'b', properties: {} },
+          { id: 'c', type: 'c', properties: {} },
+        ],
+        edges: [
+          { id: 'e1', type: 'd', source: 'a', target: 'b' },
+          { id: 'e2', type: 'd', source: 'b', target: 'c' },
+        ],
+      };
+      const policy = defaultEditPolicy();
+      expect(policy.getDeleteStrategy(chain.nodes[1]!, chain)).toEqual({ type: 'disconnect' });
     });
 
     it('returns disconnect for node with multiple inbound', () => {
@@ -491,7 +551,7 @@ describe('defaultEditPolicy', () => {
           { id: 'e2', type: 'd', source: 'b', target: 'c' },
         ],
       };
-      const policy = defaultEditPolicy(multi);
+      const policy = defaultEditPolicy();
       expect(policy.getDeleteStrategy(multi.nodes[2]!, multi)).toEqual({ type: 'disconnect' });
     });
 
@@ -503,7 +563,7 @@ describe('defaultEditPolicy', () => {
         ],
         edges: [],
       };
-      const policy = defaultEditPolicy(container);
+      const policy = defaultEditPolicy();
       expect(policy.getDeleteStrategy(container.nodes[0]!, container)).toEqual({ type: 'cascade' });
     });
 
@@ -519,25 +579,67 @@ describe('defaultEditPolicy', () => {
           { id: 'e2', type: 'd', source: 'b', target: 'c' },
         ],
       };
-      const policy = defaultEditPolicy(chain);
+      const policy = defaultEditPolicy();
       const deletionSet = new Set(['b', 'c']);
       expect(policy.getDeleteStrategy(chain.nodes[1]!, chain, deletionSet)).toEqual({ type: 'disconnect' });
     });
   });
+
+  describe('getCreatableTypes', () => {
+    it('includes child types when nearNode is a container', () => {
+      registerGrammar({
+        type: 'container',
+        connections: { inbound: { min: 0, max: 10, allowedFrom: [] }, outbound: { min: 0, max: 10, allowedTo: [] } },
+        containment: { allowedChildTypes: ['child'] },
+      });
+      registerStencil({
+        type: 'child', label: 'Child', icon: 'c',
+        grammar: {
+          type: 'child',
+          connections: { inbound: { min: 0, max: 10, allowedFrom: [] }, outbound: { min: 0, max: 10, allowedTo: [] } },
+          containment: { allowedParentTypes: ['container'] },
+        },
+        render: dummyRender,
+      });
+      const m: GraphModel = { nodes: [{ id: 'c1', type: 'container', properties: {} }], edges: [] };
+      const policy = defaultEditPolicy();
+      const types = policy.getCreatableTypes(m.nodes[0]!, m);
+      expect(types.some(t => t.type === 'child')).toBe(true);
+    });
+  });
 });
 
-describe('setEditPolicy / getEditPolicy', () => {
-  it('stores and retrieves custom policy', () => {
-    const custom: EditPolicy = {
-      canConnect: () => false,
-      getInsertableTypes: () => [],
-      getCreatableTypes: () => [],
-      canDelete: () => false,
-      getDeleteStrategy: () => ({ type: 'disconnect' as const }),
-    };
-    setEditPolicy(custom);
-    expect(getEditPolicy()).toBe(custom);
-    setEditPolicy(undefined);
+describe('applyGraphEdit', () => {
+  const model: GraphModel = {
+    nodes: [
+      { id: 'n1', type: 'a', properties: {} },
+      { id: 'n2', type: 'b', properties: {} },
+    ],
+    edges: [{ id: 'e1', type: 'default', source: 'n1', target: 'n2' }],
+  };
+
+  it('applies addEdge edit', () => {
+    const noEdgeModel: GraphModel = { ...model, edges: [] };
+    const result = applyGraphEdit(noEdgeModel, { type: 'addEdge', sourceId: 'n1', targetId: 'n2' });
+    expect(result.model.edges).toHaveLength(1);
+  });
+
+  it('applies removeEdge edit', () => {
+    const result = applyGraphEdit(model, { type: 'removeEdge', edgeId: 'e1' });
+    expect(result.model.edges).toHaveLength(0);
+  });
+
+  it('applies compound edit as single operation', () => {
+    const noEdgeModel: GraphModel = { ...model, edges: [] };
+    const result = applyGraphEdit(noEdgeModel, {
+      type: 'compound',
+      edits: [
+        { type: 'addEdge', sourceId: 'n1', targetId: 'n2' },
+        { type: 'addNode', nodeType: 'c', properties: {} },
+      ],
+    });
+    expect(result.model.edges).toHaveLength(1);
+    expect(result.model.nodes).toHaveLength(3);
   });
 });
 ```
@@ -553,23 +655,13 @@ Create `packages/graph-renderer/src/editing/edit-policy.ts`:
 
 ```typescript
 import type { GraphModel, GraphNode, GraphEdge } from '@casehubio/graph-core';
-import { getGrammar, getAllGrammars, inboundEdges, outboundEdges, childrenOf } from '@casehubio/graph-core';
+import { getGrammar, inboundEdges, outboundEdges, childrenOf, nodeById } from '@casehubio/graph-core';
 import { getAllStencils } from '../registry/stencil-registry.js';
 import type { EditPolicy, StencilTypeInfo, DeleteStrategy } from './types.js';
 
-let currentPolicy: EditPolicy | undefined;
-
-export function setEditPolicy(policy: EditPolicy | undefined): void {
-  currentPolicy = policy;
-}
-
-export function getEditPolicy(): EditPolicy | undefined {
-  return currentPolicy;
-}
-
-export function defaultEditPolicy(model: GraphModel): EditPolicy {
-  return {
-    canConnect(source: GraphNode, target: GraphNode, _model: GraphModel, _edgeType?: string): boolean {
+export function defaultEditPolicy(): EditPolicy {
+  const policy: EditPolicy = {
+    canConnect(source: GraphNode, target: GraphNode, model: GraphModel, _edgeType?: string): boolean {
       const grammar = getGrammar(source.type);
       if (!grammar) return true;
 
@@ -578,7 +670,7 @@ export function defaultEditPolicy(model: GraphModel): EditPolicy {
         return false;
       }
 
-      const currentOutbound = outboundEdges(_model, source.id);
+      const currentOutbound = outboundEdges(model, source.id);
       if (currentOutbound.length >= outbound.max) {
         return false;
       }
@@ -589,7 +681,7 @@ export function defaultEditPolicy(model: GraphModel): EditPolicy {
         if (inbound.allowedFrom.length > 0 && !inbound.allowedFrom.includes(source.type)) {
           return false;
         }
-        const currentInbound = inboundEdges(_model, target.id);
+        const currentInbound = inboundEdges(model, target.id);
         if (currentInbound.length >= inbound.max) {
           return false;
         }
@@ -598,9 +690,9 @@ export function defaultEditPolicy(model: GraphModel): EditPolicy {
       return true;
     },
 
-    getInsertableTypes(edge: GraphEdge, _model: GraphModel): StencilTypeInfo[] {
-      const sourceNode = _model.nodes.find(n => n.id === edge.source);
-      const targetNode = _model.nodes.find(n => n.id === edge.target);
+    getInsertableTypes(edge: GraphEdge, model: GraphModel): StencilTypeInfo[] {
+      const sourceNode = model.nodes.find(n => n.id === edge.source);
+      const targetNode = model.nodes.find(n => n.id === edge.target);
       if (!sourceNode || !targetNode) return [];
 
       return getAllStencils()
@@ -615,10 +707,12 @@ export function defaultEditPolicy(model: GraphModel): EditPolicy {
         .map(s => ({ type: s.type, label: s.label, icon: s.icon }));
     },
 
-    getCreatableTypes(_nearNode: GraphNode | null, _model: GraphModel): StencilTypeInfo[] {
+    getCreatableTypes(nearNode: GraphNode | null, model: GraphModel): StencilTypeInfo[] {
       return getAllStencils()
         .filter(s => {
-          if (!s.grammar.containment?.allowedParentTypes) return true;
+          const parentTypes = s.grammar.containment?.allowedParentTypes;
+          if (!parentTypes) return true;
+          if (nearNode && parentTypes.includes(nearNode.type)) return true;
           return false;
         })
         .map(s => ({ type: s.type, label: s.label, icon: s.icon }));
@@ -628,26 +722,91 @@ export function defaultEditPolicy(model: GraphModel): EditPolicy {
       return true;
     },
 
-    getDeleteStrategy(node: GraphNode, _model: GraphModel, deletionSet?: ReadonlySet<string>): DeleteStrategy {
-      const children = childrenOf(_model, node.id);
+    getDeleteStrategy(node: GraphNode, model: GraphModel, deletionSet?: ReadonlySet<string>): DeleteStrategy {
+      const children = childrenOf(model, node.id);
       if (children.length > 0) {
         return { type: 'cascade' };
       }
 
-      const inbound = inboundEdges(_model, node.id);
-      const outbound = outboundEdges(_model, node.id);
+      const inbound = inboundEdges(model, node.id);
+      const outbound = outboundEdges(model, node.id);
 
       if (inbound.length === 1 && outbound.length === 1) {
         const joinTargetId = outbound[0]!.target;
         if (deletionSet && deletionSet.has(joinTargetId)) {
           return { type: 'disconnect' };
         }
-        return { type: 'auto-join' };
+        const predecessor = nodeById(model, inbound[0]!.source);
+        const successor = nodeById(model, joinTargetId);
+        if (predecessor && successor && policy.canConnect(predecessor, successor, model)) {
+          return { type: 'auto-join' };
+        }
+        return { type: 'disconnect' };
       }
 
       return { type: 'disconnect' };
     },
   };
+  return policy;
+}
+```
+
+Create `packages/graph-renderer/src/editing/apply-graph-edit.ts`:
+
+```typescript
+import type { GraphModel, GraphNode, GraphEdge, EditResult } from '@casehubio/graph-core';
+import { addNode, removeNode, addEdge, removeEdge, reconnectEdge, splitEdge } from '@casehubio/graph-core';
+import type { GraphEdit } from './types.js';
+
+let idCounter = 0;
+function nextId(prefix: string): string {
+  idCounter += 1;
+  return `${prefix}-${String(idCounter)}`;
+}
+
+export function applyGraphEdit(model: GraphModel, edit: GraphEdit): EditResult {
+  switch (edit.type) {
+    case 'addNode': {
+      const node: GraphNode = {
+        id: nextId('node'),
+        type: edit.nodeType,
+        properties: edit.properties ?? {},
+      };
+      return addNode(model, node);
+    }
+    case 'removeNode':
+      return removeNode(model, edit.nodeId);
+    case 'addEdge': {
+      const edge: GraphEdge = {
+        id: nextId('edge'),
+        type: edit.edgeType ?? 'default',
+        source: edit.sourceId,
+        target: edit.targetId,
+      };
+      return addEdge(model, edge);
+    }
+    case 'removeEdge':
+      return removeEdge(model, edit.edgeId);
+    case 'reconnectEdge':
+      return reconnectEdge(model, edit.edgeId, edit.endpoints);
+    case 'splitEdge': {
+      const insertNode: GraphNode = {
+        id: nextId('node'),
+        type: edit.insertNodeType,
+        properties: {},
+      };
+      return splitEdge(model, edit.edgeId, insertNode);
+    }
+    case 'moveNodeToEdge':
+      throw new Error('moveNodeToEdge requires domain adapter — not executable at graph-core level');
+    case 'compound': {
+      let result: EditResult = { model, violations: [] };
+      for (const subEdit of edit.edits) {
+        result = applyGraphEdit(result.model, subEdit);
+      }
+      return result;
+    }
+  }
 }
 ```
 
@@ -660,7 +819,8 @@ Expected: PASS
 
 Add to `packages/graph-renderer/src/index.ts`:
 ```typescript
-export { setEditPolicy, getEditPolicy, defaultEditPolicy } from './editing/edit-policy.js';
+export { defaultEditPolicy } from './editing/edit-policy.js';
+export { applyGraphEdit } from './editing/apply-graph-edit.js';
 export type { EditPolicy, GraphEdit, StencilTypeInfo, DeleteStrategy, DeleteOption } from './editing/types.js';
 ```
 
@@ -686,8 +846,8 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "feat: add EditPolicy SPI
 - Modify: `packages/graph-renderer/src/bridge/bridge.test.ts`
 
 **Interfaces:**
-- Consumes: `useReactFlow()` from `@xyflow/react`, `EditPolicy`, `getEditPolicy()` from editing/edit-policy
-- Produces: `ViewportBridge` React component (internal), `GraphCanvas.screenToFlow(x, y)`, `GraphCanvas.flowToScreen(x, y)`, expanded ReactFlowApp props (`onConnect`, `isValidConnection`, `onReconnect`, `onPaneClick`, `onNodeDragStop`, `onPaneContextMenu`, `onReactFlowReady`)
+- Consumes: `useReactFlow()` from `@xyflow/react`, `EditPolicy` type from editing/types
+- Produces: `ViewportBridge` React component (internal), `GraphCanvas.screenToFlow(x, y)`, `GraphCanvas.flowToScreen(x, y)`, `GraphCanvas.editPolicy` property, expanded ReactFlowApp props (`onConnect`, `isValidConnection`, `onReconnect`, `onPaneClick`, `onNodeDragStop`, `onPaneContextMenu`, `onNodeContextMenu`, `onEdgeContextMenu`, `onReactFlowReady`)
 
 - [ ] **Step 1: Write failing test for GraphCanvas viewport methods**
 
@@ -754,11 +914,13 @@ interface ReactFlowAppProps {
   onPaneClick?: (event: React.MouseEvent) => void;
   onNodeDragStop?: (event: React.MouseEvent, node: Node, nodes: Node[]) => void;
   onPaneContextMenu?: (event: React.MouseEvent) => void;
+  onNodeContextMenu?: (event: React.MouseEvent, node: Node) => void;
+  onEdgeContextMenu?: (event: React.MouseEvent, edge: Edge) => void;
   onReactFlowReady?: (instance: ReactFlowInstance) => void;
 }
 ```
 
-Add `<ViewportBridge>` inside ReactFlow and wire new props to the `<ReactFlow>` element:
+Add `<ViewportBridge>` inside ReactFlow and wire new props to the `<ReactFlow>` element. Note: use `onPaneContextMenu` (not `onContextMenu`) so only empty-canvas right-clicks fire. Node and edge right-clicks use their own callbacks:
 ```tsx
 <ReactFlow
   nodes={nodes}
@@ -773,7 +935,9 @@ Add `<ViewportBridge>` inside ReactFlow and wire new props to the `<ReactFlow>` 
   onReconnect={onReconnect}
   onPaneClick={onPaneClick}
   onNodeDragStop={onNodeDragStop}
-  onContextMenu={onPaneContextMenu}
+  onPaneContextMenu={onPaneContextMenu}
+  onNodeContextMenu={onNodeContextMenu}
+  onEdgeContextMenu={onEdgeContextMenu}
   reconnectEdges
   selectionOnDrag
   selectionMode={SelectionMode.Partial}
@@ -790,15 +954,18 @@ Add `<ViewportBridge>` inside ReactFlow and wire new props to the `<ReactFlow>` 
 
 Add to `packages/graph-renderer/src/bridge/GraphCanvas.ts`:
 
-Add a private field for the React Flow instance and the onMutation property:
+Add new fields and properties:
 ```typescript
 private _reactFlowInstance?: ReactFlowInstance;
+
+@property({ attribute: false })
+editPolicy?: EditPolicy;
 
 @property({ attribute: false })
 onMutation?: (edit: GraphEdit) => void;
 ```
 
-Add public methods:
+Add public viewport bridge methods:
 ```typescript
 screenToFlow(screenX: number, screenY: number): { x: number; y: number } | undefined {
   return this._reactFlowInstance?.screenToFlowPosition({ x: screenX, y: screenY });
@@ -816,26 +983,26 @@ onReactFlowReady: (instance: ReactFlowInstance) => {
 },
 ```
 
-Wire the connection callbacks in `_renderReact()`:
+Wire the connection callbacks in `_renderReact()`. Note: uses `this.model` (the Lit `@property`) with guard, not `this._currentModel` which does not exist. Event emission is inside the success path only:
 ```typescript
 onConnect: (connection: Connection) => {
-  const policy = getEditPolicy();
-  if (policy) {
-    const source = nodeById(this._currentModel, connection.source);
-    const target = nodeById(this._currentModel, connection.target);
-    if (source && target && policy.canConnect(source, target, this._currentModel)) {
-      this.onMutation?.({ type: 'addEdge', sourceId: connection.source, targetId: connection.target });
-    }
-  }
+  if (!this.model) return;
+  const source = nodeById(this.model, connection.source);
+  const target = nodeById(this.model, connection.target);
+  if (!source || !target) return;
+  const policy = this.editPolicy;
+  if (policy && !policy.canConnect(source, target, this.model)) return;
+  this.onMutation?.({ type: 'addEdge', sourceId: connection.source, targetId: connection.target });
   emitPagesEvent(this, 'graph:edge:create', { sourceId: connection.source, targetId: connection.target });
 },
 isValidConnection: (connection: Connection) => {
-  const policy = getEditPolicy();
+  if (!this.model) return false;
+  const policy = this.editPolicy;
   if (!policy) return true;
-  const source = nodeById(this._currentModel, connection.source);
-  const target = nodeById(this._currentModel, connection.target);
+  const source = nodeById(this.model, connection.source);
+  const target = nodeById(this.model, connection.target);
   if (!source || !target) return false;
-  return policy.canConnect(source, target, this._currentModel);
+  return policy.canConnect(source, target, this.model);
 },
 ```
 
@@ -907,7 +1074,7 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "chore: lint fixes for di
 
 ## References
 
-- [2026-08-26-diagram-editing-infrastructure-design.md] — design spec this plan implements
+- [specs/diagram-editing-infrastructure/2026-08-26-diagram-editing-infrastructure-design.md] — design spec this plan implements (workspace repo)
 - [packages/graph-core/src/edit.ts] — existing node edit operations (addNode, removeNode, replaceNode)
 - [packages/graph-core/src/query.ts] — edgesOf, inboundEdges, outboundEdges, nodeById, edgeById
 - [packages/graph-core/src/validator.ts] — validateConstraints, ConstraintViolation
@@ -917,4 +1084,4 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "chore: lint fixes for di
 - [packages/graph-renderer/src/bridge/GraphCanvas.ts] — Lit-to-React bridge
 - [packages/graph-renderer/src/registry/stencil-registry.ts] — StencilDescriptor, getAllStencils
 - [GE-20260825-309197] — coordinator pattern for multi-phase interaction state machines
-- [PP-20260705-bac842] — pages-event-contract
+- [PP-20260705-bac842] — pages-event-contract. Note: new `graph:*` editing event topics (graph:edge:create, etc.) follow the same convention as existing `graph:*` interaction events and will be added to the protocol's reserved names table when the full editing event catalog is finalised.
