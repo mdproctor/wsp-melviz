@@ -1,0 +1,15 @@
+# Work Plan — issue-378-diagram-editing-infra
+
+## State
+branch: issue-378-diagram-editing-infra
+state: scaffolded
+project-sha: e94c65eee53866ba5d5d1a7e96e7aa53070e06de
+date: 2026-08-26
+issue-repo: casehubio/casehub-pages
+covers: 378
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#378 — Issue #378 ← active
