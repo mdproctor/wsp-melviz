@@ -5,13 +5,13 @@ Issue: #367, #368, #369 — Container toolbar unification + workspace as root Co
 
 ## Last Session
 
-Completed Batch 2 (DnD event protocol, cross-entry tab transfer, edge splits + depth escape) and Task 7 of Batch 3 (migrateFrameLayout persistence function). 7 of 10 tasks done on the workspace-as-container plan. Assessed Tasks 8-9 (engine-to-Container migration) — coupled refactor across ~10 files and ~70 tests, deferred to next session. 1038 tests passing.
+Completed the engine elimination — Tasks 8-9 of the workspace-as-container plan plus full backend deletion. Rewrote `wireFloatingWorkspace` (362→140 lines), migrated all engine consumers (frame-keyboard, frame-detach-handler, frame-zone-picker, activation.ts, site.ts) to Container API, deleted engine (333 lines), backend (1094 lines), frame-organisers, workspace-content-lifecycle, floating-frame-backend interface, frame-state. Net: 4036 lines deleted, 433 added. 918 tests passing, typecheck clean, lint clean. Fixed pre-existing accordion `detachEntry` bug (`hostElement`→`containerEl`).
 
 ## Immediate Next Step
 
-Continue plan at **Batch 3, Tasks 8-9 (engine-to-Container migration)**. This is an atomic refactor: rewrite `wireFloatingWorkspace` (~80 lines), migrate `activation.ts` (7 `handle.engine` call sites), rewrite `workspace-content-lifecycle.ts`, migrate `frame-detach-handler.ts` and `frame-keyboard.ts`, delete `floating-frame-engine.ts` (58 tests), `frame-organisers.ts`. Run `/work continue` to resume.
+Task 10 (Batch 4): Integration tests + final verification. Write DnD integration tests (cross-entry tab transfer via DOM event dispatch), workspace mode switch tests (`setLayout("tabbed")`/`setLayout("free")` preserves entries), and migration edge case tests (nested containers, split containers). Run `/work continue` to resume.
 
 ## References
 
 - Plan: `plans/2026-08-25-workspace-as-container.md`
-- Blog: `blog/2026-08-26-mdp01-dnd-protocol-and-the-engine-boundary.md`
+- Blog: `blog/2026-08-26-mdp02-killing-the-engine.md`
