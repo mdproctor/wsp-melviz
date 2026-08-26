@@ -1,26 +1,18 @@
 # HANDOFF — casehub-pages
 
-Branch: `issue-345-recursive-container-model`
-Issue: #345 — Recursive Container model — entries as nested Containers
+Branch: `main` (direct-to-main fixes)
+Issue: #367, #368, #369 (closed), #376 (filed)
 
 ## Last Session
 
-Implemented the core recursive Container model (Entry.childContainer, containerizeEntry/flattenEntry, tree-walking refactor, persistence bridge). Then spent significant time fixing pre-existing floating workspace UX bugs exposed by testing the feature in the browser: frame resize on viewport change, toolbar position stability across mode cycles, workspace mode switching rendering real content instead of placeholder headings, and eliminating split-brain state between free-mode frames and workspace-mode containers. 20+ commits on the branch.
+Visual testing of the engine elimination (branch `issue-367-container-toolbar-unification`, closed previous session). Launched the examples gallery in Playwright and found 19 regressions + missing features. All fixed via TDD directly on main: nested workspace height collapse, double toolbars, cross-workspace toolbar leaking, toolbar depth suppression, nest button restoration, edge split creating peer frames instead of split containers, tab drag gap preview, within-strip reorder triggering cross-frame DnD, cross-frame drop position/activation, stale preview cleanup, pane-level split scoping, layout cycle including split modes, root toolbar made inline (recursively regular), and auto-re-arrange on addEntry. Also cleaned stale `dist/` artifacts from deleted source files.
 
 ## Immediate Next Step
 
-The workspace mode switching still has issues — after cycling through modes (free→tabbed→accordion→free), the Preview frame loses its tab strip toolbar actions (☰ +). The root cause: `injectStripActions` in `renderFrame` runs once at initial render but isn't re-invoked when frames are hidden/shown by `applyWorkspaceMode`. The fix needs `injectStripActions` to run after frames are shown again (in the `showFrames` path), or the strip actions need to be part of the Container's own lifecycle rather than externally injected DOM.
-
-Broader remaining work on #345:
-- Robust frame toolbar lifecycle across workspace mode switches
-- TDD for mode cycling, state preservation, toolbar persistence
-- `restoreLayout` path for containerTree (capture works, restore from persistence not wired)
-- Nest button re-injection after mode cycle round-trips
-- Frame Sandbox example fix (`free-layout` YAML alias not desugared to `free`)
+ARC42STORIES.MD is stale — test counts (shows 183, actual 957), missing packages (pages-aria, pages-table), container model not documented. File an issue or update directly.
 
 ## References
 
-- Design spec: `docs/specs/issue-345-recursive-container-model/`
-- Decisions: `docs/specs/issue-345-recursive-container-model/decisions.md`
-- Plan: `plans/2026-08-23-recursive-container-model.md` (workspace)
-- Key files changed: `packages/pages-runtime/src/frame-sandbox/container.ts`, `types.ts`, `group-organiser-backend.ts`, `wire-floating-workspace.ts`, `container-toolbar.ts`, `floating-frame-engine.ts`, `floating-frame-backend.ts`, `activation.ts`
+- Filed: #376 — dual-zone edge split scoping (pane vs frame level)
+- Spec: `specs/issue-367-container-toolbar-unification/2026-08-25-workspace-as-container-design.md`
+- Plan: `plans/2026-08-25-workspace-as-container.md`
