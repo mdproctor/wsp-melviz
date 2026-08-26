@@ -13,7 +13,7 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#374 — Issue #374 ← active
-  - [ ] Batch 1: Component
-    - [ ] Task 1: Create pages-duration-input with tests
-  - [ ] Batch 2: Resolver
-    - [ ] Task 2: Wire resolver and palette import
+  - [x] Batch 1: Component
+    - [x] Task 1: Create pages-duration-input with tests
+  - [x] Batch 2: Resolver
+    - [x] Task 2: Wire resolver and palette import
