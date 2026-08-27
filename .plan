@@ -2,7 +2,7 @@
 
 ## State
 branch: panel-activation-hash-binding
-state: active
+state: closing:promoted
 issue-repo: casehubio/casehub-pages
 covers: 382,383,384,385
 Current: casehubio/casehub-pages#382 — centralize dock-toggle exclusivity
@@ -11,6 +11,7 @@ project-sha: 6e1d5b2e91c37e78eaef4bd362c223442641d7a0
 design-repo: workspace
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#382 — centralize dock-toggle exclusivity ← active
   - [x] Batch 1: Exclusivity
