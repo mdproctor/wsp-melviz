@@ -1,18 +1,17 @@
-# HANDOFF — casehub-pages
+# HANDOFF — casehub-pages (slot 112)
 
-Branch: `main` (direct-to-main fixes)
-Issue: #367, #368, #369 (closed), #376 (filed)
+Branch: `issue-408-scenario-engine`
+Epic: casehubio/parent#408
 
 ## Last Session
 
-Visual testing of the engine elimination (branch `issue-367-container-toolbar-unification`, closed previous session). Launched the examples gallery in Playwright and found 19 regressions + missing features. All fixed via TDD directly on main: nested workspace height collapse, double toolbars, cross-workspace toolbar leaking, toolbar depth suppression, nest button restoration, edge split creating peer frames instead of split containers, tab drag gap preview, within-strip reorder triggering cross-frame DnD, cross-frame drop position/activation, stale preview cleanup, pane-level split scoping, layout cycle including split modes, root toolbar made inline (recursively regular), and auto-re-arrange on addEntry. Also cleaned stale `dist/` artifacts from deleted source files.
+Spec session — wrote the scenario format protocol document (`parent/docs/platform/scenario-format.md`) for #409 and the demo SPI convention (`parent/docs/platform/demo-spi-convention.md`) for #410. Amended the design spec with 9 review findings: ControlChannel resilience, DataTrigger as server-side polling, fill resolution, on-error policy, file distribution via bootstrap endpoint, shared DemoCurrentPrincipal.
 
 ## Immediate Next Step
 
-ARC42STORIES.MD is stale — test counts (shows 183, actual 957), missing packages (pages-aria, pages-table), container model not documented. File an issue or update directly.
+Queue is at position 2/7. Active issue: **#311 — Scenario executor backend (XL / High) [pages]**. This is the first implementation issue — TypeScript/Java code. Run `/work` to continue. Invoke brainstorming before implementation — #311 is XL scope.
 
-## References
+## Cross-Module
 
-- Filed: #376 — dual-zone edge split scoping (pane vs frame level)
-- Spec: `specs/issue-367-container-toolbar-unification/2026-08-25-workspace-as-container-design.md`
-- Plan: `plans/2026-08-25-workspace-as-container.md`
+**Enabled** (delivered, downstream unblocked):
+- `parent` — scenario format spec (#409) and demo SPI convention (#410) are published; pages#311, connectors#93, connectors#94 can proceed
