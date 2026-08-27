@@ -13,11 +13,11 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#378 — Issue #378 ← active
-  - [ ] Batch 1: Infrastructure
-    - [ ] Task 1: Dependencies and pipeline stencils
-    - [ ] Task 2: Basic Pipeline example
-  - [ ] Batch 2: Interactive examples
-    - [ ] Task 3: Interactive Editing example
-    - [ ] Task 4: Pipeline Properties example
-  - [ ] Batch 3: Verification
-    - [ ] Task 5: Full build and gallery check
+  - [x] Batch 1: Infrastructure
+    - [x] Task 1: Dependencies and pipeline stencils
+    - [x] Task 2: Basic Pipeline example
+  - [x] Batch 2: Interactive examples
+    - [x] Task 3: Interactive Editing example
+    - [x] Task 4: Pipeline Properties example
+  - [x] Batch 3: Verification
+    - [x] Task 5: Full build and gallery check
