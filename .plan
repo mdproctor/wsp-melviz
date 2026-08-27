@@ -1,0 +1,15 @@
+# Work Plan — issue-380-diagram-palette
+
+## State
+branch: issue-380-diagram-palette
+state: scaffolded
+project-sha: 6e3bd994cc7c0fd20c3f73a953f977f297f97a71
+date: 2026-08-27
+issue-repo: casehubio/casehub-pages
+covers: 380
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#380 — Issue #380 ← active
