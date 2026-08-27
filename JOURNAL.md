@@ -1,27 +1,76 @@
-# Design Journal — issue-378-diagram-editing-infra
+# Design Journal — issue-408-scenario-engine
 
-## 2026-08-26 — Session 1: Design + Batch 1 implementation
+## 2026-08-11 — Spec session: format and demo SPI convention
 
-### Design phase
+### §Scenario Format (#409)
 
-Brainstormed the full diagram editing interaction model — 11 interaction types covering creation, connection, insertion, deletion, and reconnection. Key insight: auto-layout (ELK) makes all drag interactions tractable because every mutation ends with re-layout, not free-position reconciliation.
+Formalized the cross-platform scenario YAML format as a platform protocol
+document (`parent/docs/platform/scenario-format.md`). Derived from the
+design spec's §3 with 9 amendments from review feedback:
 
-Decision review (3 rounds, 17 issues) revised 4 of 8 original decisions and surfaced 3 new ones:
-- D2: Palette moved from graph-renderer to casehub-diagram (Lit/React package misfit)
-- D3: Removed validateConnection callback from StencilGrammar — graph-core stays pure data
-- D4: Hybrid approach — React Flow handles connections natively, custom pointer events only for palette drag
-- D7: Per-handler architecture instead of single coordinator — React Flow IS the coordinator for native interactions
+- **ControlChannel resilience** — reconnect-resets-state model, per-step ack
+  timeout, no clock sync needed
+- **DataTrigger** — collapsed to server-side polling (convergent with await
+  syntax), not client-side DataSet evaluation
+- **`fill: { from: data }`** — resolution convention via `data-field`
+  attributes, element-type dispatch
+- **`on-error: continue|stop|pause`** — scenario-level failure policy
+- **File distribution** — executor pushes data via `POST /scenario/bootstrap`
+  (Option B — no shared resource module needed)
+- **DemoCurrentPrincipal** — shared in platform-api, not per-app
 
-Light spec review (17 findings) added: viewport bridge design (§4.8), mutation orchestration via onMutation callback (§4.6), edge operations in graph-core (§4.12), batch-aware delete strategies, keyboard accessibility via context menu alternatives.
+### §Demo SPI Convention (#410)
 
-Plan review (14 findings) fixed: reconnectEdge API supports both endpoints, EditPolicy is per-instance on GraphCanvas (not global singleton), splitEdge composes from primitives, applyGraphEdit executor bridges GraphEdit to graph-core operations.
+Wrote the demo SPI convention protocol (`parent/docs/platform/demo-spi-convention.md`):
+`@Alternative @Priority(300) @IfBuildProfile("demo")`. Pull/push mode templates.
+Priority allocation table (300=demo connector, 200=demo identity, 100=OIDC).
+Profile convention: demo (synthetic) vs dev (live dev creds) vs prod.
 
-### Implementation — Batch 1: graph-core edge operations
+Noted discrepancy: clinical's existing `DemoCurrentPrincipal` uses
+`@IfBuildProfile("dev")` with fixed identity — needs migration to
+shared `@IfBuildProfile("demo")` version.
 
-Landed 4 new functions in `packages/graph-core/src/edit.ts`:
-- `addEdge(model, newEdge)` — validates duplicate ID, dangling source/target
-- `removeEdge(model, edgeId)` — validates existence
-- `reconnectEdge(model, edgeId, { source?, target? })` — supports both endpoints, at-least-one validation
-- `splitEdge(model, edgeId, insertNode)` — composes from removeEdge + addNode + addEdge + addEdge
+## 2026-08-20 — Distributed executor protocol design (#418)
 
-20 new tests, all 127 passing. Two commits on `issue-378-diagram-editing-infra`.
+### §Executor Protocol (#418)
+
+Designed the distributed executor protocol — how the orchestrator
+dispatches ordered step sequences to executors (browser and services)
+via push wire WebSocket. Six key decisions:
+
+- **D8: Ordered step sequences** as the dispatch unit (not single-step
+  RPC or full sub-scenarios). Reduces round-trips while keeping
+  executors simple.
+- **D9: Push wire WebSocket** as universal transport for all executor
+  types. Browser executors already use it; service executors connect
+  as WebSocket clients.
+- **D10: New PushRequest/PushMessage op types** — ExecutorRegister,
+  StepResult, dispatch-sequence, executor-control. Pre-release, so
+  sealed interface changes are free.
+- **D11: CDI @ScenarioAction annotation** for service executor
+  contract. Shared library dispatches to annotated handlers.
+- **D12: Optional nested YAML hierarchy** — chapters → sections →
+  steps → commands. All levels optional. Steps are the demo-meaningful
+  unit; commands execute without pausing.
+- **D13: Separable controller** — REST/GraphQL/MCP API on the
+  orchestrator, with state broadcast on `scenario:state` topic.
+  Controller UI can run on a separate device (phone as presenter
+  remote).
+
+### §Format Evolution
+
+This spec explicitly evolves the cross-platform design spec's format.
+The `delivery` modes (rest/ui-form/simulated) are replaced by `target`
+(executor name). `ControlChannel` is superseded by the executor
+protocol. `GraphQLDispatcher` retained as fallback for services without
+local executors.
+
+### §Implementation Started
+
+Implemented Task 1 of the plan: PushRequest/PushMessage protocol
+extensions. Added ExecutorRegister, StepResult records and
+dispatchSequence, executorControl static methods. 123 tests pass.
+
+Discovered IntelliJ MCP gotcha: ide_import_modules with duplicate
+Maven artifactIds routes edits to the first-registered module.
+Worked around with git patch transfer. Captured as GE-20260821-8ada11.

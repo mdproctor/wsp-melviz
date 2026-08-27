@@ -1,19 +1,17 @@
-# HANDOFF — casehub-pages
+# HANDOFF — casehub-pages (slot 112)
 
-Branch: `issue-378-diagram-editing-infra`
-Issue: #378
+Branch: `issue-408-scenario-engine`
+Epic: casehubio/parent#408
 
 ## Last Session
 
-Designed and began implementing diagram editing infrastructure (#378) — the pages-side foundation for interactive graph mutation UX. Full brainstorming produced 11 decisions (4 revised by decision review, 3 surfaced), a spec with 11 interaction types and EditPolicy SPI, and a TDD implementation plan. Implemented Batch 1: four new edge operations in graph-core (addEdge, removeEdge, reconnectEdge, splitEdge) with 20 tests.
+Spec session — wrote the scenario format protocol document (`parent/docs/platform/scenario-format.md`) for #409 and the demo SPI convention (`parent/docs/platform/demo-spi-convention.md`) for #410. Amended the design spec with 9 review findings: ControlChannel resilience, DataTrigger as server-side polling, fill resolution, on-error policy, file distribution via bootstrap endpoint, shared DemoCurrentPrincipal.
 
 ## Immediate Next Step
 
-Resume at Batch 2, Task 3 — create EditPolicy SPI in `packages/graph-renderer/src/editing/` (types.ts, edit-policy.ts, apply-graph-edit.ts). Plan: `plans/2026-08-26-diagram-editing-infrastructure.md`.
+Queue is at position 2/7. Active issue: **#311 — Scenario executor backend (XL / High) [pages]**. This is the first implementation issue — TypeScript/Java code. Run `/work` to continue. Invoke brainstorming before implementation — #311 is XL scope.
 
-## References
+## Cross-Module
 
-- Spec: `specs/diagram-editing-infrastructure/2026-08-26-diagram-editing-infrastructure-design.md`
-- Decisions: `specs/diagram-editing-infrastructure/decisions.md`
-- Plan: `plans/2026-08-26-diagram-editing-infrastructure.md`
-- Journal: `JOURNAL.md`
+**Enabled** (delivered, downstream unblocked):
+- `parent` — scenario format spec (#409) and demo SPI convention (#410) are published; pages#311, connectors#93, connectors#94 can proceed
