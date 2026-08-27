@@ -1,1 +1,2 @@
 {"ts": "2026-08-25T03:54:55.560574+00:00", "meta_state": "none", "action": "error", "step": "land", "context": "", "steps_executed": ["report_squash", "land:ERROR"], "error": "REBASE_CONFLICT"}
+{"ts": "2026-08-27T13:07:07.646245+00:00", "mode": "close", "action": "error", "step": "checkout_main", "steps_executed": ["land", "report_land", "push_pass", "merge_pass", "stamp_pass", "verify", "report_verify", "checkout_main:ERROR:1"], "error": "checkout_failed", "meta_state": "none", "context": ""}
