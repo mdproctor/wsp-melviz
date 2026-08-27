@@ -6,8 +6,8 @@
 > (test-driven-development) and uses ide-tooling for structural
 > editing. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Focal issue:** TBD — issues to be created before implementation
-**Issue group:** TBD
+**Focal issue:** #385 — feat: add panel= hash param for dock panel deep linking
+**Issue group:** #382, #383, #384, #385
 
 **Goal:** Add programmatic dock panel activation (`site.activateDockPanel(key)`) and hash-based panel deep linking (`?panel=backlog,properties`) to the workbench.
 
@@ -276,7 +276,7 @@ exclusivity, scoped to the zone group (if zoned) or the entire bar
 dispatchers. All four combinations of zoned/non-zoned and
 exclusive/non-exclusive are handled correctly.
 
-Refs #TBD"
+Refs #382"
 ```
 
 ---
@@ -381,7 +381,7 @@ Previously, restoreFromUrl updated the dockState map but never
 dispatched pages-dock-toggle events, so dock panels didn't
 actually show/hide on browser back/forward navigation.
 
-Refs #TBD"
+Refs #383"
 ```
 
 ### Task 3: Add activateDockPanel to LiveSite
@@ -509,7 +509,7 @@ handler enforces zone exclusivity and syncs dock-bar button state.
 Uses DOM lookup (data-component-id), not zoneEngine, so it works
 for both dockWorkbench() and manual dock-bar compositions.
 
-Refs #TBD"
+Refs #384"
 ```
 
 ---
@@ -736,7 +736,7 @@ panel= as comma-separated list, also accepts #?panel=backlog format
 for panel-only deep links (no page path prefix required).
 serializeToUrl produces #? format when page is empty.
 
-Refs #TBD"
+Refs #385"
 ```
 
 ### Task 5: Wire panel merge into restoreFromUrl
@@ -881,7 +881,7 @@ dock= entries for the same key (activation intent wins over
 saved state). Panels listed in panel= but not in dock= get
 separate activation dispatches.
 
-Refs #TBD"
+Closes #385"
 ```
 
 ---

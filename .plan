@@ -1,0 +1,23 @@
+# Work Plan — panel-activation-hash-binding
+
+## State
+branch: panel-activation-hash-binding
+state: active
+issue-repo: casehubio/casehub-pages
+covers: 382
+Current: casehubio/casehub-pages#382 — centralize dock-toggle exclusivity
+date: 2026-08-27
+
+## Queue
+- [ ] casehubio/casehub-pages#382 — centralize dock-toggle exclusivity ← active
+  - [ ] Batch 1: Exclusivity
+    - [ ] Task 1: Centralize exclusivity in dock-toggle handler
+  - [ ] Batch 2: Popstate+API
+    - [ ] Task 2: Fix restoreFromUrl dock dispatch
+    - [ ] Task 3: Add activateDockPanel to LiveSite
+  - [ ] Batch 3: Hash binding
+    - [ ] Task 4: Extend DeepLink and URL with panel= support
+    - [ ] Task 5: Wire panel merge into restoreFromUrl
+- [ ] casehubio/casehub-pages#383 — fix restoreFromUrl popstate dock dispatch
+- [ ] casehubio/casehub-pages#384 — add activateDockPanel to LiveSite
+- [ ] casehubio/casehub-pages#385 — panel= hash param for dock panel deep linking
