@@ -32,68 +32,79 @@ After this batch: dock-toggle handler in site.ts is the single owner of zone-exc
 ### Task 1: Centralize exclusivity logic in dock-toggle handler
 
 **Files:**
-- Modify: `packages/pages-runtime/src/dock-bar-renderer.ts` — simplify click handler
-- Modify: `packages/pages-runtime/src/site.ts:887-959` — dock-toggle handler gains exclusivity
-- Test: `packages/pages-runtime/src/dock-bar-zones.test.ts` — extend with exclusivity tests
+- Modify: `packages/pages-runtime/src/dock-bar-renderer.ts` — store `data-exclusive` on dock-bar element; simplify click handler to thin dispatcher
+- Modify: `packages/pages-runtime/src/site.ts:887-959` — dock-toggle handler gains exclusivity and button-state sync
+- Modify: `packages/pages-runtime/src/site.ts:1252-1297` — simplify `initDockZoneGroup` to dispatch only (remove manual `data-active`/`dockState` management)
+- Test: `packages/pages-runtime/src/dock-bar-zones.test.ts` — extend with exclusivity tests via loadSite
 
 **Interfaces:**
 - Consumes: `pages-dock-toggle` CustomEvent with `{ panelId: string; visible: boolean }` detail
-- Produces: Same event contract — no interface change. Behavior change: the handler now enforces exclusivity and syncs dock-bar button `data-active` state.
+- Produces: Same event contract — no interface change. Behavior change: the handler now enforces exclusivity (when the parent dock-bar has `data-exclusive`) and syncs dock-bar button `data-active` state.
 
-- [ ] **Step 1: Write the failing test — exclusivity via direct dispatch**
+**Exclusivity determination — four cases:**
 
-Add to `dock-bar-zones.test.ts`:
+The `exclusive` prop is independent of zone grouping. The handler must check both:
+
+| Zone | Exclusive | Behavior |
+|------|-----------|----------|
+| Yes  | Yes       | Exclusivity scoped to zone buttons |
+| No   | Yes       | Exclusivity scoped to all buttons in the bar |
+| Yes  | No        | No exclusivity — multiple panels visible |
+| No   | No        | No exclusivity |
+
+The handler determines exclusivity by finding the button's parent `[data-component-type="dock-bar"]` and checking for `data-exclusive`. If exclusive, it scopes to the zone group (if zoned) or the entire bar (if not).
+
+- [ ] **Step 1: Store `data-exclusive` on dock-bar DOM element**
+
+In `packages/pages-runtime/src/dock-bar-renderer.ts`, in `renderDockBar` function (line 95), add after `el.style.padding = "4px"`:
 
 ```typescript
-import { describe, it, expect, beforeEach } from "vitest";
+if (exclusive) {
+  el.dataset.exclusive = "";
+}
+```
+
+This persists the `exclusive` prop in the DOM so the centralized handler can look it up.
+
+- [ ] **Step 2: Write the failing test — exclusivity via direct dispatch**
+
+Tests must use `loadSite()` because the `pages-dock-toggle` handler is registered inside `loadSite()`. Add to `dock-bar-zones.test.ts`:
+
+```typescript
+import { describe, it, expect, afterEach } from "vitest";
+import { loadSite } from "./site.js";
+import type { LiveSite } from "./site.js";
 
 describe("dock-toggle handler exclusivity", () => {
   let target: HTMLElement;
+  let site: LiveSite;
 
-  beforeEach(() => {
+  afterEach(() => {
+    site?.dispose();
+    if (target?.parentElement) target.parentElement.removeChild(target);
+  });
+
+  it("showing panel-b hides panel-a in same exclusive zone", async () => {
     target = document.createElement("div");
     document.body.appendChild(target);
 
-    // Set up a dock zone with two panels and dock-bar buttons
-    const bar = document.createElement("div");
-    bar.dataset.componentType = "dock-bar";
-    const zoneGroup = document.createElement("div");
-    zoneGroup.dataset.dockZone = "top";
+    const { dockWorkbench } = await import("@casehubio/pages-ui/dist/dsl/builders.js");
+    const config = dockWorkbench({
+      centre: { type: "html", props: { content: "<p>Centre</p>" } },
+      left: [
+        { key: "panel-a", label: "A", icon: "A", defaultOpen: true,
+          content: { type: "html", props: { content: "<p>A</p>" } } },
+        { key: "panel-b", label: "B", icon: "B",
+          content: { type: "html", props: { content: "<p>B</p>" } } },
+      ],
+    });
+    site = await loadSite(target, config);
 
-    const btn1 = document.createElement("button");
-    btn1.dataset.dockPanelId = "panel-a";
-    btn1.dataset.dockZone = "top";
-    const btn2 = document.createElement("button");
-    btn2.dataset.dockPanelId = "panel-b";
-    btn2.dataset.dockZone = "top";
-
-    zoneGroup.appendChild(btn1);
-    zoneGroup.appendChild(btn2);
-    bar.appendChild(zoneGroup);
-    target.appendChild(bar);
-
-    // Two panel elements
-    const panelA = document.createElement("div");
-    panelA.dataset.componentId = "panel-a";
-    panelA.style.display = "none";
-    const panelB = document.createElement("div");
-    panelB.dataset.componentId = "panel-b";
-    panelB.style.display = "none";
-    target.appendChild(panelA);
-    target.appendChild(panelB);
-  });
-
-  it("showing panel-b hides panel-a in same zone when dispatched directly", () => {
-    // First show panel-a
-    target.dispatchEvent(new CustomEvent("pages-dock-toggle", {
-      bubbles: true, composed: true,
-      detail: { panelId: "panel-a", visible: true },
-    }));
-
+    // panel-a is defaultOpen — verify it's visible
     const panelA = target.querySelector<HTMLElement>('[data-component-id="panel-a"]')!;
     expect(panelA.style.display).not.toBe("none");
 
-    // Now show panel-b — should hide panel-a
+    // Dispatch toggle directly (simulating programmatic activation)
     target.dispatchEvent(new CustomEvent("pages-dock-toggle", {
       bubbles: true, composed: true,
       detail: { panelId: "panel-b", visible: true },
@@ -104,37 +115,46 @@ describe("dock-toggle handler exclusivity", () => {
     expect(panelA.style.display).toBe("none");
   });
 
-  it("dock-bar button data-active syncs on direct dispatch", () => {
-    target.dispatchEvent(new CustomEvent("pages-dock-toggle", {
-      bubbles: true, composed: true,
-      detail: { panelId: "panel-a", visible: true },
-    }));
+  it("dock-bar button data-active syncs on direct dispatch", async () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
 
-    const btn1 = target.querySelector<HTMLElement>('button[data-dock-panel-id="panel-a"]')!;
-    const btn2 = target.querySelector<HTMLElement>('button[data-dock-panel-id="panel-b"]')!;
-    expect(btn1.dataset.active).toBeDefined();
-    expect(btn2.dataset.active).toBeUndefined();
+    const { dockWorkbench } = await import("@casehubio/pages-ui/dist/dsl/builders.js");
+    const config = dockWorkbench({
+      centre: { type: "html", props: { content: "<p>Centre</p>" } },
+      left: [
+        { key: "panel-a", label: "A", icon: "A", defaultOpen: true,
+          content: { type: "html", props: { content: "<p>A</p>" } } },
+        { key: "panel-b", label: "B", icon: "B",
+          content: { type: "html", props: { content: "<p>B</p>" } } },
+      ],
+    });
+    site = await loadSite(target, config);
 
-    // Show panel-b
+    const btnA = target.querySelector<HTMLElement>('button[data-dock-panel-id="panel-a"]')!;
+    const btnB = target.querySelector<HTMLElement>('button[data-dock-panel-id="panel-b"]')!;
+    expect(btnA.dataset.active).toBeDefined();
+
+    // Show panel-b directly
     target.dispatchEvent(new CustomEvent("pages-dock-toggle", {
       bubbles: true, composed: true,
       detail: { panelId: "panel-b", visible: true },
     }));
 
-    expect(btn1.dataset.active).toBeUndefined();
-    expect(btn2.dataset.active).toBeDefined();
+    expect(btnA.dataset.active).toBeUndefined();
+    expect(btnB.dataset.active).toBeDefined();
   });
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Run test to verify it fails**
 
 Run: `yarn workspace @casehubio/pages-runtime run test dock-bar-zones.test.ts`
-Expected: FAIL — current dock-toggle handler has no exclusivity logic
+Expected: FAIL — current dock-toggle handler has no exclusivity logic; direct dispatch doesn't hide siblings
 
-- [ ] **Step 3: Add exclusivity and button-sync to dock-toggle handler**
+- [ ] **Step 4: Add exclusivity and button-sync to dock-toggle handler**
 
-In `packages/pages-runtime/src/site.ts`, modify the `pages-dock-toggle` handler (line 887). After `dockState.set(panelId, visible)` and before the panel show/hide logic, add:
+In `packages/pages-runtime/src/site.ts`, modify the `pages-dock-toggle` handler (line 887). After `dockState.set(panelId, visible)` and before the panel show/hide logic, add exclusivity enforcement. The handler finds the button's parent dock-bar and checks for `data-exclusive`:
 
 ```typescript
 target.addEventListener("pages-dock-toggle", ((e: Event) => {
@@ -145,13 +165,19 @@ target.addEventListener("pages-dock-toggle", ((e: Event) => {
   const panelEl = target.querySelector<HTMLElement>(`[data-component-id="${escapedId}"]`);
   if (!panelEl) return;
 
-  // Zone-exclusive: if showing, hide other panels in same zone group
   if (visible) {
+    // Find the button and check if its parent dock-bar is exclusive
     const btn = target.querySelector<HTMLElement>(`button[data-dock-panel-id="${escapedId}"]`);
-    const zoneName = btn?.dataset.dockZone;
-    if (zoneName) {
-      const zoneBtns = target.querySelectorAll<HTMLElement>(`button[data-dock-zone="${zoneName}"]`);
-      for (const sibling of zoneBtns) {
+    const dockBar = btn?.closest<HTMLElement>('[data-component-type="dock-bar"]');
+    const isExclusive = dockBar?.dataset.exclusive !== undefined;
+
+    if (isExclusive && btn) {
+      // Scope: zone group if zoned, else entire bar
+      const zoneName = btn.dataset.dockZone;
+      const scope = zoneName
+        ? dockBar!.querySelectorAll<HTMLElement>(`button[data-dock-zone="${zoneName}"]`)
+        : dockBar!.querySelectorAll<HTMLElement>("button[data-dock-panel-id]");
+      for (const sibling of scope) {
         const siblingId = sibling.dataset.dockPanelId!;
         if (siblingId !== panelId && dockState.get(siblingId) === true) {
           dockState.set(siblingId, false);
@@ -168,7 +194,6 @@ target.addEventListener("pages-dock-toggle", ((e: Event) => {
     // Sync this button's active state
     if (btn) btn.dataset.active = "";
   } else {
-    // Sync button: remove active
     const btn = target.querySelector<HTMLElement>(`button[data-dock-panel-id="${escapedId}"]`);
     if (btn) delete btn.dataset.active;
   }
@@ -176,7 +201,7 @@ target.addEventListener("pages-dock-toggle", ((e: Event) => {
   // ... existing cascade expand/collapse logic unchanged ...
 ```
 
-- [ ] **Step 4: Simplify dock-bar-renderer click handler**
+- [ ] **Step 5: Simplify dock-bar-renderer click handler**
 
 In `packages/pages-runtime/src/dock-bar-renderer.ts`, replace the click handler (line 48-89) with a thin dispatcher:
 
@@ -192,17 +217,51 @@ button.addEventListener("click", () => {
 
 The handler no longer manages `data-active` or sibling exclusivity — the dock-toggle handler in site.ts now owns both.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 6: Simplify initDockZoneGroup**
+
+In `packages/pages-runtime/src/site.ts`, simplify `initDockZoneGroup` (line 1252-1285). The function currently dispatches `pages-dock-toggle` for the active panel AND then manually iterates all buttons to set `data-active` and `dockState`. After centralization, the dispatch handles button state — remove the manual loop:
+
+```typescript
+function initDockZoneGroup(
+  buttons: NodeListOf<HTMLElement> | HTMLElement[],
+): void {
+  let activePanel: string | undefined;
+  for (const btn of buttons) {
+    const panelId = btn.dataset.dockPanelId!;
+    if (dockState.get(panelId) === true) {
+      if (activePanel === undefined) activePanel = panelId;
+    }
+  }
+  if (activePanel === undefined) {
+    for (const btn of buttons) {
+      if (btn.dataset.active !== undefined) {
+        activePanel = btn.dataset.dockPanelId!;
+        break;
+      }
+    }
+  }
+  if (activePanel) {
+    target.dispatchEvent(new CustomEvent("pages-dock-toggle", {
+      bubbles: true, composed: true,
+      detail: { panelId: activePanel, visible: true },
+    }));
+  }
+  // Removed: manual btn.dataset.active and dockState management
+  // The dock-toggle handler now owns button state sync
+}
+```
+
+- [ ] **Step 7: Run test to verify it passes**
 
 Run: `yarn workspace @casehubio/pages-runtime run test dock-bar-zones.test.ts`
 Expected: PASS
 
-- [ ] **Step 6: Run the full test suite**
+- [ ] **Step 8: Run the full test suite**
 
 Run: `yarn workspace @casehubio/pages-runtime run test`
 Expected: All existing tests pass — behavior is unchanged, just centralized.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git -C /Users/mdproctor/claude/casehub/pages add packages/pages-runtime/src/dock-bar-renderer.ts packages/pages-runtime/src/site.ts packages/pages-runtime/src/dock-bar-zones.test.ts
@@ -210,10 +269,12 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "refactor: centralize doc
 
 Move zone-group exclusivity logic and dock-bar button data-active
 management from dock-bar-renderer click handler into the
-pages-dock-toggle event handler in site.ts. The click handler is
-now a thin dispatcher. Any code dispatching pages-dock-toggle
-directly (initDockZoneGroup, rearrange, future activateDockPanel)
-gets correct exclusivity behavior.
+pages-dock-toggle event handler in site.ts. The handler checks the
+parent dock-bar for data-exclusive to determine whether to enforce
+exclusivity, scoped to the zone group (if zoned) or the entire bar
+(if not). The click handler and initDockZoneGroup are now thin
+dispatchers. All four combinations of zoned/non-zoned and
+exclusive/non-exclusive are handled correctly.
 
 Refs #TBD"
 ```
@@ -651,10 +712,11 @@ if (link.page) {
 Run: `yarn workspace @casehubio/pages-runtime run test url.test.ts`
 Expected: PASS
 
-- [ ] **Step 7: Check existing url tests still pass**
+- [ ] **Step 7: Check existing url tests still pass and update empty-page test**
 
 Run: `yarn workspace @casehubio/pages-runtime run test url.test.ts`
-Expected: All tests pass. Note: the existing test `"root page (empty path)"` asserts `serializeToUrl({ page: "" })` returns `"#/page/"`. This will now return `""` (empty string). Update the test:
+
+**Behavioral change:** the existing test `"root page (empty path)"` asserts `serializeToUrl({ page: "" })` returns `"#/page/"`. This now returns `""` (empty string). This is a broader change: all single-page workbenches (no named pages) will see their URL format change from `#/page/?dock=...` to `#?dock=...`. The URL is cleaner and round-trips correctly with the new `#?` parser, but any code or analytics that pattern-matches on `#/page/` will stop matching for empty-page sites. Update the test:
 
 ```typescript
 it("root page (empty path)", () => {
