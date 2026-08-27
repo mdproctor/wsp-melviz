@@ -13,14 +13,14 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#382 — centralize dock-toggle exclusivity ← active
-  - [ ] Batch 1: Exclusivity
-    - [ ] Task 1: Centralize exclusivity in dock-toggle handler
-  - [ ] Batch 2: Popstate+API
-    - [ ] Task 2: Fix restoreFromUrl dock dispatch
-    - [ ] Task 3: Add activateDockPanel to LiveSite
-  - [ ] Batch 3: Hash binding
-    - [ ] Task 4: Extend DeepLink and URL with panel= support
-    - [ ] Task 5: Wire panel merge into restoreFromUrl
+  - [x] Batch 1: Exclusivity
+    - [x] Task 1: Centralize exclusivity in dock-toggle handler
+  - [x] Batch 2: Popstate+API
+    - [x] Task 2: Fix restoreFromUrl dock dispatch
+    - [x] Task 3: Add activateDockPanel to LiveSite
+  - [x] Batch 3: Hash binding
+    - [x] Task 4: Extend DeepLink and URL with panel= support
+    - [x] Task 5: Wire panel merge into restoreFromUrl
 - [ ] casehubio/casehub-pages#383 — fix restoreFromUrl popstate dock dispatch
 - [ ] casehubio/casehub-pages#384 — add activateDockPanel to LiveSite
 - [ ] casehubio/casehub-pages#385 — panel= hash param for dock panel deep linking
