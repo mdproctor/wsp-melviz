@@ -79,6 +79,9 @@ To set a global default across all workspaces, add to `~/.claude/CLAUDE.md`:
 ```
 Global valid values: `workspace` or `project` only (no alternative at global level).
 
+Living docs — check for drift after significant changes:
+- `ARC42STORIES.MD` — primary architecture record; check §9–10 after module, SPI, or structural changes
+
 ---
 
 # CLAUDE.md
@@ -188,6 +191,12 @@ yarn workspace @casehubio/pages-examples run dev
 - `@casehubio/pages-table` — `PagesDataTable` (`pages-data-table`, type `data-table`) — interactive data table: CSS Grid rendering, virtual scroll, sorting, filtering, column visibility (`hiddenColumns`), multi-mode selection, tree rows, row-detail expansion, CSV export, ARIA grid, keyboard navigation, native `groupBy` (interleaved group headers). Builder: `dataTable()`. Depends on `lit`. Migrated from blocks-ui in blocks-ui#48.
 - `@casehubio/pages-aria` — ARIA-based browser automation for scenario demos. Tree walker, command executor (`click`, `fill`, `select`, `assertState`, `waitFor`), scenario handler (push wire dispatch), visual feedback (highlights, typing animation), YAML viewer component with syntax highlighting and position tracking, scenario controller component (compact overlay, transport controls, dock/undock, detach). Depends on `lit`, `yaml`.
 - `@casehubio/pages-runtime` — Site orchestrator: `loadSite()` API, navigation, data pipeline, layout serialization (`LayoutStore`, `createLocalLayoutStore`)
+- `@casehubio/graph-core` — Directed graph model (`GraphModel`, `GraphNode`, `GraphEdge`), grammar-based connection rules (`StencilGrammar`), graph operations (add/remove node/edge, `nodeById`, `edgeById`). Pure TypeScript, no framework deps.
+- `@casehubio/graph-renderer` — React Flow bridge for rendering `GraphModel` via `<pages-graph-canvas>` Lit element. Stencil registry, ELK auto-layout, CSS style isolation, editing infrastructure (`EditPolicy` SPI, `GraphEdit` discriminated union, `applyGraphEdit`, `defaultEditPolicy`). Depends on `@xyflow/react`, `lit`.
+- `@casehubio/graph-work-registry` — Graph-aware work item registry for diagram-driven workflow nodes.
+- `@casehubio/pages-ui-components` — Standalone Lit web components: `PagesNumberInput`, `PagesDatePicker`, `PagesColorPicker`, `PagesSliderInput`, `PagesTagsInput`, `PagesMultiSelect`, `PagesTextArea`, `PagesCheckbox`. Styled with design tokens. Depends on `lit`.
+- `@casehubio/pages-property-palette` — `<pages-property-palette>` — schema-driven property inspector panel. Renders JSON Schema as editable form fields using `pages-ui-components`. Depends on `lit`.
+- `@casehubio/pages-filter-bar` — `<pages-filter-bar>` — type chips, entity dropdown, date range filtering. Depends on `lit`.
 
 **Iframe Component API** (`packages/`):
 - `@casehubio/pages-iframe-api` — Component controller for iframe-isolated components
