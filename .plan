@@ -4,9 +4,12 @@
 branch: panel-activation-hash-binding
 state: active
 issue-repo: casehubio/casehub-pages
-covers: 382
+covers: 382,383,384,385
 Current: casehubio/casehub-pages#382 — centralize dock-toggle exclusivity
 date: 2026-08-27
+project-sha: 6e1d5b2e91c37e78eaef4bd362c223442641d7a0
+design-repo: workspace
+flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#382 — centralize dock-toggle exclusivity ← active
