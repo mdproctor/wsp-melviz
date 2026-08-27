@@ -2,19 +2,26 @@
 
 **Branch:** `issue-334-dsl-and-scenario`
 **Slot:** 152 (pages + examples/helpdesk)
-**Date:** 2026-08-25
+**Date:** 2026-08-27
 
 ## Last Session
 
-Implemented #365 show-markdown end-to-end, then built the tabbed viewer (Source + Guide tabs), modal slide deck with progressive loading, and helpdesk tutorial content. Extensive debugging of three root causes: (1) `executeSequence` bricking from stale push events after reload (fixed with try-finally), (2) dual WebSocket connections (fixed by reusing controller's connection via poll), (3) modal auto-pause racing with server Resume command in Play mode (fixed by removing auto-pause and using activeDeck guard). All verified in Playwright across multiple Reset cycles.
+Improved the helpdesk demo presentation: reframed slides for choreography vs orchestration (hybrid execution model with 6-model table), added tabbed Diagram/YAML views in modal slides, syntax highlighting for YAML code blocks, markdown table rendering, outline step icons (unicode outline-weight), and Prev/Next navigation fix. Exported case architecture SVG from blocks-ui export.html (fixed React dedup, style bloat, viewport scaling). Filed engine bugs #988/#989/#990 (moved misfiled pages issues). Added action field to outline endpoint (Java). Updated CLAUDE.md with demo profile requirement.
 
 ## Immediate Next Step
 
-Continue iterating on the helpdesk demo. Open items: outline type icons need server-side `action` field in `/scenario/outline` endpoint (Java change), "run through" auto-advance mode for slides (word-count timer), and blocks-ui case viewer diagram (replacing the hand-coded SVG).
+Verify end-to-end demo once engine JAR is deployed (engine had build issue preventing install). The demo fails at "Spotlight the resolution" because engine#988 fix (outputMapping feedback) hasn't been picked up. Once deployed, reset and run the full demo — notification should fire this time.
+
+## Blocked On
+
+- **Engine JAR deployment** — engine had a build issue preventing `mvn install`. Once fixed, restart helpdesk Quarkus (`-Dquarkus.profile=demo`) to pick up the new engine.
+- **Work-end incomplete** — review gates all passed, findings filed (#379). Squash/merge/close deferred until demo is verified end-to-end.
 
 ## Known Issues
 
-- **Work item → case context feedback broken** — completing a work item via REST (`PUT /workitems/{id}/complete`) does not apply the humanTask `outputMapping` back to the case context. The case stays at `TRIAGED` instead of advancing to `RESOLVED`, so the `notify-resolution` binding never fires and the Notifications panel stays empty. Filed as casehubio/engine#988. The helpdesk demo fails at "Spotlight the resolution" because of this.
-- **ES module caching** — `controller.js` import now uses `import('...?_=' + Date.now())` for cache busting. Works but re-parses the module on every load. A content-hash filename would be better long-term.
-- **Controller push state** — the controller's `ScenarioConnectionController` creates its own connection before the module script runs. The module script polls for `_conn._ownConnection` and creates the handler on it. Works reliably but is fragile — accessing internal properties.
-- **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `src/main/resources/META-INF/resources/scenarios/`. Both must be kept in sync.
+- **Work item → case context feedback broken** — engine#988. Work item completion via REST doesn't apply outputMapping. Case stays TRIAGED. Filed, reportedly fixed but JAR not deployed.
+- **Duplicate work items** — engine#989. contextChange binding fires twice for single case. Filed, reportedly fixed but JAR not deployed.
+- **Engine reset API** — engine#990. No clean reset without JVM restart.
+- **Export viewport scaling** — blocks-ui#138. Fixed (MAX_ZOOM clamp removed). Re-exported architecture SVG.
+- **ES module caching** — controller.js uses `import('...?_=' + Date.now())` for cache busting.
+- **Helpdesk YAML duplication** — two copies at `src/main/resources/scenarios/` and `META-INF/resources/scenarios/`. Both must be kept in sync.
