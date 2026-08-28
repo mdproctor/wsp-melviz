@@ -7,16 +7,22 @@
 ## Overview
 
 Drag a node and drop it onto an edge to splice it in. The node is inserted
-between the edge's source and target, replacing the original edge with up to
-two new edges through the dropped node. Grammar rules determine which
-connections are valid — both, one, or neither — with distinct visual feedback
-for each state.
+between the edge's source and target, replacing the original edge with two
+new edges through the dropped node. Grammar rules determine whether the
+splice is valid, with visual feedback distinguishing valid drop zones from
+non-drop zones.
 
 This is a refinement of infra spec interaction #7. The infra spec designed #7
 using React Flow's native drag as a gesture detector. This design replaces the
 drag mechanism with a custom pointer-event ghost+clone system because
 auto-layout contexts require the original node to stay in place during drag
 (React Flow's drag visually moves the node, causing edges to rubber-band).
+
+Note: infra spec interaction #6 (drag-to-empty-space) has the same
+`nodesDraggable: false` problem — it also relies on `onNodeDragStop` which
+doesn't fire when nodes are not draggable. The custom drag system designed
+here can naturally extend to handle #6 (drag-end over empty space → show
+node chooser). That extension is tracked separately as a follow-up issue.
 
 ## Constraints
 
@@ -60,23 +66,21 @@ The clone follows the cursor. On each move:
    dragged node (source or target equals nodeId, since splicing onto your
    own edge would create a self-loop)
 4. Resolve source and target nodes
-5. Call `editPolicy.canSpliceOntoEdge(edge, draggedNode, model)` which
-   composes two `canConnect` checks:
-   - `canConnect(sourceNode, draggedNode, model)` — can the edge's source
-     connect to the dragged node?
-   - `canConnect(draggedNode, targetNode, model)` — can the dragged node
-     connect to the edge's target?
-5. Update edge highlight based on result:
-   - Both valid → `edge-splice-valid` (green)
-   - One valid → `edge-splice-partial` (amber)
-   - Neither valid → no class (not a drop zone)
-6. Remove highlight from previously highlighted edge if cursor moved away
+5. Call `editPolicy.canSpliceOntoEdge(edge, draggedNode, model)` — validates
+   that **both** replacement edges are permitted using projected-model
+   cardinality checks (see §EditPolicy Extension)
+6. Update edge highlight based on result:
+   - Valid (both connections pass) → `edge-splice-valid` (green)
+   - Invalid → no class (not a drop zone)
+7. Remove highlight from previously highlighted edge if cursor moved away
 
 ### 3. Drag End — pointerup
 
-**Over a highlighted edge (valid or partial):**
+**Over a highlighted edge (valid):**
 - Remove ghost class and clone element
-- Dispatch `onMutation({ type: 'moveNodeToEdge', nodeId, edgeId, validity })`
+- Compute source-side cleanup strategy via `editPolicy.getDeleteStrategy(node, model)`
+  mapped to `SourceCleanupStrategy` (`auto-join` or `disconnect`)
+- Dispatch `onMutation({ type: 'moveNodeToEdge', nodeId, edgeId, sourceCleanup })`
 - ELK re-layouts the entire graph
 
 **Over nothing / non-highlighted edge:**
@@ -94,25 +98,34 @@ caller dispatches.
 
 ```typescript
 interface NodeMoveCoordinator {
-  startDrag(nodeId: string, pointerEvent: PointerEvent): void;
+  startDrag(nodeId: string, pointerEvent: PointerEvent, model: GraphModel): void;
   dispose(): void;
 }
 
-type SpliceValidity = 'full' | 'source-only' | 'target-only';
+type SourceCleanupStrategy = 'auto-join' | 'disconnect';
 
 type DragEndResult =
-  | { type: 'splice'; nodeId: string; edgeId: string; validity: SpliceValidity }
+  | { type: 'splice'; nodeId: string; edgeId: string; sourceCleanup: SourceCleanupStrategy }
   | { type: 'cancelled' };
 ```
 
+**Invariant:** The `model` reference passed to `startDrag` is valid for the
+entire duration of the drag. GraphCanvas must not re-render the graph or
+trigger ELK re-layout while a drag is active. The drag is a modal
+interaction — no concurrent graph edits are permitted. The model is used
+during every `pointermove` (edge lookup, validity checks) and at drag end
+(source cleanup strategy computation). Because the user cannot perform other
+graph edits while mid-drag, the model snapshot captured at `startDrag` is
+guaranteed to reflect the true graph state throughout the gesture.
+
 **Constructor dependencies (injected, read-only):**
-- `model: GraphModel` — current graph state
-- `editPolicy: EditPolicy` — validation
-- `containerEl: HTMLElement` — the graph canvas element (for clone positioning
-  and hit-testing)
+- `editPolicy: EditPolicy` — validation and source cleanup strategy
+- `containerEl: HTMLElement` — the graph canvas container element (for clone
+  positioning, hit-testing, and event delegation)
 - `onResult: (result: DragEndResult) => void` — callback on drag end
 
 **Internal state (owned by coordinator, cleaned up on dispose):**
+- `activeModel: GraphModel | null` — model snapshot for the active drag
 - `ghostedNodeId: string | null`
 - `cloneElement: HTMLElement | null`
 - `highlightedEdgeId: string | null`
@@ -120,59 +133,100 @@ type DragEndResult =
 
 ### EditPolicy Extension
 
-New method on `EditPolicy`:
+New optional method on `EditPolicy`:
 
 ```typescript
-canSpliceOntoEdge(
+canSpliceOntoEdge?(
   edge: GraphEdge,
   node: GraphNode,
   model: GraphModel
-): { valid: boolean; validity?: SpliceValidity }
+): boolean;
 ```
 
-Implemented in `defaultEditPolicy()`:
-1. Look up source and target nodes of the edge
-2. Check `canConnect(sourceNode, node, model)` → sourceValid
-3. Check `canConnect(node, targetNode, model)` → targetValid
-4. Return:
-   - Both true → `{ valid: true, validity: 'full' }`
-   - Only source → `{ valid: true, validity: 'source-only' }`
-   - Only target → `{ valid: true, validity: 'target-only' }`
-   - Neither → `{ valid: false }`
+Implemented in `defaultEditPolicy()` using a **projected model** to avoid
+false negatives from stale cardinality counts:
+
+1. Build a projected model reflecting post-operation state:
+   a. Remove the target edge from the model (the splice replaces it)
+   b. Remove all edges connected to the dragged node (source-side cleanup
+      will remove or auto-join them — the auto-join creates an edge between
+      the dragged node's predecessor and successor, but this does not affect
+      the dragged node's own cardinality or the splice endpoints)
+2. Check `canConnect(sourceNode, node, projectedModel)` — can the edge's
+   source connect to the dragged node in the post-cleanup state?
+3. Check `canConnect(node, targetNode, projectedModel)` — can the dragged
+   node connect to the edge's target in the post-cleanup state?
+4. Return `true` only if both checks pass
+
+The projected model accounts for cardinality slots freed by removing the
+target edge and the dragged node's existing edges. Without projection,
+`canConnect` checks cardinality against the current model where nodes may
+be at their limits — even though the splice operation itself frees the
+necessary slots. Example: node A has `outbound.max: 1` and one outbound
+edge A→B. Without projection, `canConnect(A, draggedNode)` returns false.
+With projection, A→B is removed from the model, A has 0 outbound edges,
+and the check correctly returns true.
 
 The method does NOT check whether the edge is connected to the node — that
 guard belongs in the coordinator (it's a drag constraint, not a grammar rule).
+
+Domain adapters may override `canSpliceOntoEdge` for custom splice validation
+(e.g., forbidding splicing entirely for certain diagram types). When the method
+is not provided, the coordinator falls back to the `defaultEditPolicy`
+implementation.
+
+**Source-side cleanup strategy:** The coordinator pre-computes the source-side
+cleanup strategy by calling the existing `getDeleteStrategy(node, model)` and
+mapping the result:
+- `auto-join` → `'auto-join'` (1-in, 1-out leaf, predecessor and successor
+  can connect)
+- `disconnect` / any other → `'disconnect'` (remove all connected edges)
+
+This reuses the existing `getDeleteStrategy` method — no new EditPolicy method
+is needed. The mapping is trivial because eligibility guarantees the node is
+a leaf (no `cascade`), and the drag is deterministic (no `prompt`).
 
 ### GraphEdit Extension
 
 The existing `moveNodeToEdge` type in the `GraphEdit` union is extended:
 
 ```typescript
-{ type: 'moveNodeToEdge'; nodeId: string; edgeId: string; validity?: SpliceValidity }
+{ type: 'moveNodeToEdge'; nodeId: string; edgeId: string; sourceCleanup: SourceCleanupStrategy }
 ```
 
-`validity` defaults to `'full'` if omitted (backward compatible).
+Where `SourceCleanupStrategy = 'auto-join' | 'disconnect'`.
+
+The `sourceCleanup` field carries the pre-computed strategy so that
+`applyGraphEdit` remains policy-free — the same architectural pattern as
+`removeNode` carrying its `DeleteStrategy`. The coordinator calls
+`getDeleteStrategy` before dispatching the edit; `applyGraphEdit` executes
+the strategy without needing access to `EditPolicy`.
 
 ### applyGraphEdit — moveNodeToEdge Implementation
 
 Replaces the current stub that throws. Performs atomically:
 
-**Source-side cleanup:**
-1. Find all edges connected to the node (`edgesOf(model, nodeId)`)
-2. If no edges: skip (disconnected node)
-3. If exactly 1 inbound + 1 outbound:
-   - Check `canConnect(predecessor, successor)` in the model-without-the-node
-   - If valid: remove both edges, add auto-join edge (predecessor → successor)
-   - If invalid: remove both edges (disconnect)
-4. Otherwise: remove all connected edges
+**Source-side cleanup** (based on pre-computed `sourceCleanup`):
+1. If `sourceCleanup === 'auto-join'`:
+   - Find the single inbound and single outbound edge of the node
+   - Remove both edges
+   - Add auto-join edge (predecessor → successor) inheriting the inbound
+     edge's type
+2. If `sourceCleanup === 'disconnect'`:
+   - Remove all edges connected to the node (`edgesOf(model, nodeId)`)
 
 **Target-side splice:**
 1. Look up the target edge, resolve its source and target nodes
 2. Remove the target edge
-3. Based on `validity`:
-   - `'full'`: add edge source→node AND edge node→target
-   - `'source-only'`: add only edge source→node
-   - `'target-only'`: add only edge node→target
+3. Add edge source→node with `type: originalEdge.type` (inherits the
+   original edge's type, consistent with `splitEdge` in
+   `graph-core/src/edit.ts:110-115`)
+4. Add edge node→target with `type: originalEdge.type` (same type
+   inheritance)
+
+New splice edges always inherit the original edge's type. This is consistent
+with `splitEdge` which also preserves the edge type through the split
+operation.
 
 Return single `EditResult` with new model and any constraint violations.
 
@@ -188,15 +242,35 @@ private handleMoveResult(result: DragEndResult): void {
       type: 'moveNodeToEdge',
       nodeId: result.nodeId,
       edgeId: result.edgeId,
-      validity: result.validity,
+      sourceCleanup: result.sourceCleanup,
     });
   }
 }
 ```
 
-Pointer events on node bodies are wired in `ReactFlowApp` — the coordinator
-attaches to pointerdown on `.stencil-decoration-wrapper` elements that are NOT
-connection ports.
+**Event delegation across Lit/React boundary:** The coordinator attaches a
+single `pointerdown` listener on `containerEl` (the `.diagram-root` div
+created by GraphCanvas) using event delegation. This single listener survives
+React re-renders — node additions and removals do not require re-attachment.
+
+The delegation handler:
+1. Checks `event.target.closest('.stencil-source-handle')` — if the click
+   hit the source handle port, ignore and let React Flow handle connection
+   initiation
+2. Finds the node wrapper via `event.target.closest('.stencil-decoration-wrapper')`
+   — if not found, ignore (click was on canvas, edge, or other non-node
+   element)
+3. Resolves the node ID from the ancestor `.react-flow__node[data-id]`
+   element
+4. Starts the drag via `coordinator.startDrag(nodeId, event, this.model)`
+
+After handle shrinking (blocker — see below), the source handle occupies a
+small port at the bottom edge of the node. The majority of the node body
+surface is drag-eligible. The target handle sits behind the wrapper
+(`zIndex: 1` vs wrapper's `position: relative`) and does not intercept body
+clicks in normal mode. During connection mode (`.graph-connecting` CSS class
+active), the `stencil-source-handle` has `pointer-events: none` — this is
+already handled by the existing CSS in `css-isolation.ts`.
 
 ## Visual Design
 
@@ -228,25 +302,25 @@ connection ports.
   filter: drop-shadow(0 0 4px var(--pages-success-9));
   transition: stroke-width 100ms, filter 100ms;
 }
-
-.edge-splice-partial .react-flow__edge-path {
-  stroke: var(--pages-warning-9);
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 4px var(--pages-warning-9));
-  transition: stroke-width 100ms, filter 100ms;
-}
 ```
 
 Edge highlight classes are applied to the `.react-flow__edge[data-id="..."]`
-element wrapping the SVG path.
+element wrapping the SVG path. Only valid edges (both connections pass) are
+highlighted — there is no partial/amber state.
 
-## Handle Shrinking (Prerequisite)
+## Handle Shrinking (Blocker)
 
-This is a **separate, prerequisite change** — not bundled into edge-splice.
-It affects all node interactions.
+This is a **blocking prerequisite** — not bundled into edge-splice.
+It affects all node interactions and must be completed before edge-splice
+can be implemented. Tracked as a separate GitHub issue.
 
-Current state: source handles cover 100% of node surface (full-node invisible
-handles). This prevents body-drag because every pointerdown starts a connection.
+Current state: source handles cover 100% of node surface
+(`stencil-wrapper.tsx` renders the source handle with
+`position: absolute, top: 0, left: 0, width: 100%, height: 100%, zIndex: 2`
+and `css-isolation.ts` adds `cursor: crosshair; pointer-events: all` via
+`.stencil-source-handle`). Every `pointerdown` on a node body starts a
+connection — the coordinator's drag handler literally cannot fire without
+this change.
 
 Target state:
 - **Source handle** shrinks to a small visible port at the bottom edge of the
@@ -261,6 +335,10 @@ The target handle staying full-node means connection drops are still forgiving
 (drop anywhere on the target node). Only connection initiation requires the
 port.
 
+Interaction consequences (touch target sizing per WCAG 2.5.5, port
+discoverability, interaction with `connectionRadius={0}` on ReactFlow) are
+scoped to the handle-shrinking issue's own design, not this spec.
+
 ## Events
 
 The coordinator does not emit custom events — it returns a `DragEndResult` to
@@ -272,13 +350,17 @@ need drag lifecycle events, they can be added later via `emitPagesEvent`:
 
 ## Testing
 
-- **Unit tests** for `canSpliceOntoEdge` — all three validity states with
-  various grammar configurations
+- **Unit tests** for `canSpliceOntoEdge` — valid and invalid states with
+  various grammar configurations, including projected-model correctness:
+  nodes at cardinality limits where the splice frees the necessary slots
 - **Unit tests** for `applyGraphEdit('moveNodeToEdge')` — source cleanup
-  (auto-join, disconnect, no edges) × target splice (full, source-only,
-  target-only)
+  (auto-join, disconnect, no edges) × target splice, verifying:
+  - Edge type inheritance from original edge
+  - Auto-join edge creation with correct type
+  - All connected edges removed on disconnect
 - **Unit tests** for `NodeMoveCoordinator` — mock pointer events, verify
-  ghost class toggle, clone creation/removal, edge highlight state
+  ghost class toggle, clone creation/removal, edge highlight state,
+  source handle discrimination (clicks on `.stencil-source-handle` ignored)
 - **Integration test** — full lifecycle: pointerdown → pointermove over edge
   → pointerup → model mutation verified
 
@@ -291,5 +373,5 @@ need drag lifecycle events, they can be added later via `emitPagesEvent`:
 - [PP-20260705-bac842] — pages-event contract
 - `graph-renderer/src/editing/types.ts:35` — existing `moveNodeToEdge` GraphEdit type
 - `graph-renderer/src/editing/apply-graph-edit.ts:61` — existing stub
-- `graph-renderer/src/editing/edit-policy.ts:37` — existing `getInsertableTypes`
+- `graph-renderer/src/editing/edit-policy.ts:82` — existing `getDeleteStrategy`
 - `graph-core/src/edit.ts:102` — `splitEdge` (reference for target-side mechanics)
