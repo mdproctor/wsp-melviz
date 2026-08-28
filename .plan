@@ -13,15 +13,15 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#389 — Issue #389 ← active
-  - [ ] Batch 1: pages-diagram-core
-    - [ ] Task 1: scaffold+YAML+schema+editors
-    - [ ] Task 2: export+toolbar+GitHubBackend
-    - [ ] Task 3: DiagramBaseMixin
-  - [ ] Batch 2: ui-components
-    - [ ] Task 4: status-badge+registry
-    - [ ] Task 5: split-workbench+event-trail
-  - [ ] Batch 3: blocks-ui
-    - [ ] Task 6: delete-diagram-core+update-consumers
-    - [ ] Task 7: delete-status+split+trail+update-consumers
-  - [ ] Batch 4: pages
-    - [ ] Task 8: remove-internal-re-exports
+  - [x] Batch 1: pages-diagram-core
+    - [x] Task 1: scaffold+YAML+schema+editors
+    - [x] Task 2: export+toolbar+GitHubBackend
+    - [x] Task 3: DiagramBaseMixin
+  - [x] Batch 2: ui-components
+    - [x] Task 4: status-badge+registry
+    - [x] Task 5: split-workbench+event-trail
+  - [x] Batch 3: blocks-ui
+    - [x] Task 6: delete-diagram-core+update-consumers
+    - [x] Task 7: delete-status+split+trail+update-consumers
+  - [x] Batch 4: pages
+    - [x] Task 8: remove-internal-re-exports
