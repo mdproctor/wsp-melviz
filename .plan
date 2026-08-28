@@ -13,3 +13,12 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#389 — Issue #389 ← active
+  - [ ] Batch 1: pages-diagram-core
+    - [ ] Task 1: scaffold+YAML+schema+editors
+    - [ ] Task 2: export+toolbar+GitHubBackend
+    - [ ] Task 3: DiagramBaseMixin
+  - [ ] Batch 2: ui-components
+    - [ ] Task 4: status-badge+registry
+    - [ ] Task 5: split-workbench+event-trail
+  - [ ] Batch 3: blocks-ui
+    - [ ] Task 6: re-export+compat
