@@ -21,4 +21,7 @@ flyway-next-v: unknown
     - [ ] Task 4: status-badge+registry
     - [ ] Task 5: split-workbench+event-trail
   - [ ] Batch 3: blocks-ui
-    - [ ] Task 6: re-export+compat
+    - [ ] Task 6: delete-diagram-core+update-consumers
+    - [ ] Task 7: delete-status+split+trail+update-consumers
+  - [ ] Batch 4: pages
+    - [ ] Task 8: remove-internal-re-exports
