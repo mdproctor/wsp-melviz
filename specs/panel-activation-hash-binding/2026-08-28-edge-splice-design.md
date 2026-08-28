@@ -45,16 +45,35 @@ entirely.
 
 ## Interaction Lifecycle
 
-### 1. Drag Start — pointerdown on node body
+### 1. Drag Start — pointerdown on node body (pending phase)
 
-The user presses on a node body (not a connection port). The coordinator:
+The user presses on a node body (not a connection port). The coordinator
+enters the **pending** phase — no visual changes yet:
 
 1. Checks eligibility (leaf, no parentId)
-2. Adds CSS class `node-move-ghost` to the `.react-flow__node` element
-3. Creates a floating clone element from the node's stencil rendering
-4. Calls `setPointerCapture` on the event target
+2. Records the pointer start position (`clientX`, `clientY`)
+3. Calls `setPointerCapture` on the event target
+
+The ghost class and clone are deferred until the drag threshold is exceeded
+(see §2 below). This avoids ghost flicker on simple click-to-select gestures,
+where `pointerdown` is immediately followed by `pointerup` with no movement.
+The infra spec §8.0 establishes this threshold pattern for interactions #6
+and #7.
 
 ### 2. Drag Move — pointermove
+
+**Before threshold exceeded (pending phase):**
+
+If the pointer has moved less than `DRAG_THRESHOLD` (5 CSS pixels) from the
+start position, ignore the event. The threshold is measured as Euclidean
+distance: `Math.hypot(dx, dy) < DRAG_THRESHOLD`.
+
+**Activation (pending → active transition, on first move exceeding threshold):**
+
+1. Add CSS class `node-move-ghost` to the `.react-flow__node` element
+2. Create a floating clone element from the node's stencil rendering
+
+**Active phase (every subsequent move after activation):**
 
 The clone follows the cursor. On each move:
 
@@ -76,14 +95,21 @@ The clone follows the cursor. On each move:
 
 ### 3. Drag End — pointerup
 
-**Over a highlighted edge (valid):**
+**If drag was never activated (pointerup before threshold exceeded):**
+- Release pointer capture
+- No visual changes, no model change
+- The `click` event fires normally (pointer capture does not suppress click
+  events per W3C Pointer Events spec), so React Flow's `onNodeClick` handler
+  fires for node selection
+
+**Over a highlighted edge (valid — drag was activated):**
 - Remove ghost class and clone element
 - Compute source-side cleanup strategy via `editPolicy.getDeleteStrategy(node, model)`
   mapped to `SourceCleanupStrategy` (`auto-join` or `disconnect`)
 - Dispatch `onMutation({ type: 'moveNodeToEdge', nodeId, edgeId, sourceCleanup })`
 - ELK re-layouts the entire graph
 
-**Over nothing / non-highlighted edge:**
+**Over nothing / non-highlighted edge (drag was activated):**
 - Remove ghost class and clone element
 - No model change — node returns to normal
 
@@ -126,6 +152,10 @@ guaranteed to reflect the true graph state throughout the gesture.
 
 **Internal state (owned by coordinator, cleaned up on dispose):**
 - `activeModel: GraphModel | null` — model snapshot for the active drag
+- `dragStartPosition: { x: number; y: number } | null` — pointer position
+  at `pointerdown`, used for threshold check
+- `dragActive: boolean` — `false` during pending phase, `true` after
+  threshold exceeded
 - `ghostedNodeId: string | null`
 - `cloneElement: HTMLElement | null`
 - `highlightedEdgeId: string | null`
@@ -390,7 +420,9 @@ need drag lifecycle events, they can be added later via `emitPagesEvent`:
   - All connected edges removed on disconnect
 - **Unit tests** for `NodeMoveCoordinator` — mock pointer events, verify
   ghost class toggle, clone creation/removal, edge highlight state,
-  source handle discrimination (clicks on `.stencil-source-handle` ignored)
+  source handle discrimination (clicks on `.stencil-source-handle` ignored),
+  drag threshold (pointerdown + pointerup with <5px movement produces no
+  ghost/clone and fires `cancelled` result)
 - **Integration test** — full lifecycle: pointerdown → pointermove over edge
   → pointerup → model mutation verified
 
