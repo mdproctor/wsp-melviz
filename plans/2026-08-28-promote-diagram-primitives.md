@@ -1232,162 +1232,91 @@ git -C /Users/mdproctor/claude/casehub/pages commit -m "feat(pages-ui-components
 
 ---
 
-## Batch 3: blocks-ui re-exports
+## Batch 3: blocks-ui full migration
 
-After this batch: blocks-ui's diagram-core, status-badge, split-workbench, and event-trail packages re-export from pages. Both stencil packages use pages YAML primitives instead of duplicating. Zero downstream impact.
+After this batch: blocks-ui's diagram-core, status-badge, split-workbench, and event-trail source code is deleted — replaced by direct imports from pages. All consumers updated. No re-exports anywhere.
 
 **NOTE:** This batch operates on the blocks-ui repo (`/Users/mdproctor/claude/casehub/blocks-ui/`). A separate blocks-ui issue must be created first, linked to casehub-pages#389.
 
-### Task 6: Re-export all migrated primitives from blocks-ui
+### Task 6: Delete diagram-core source, update diagram consumers
 
 **Files (all in blocks-ui repo):**
-- Modify: `packages/diagram-core/package.json` (add pages-diagram-core dep)
-- Modify: `packages/diagram-core/src/index.ts` (re-export from pages)
-- Modify: `packages/diagram-core/src/diagram-base-mixin.ts` → thin compat wrapper
-- Modify: `packages/diagram-core/src/diagram-toolbar.ts` → compat re-registration
-- Modify: `packages/diagram-core/src/diagram-export.ts` → re-export
-- Modify: `packages/diagram-core/src/schema-registry.ts` → re-export
-- Modify: `packages/diagram-core/src/editors/blocks-prompt-editor.ts` → compat re-registration
-- Modify: `packages/diagram-core/src/editors/blocks-json-editor.ts` → compat re-registration
-- Modify: `packages/blocks-ui-core/package.json` (add pages-ui-components dep)
-- Modify: `packages/blocks-ui-core/src/types/status.ts` (import SPI from pages, keep domain registrations)
-- Modify: `packages/blocks-ui-core/src/status-badge/status-badge.ts` → compat re-registration
-- Modify: `packages/blocks-ui-core/src/styles/category.ts` → re-export
-- Modify: `components/split-workbench/package.json` (add pages-ui-components dep)
-- Modify: `components/split-workbench/src/split-workbench.ts` → compat re-registration
-- Modify: `components/event-trail/package.json` (add pages-ui-components dep)
-- Modify: `components/event-trail/src/event-trail.ts` → compat re-registration
-- Modify: `packages/graph-stencil-case/src/adapter/yaml-editor.ts` (switch to pages YAML primitives)
-- Modify: `packages/graph-stencil-swf/src/adapter/swf-yaml-editor.ts` (switch to pages YAML primitives)
-- Modify: `packages/graph-stencil-case/src/persistence/github-backend.ts` → re-export from pages
+- Delete: `packages/diagram-core/src/diagram-base-mixin.ts`
+- Delete: `packages/diagram-core/src/diagram-base-mixin.test.ts`
+- Delete: `packages/diagram-core/src/diagram-toolbar.ts`
+- Delete: `packages/diagram-core/src/diagram-export.ts`
+- Delete: `packages/diagram-core/src/diagram-export.test.ts`
+- Delete: `packages/diagram-core/src/schema-registry.ts`
+- Delete: `packages/diagram-core/src/schema-registry.test.ts`
+- Delete: `packages/diagram-core/src/editors/blocks-prompt-editor.ts`
+- Delete: `packages/diagram-core/src/editors/blocks-json-editor.ts`
+- Delete: `packages/diagram-core/src/editors/editors.test.ts`
+- Delete: `packages/diagram-core/src/editors/index.ts`
+- Delete: `packages/diagram-core/src/index.ts`
+- Delete: `packages/graph-stencil-case/src/persistence/github-backend.ts`
+- Delete: `packages/graph-stencil-case/src/persistence/github-backend.test.ts`
+- Modify: `packages/diagram-core/package.json` (remove all deps, mark deprecated or remove package entirely)
+- Modify: `components/casehub-diagram/package.json` (dep `@casehubio/diagram-core` → `@casehubio/pages-diagram-core`)
+- Modify: `components/casehub-diagram/src/casehub-diagram.ts` (imports from `@casehubio/pages-diagram-core`, element names `pages-diagram-toolbar`/`pages-prompt-editor`/`pages-json-viewer` in templates)
+- Modify: `components/swf-diagram/package.json` (same dep switch)
+- Modify: `components/swf-diagram/src/swf-diagram.ts` (same import switch)
+- Modify: `packages/graph-stencil-case/src/adapter/yaml-editor.ts` (use pages YAML primitives)
+- Modify: `packages/graph-stencil-swf/src/adapter/swf-yaml-editor.ts` (use pages YAML primitives)
+- Modify: `packages/graph-stencil-case/package.json` (add `@casehubio/pages-diagram-core` dep, remove `yaml` if only used by the deleted generic function)
+- Modify: `packages/graph-stencil-swf/package.json` (add `@casehubio/pages-diagram-core` dep)
+- Modify: `packages/graph-stencil-case/src/index.ts` (remove GitHubBackend re-export)
 
 **Interfaces:**
-- Consumes: all exports from pages-diagram-core and pages-ui-components sub-paths
-- Produces: backward-compatible re-exports under old names
+- Consumes: all exports from `@casehubio/pages-diagram-core`
+- Produces: nothing new — deletes source, updates imports
 
 - [ ] **Step 1: Create blocks-ui issue**
 
 ```bash
 gh issue create --repo casehubio/blocks-ui \
-  --title "Re-export migrated primitives from casehub-pages" \
-  --body "Re-export diagram-core, status-badge, split-workbench, and event-trail from casehub-pages packages. Zero downstream impact — old element names and import paths continue to work.
+  --title "Migrate primitives to casehub-pages — delete source, update imports" \
+  --body "Full migration of diagram-core, status-badge, split-workbench, and event-trail to casehub-pages. Source is deleted from blocks-ui, all consumers updated to import directly from pages packages. No re-exports.
 
 Linked to: casehubio/casehub-pages#389"
 ```
 
 Record the issue number for commit references.
 
-- [ ] **Step 2: Update diagram-core to re-export from pages**
+- [ ] **Step 2: Delete diagram-core package source**
 
-`packages/diagram-core/package.json` — add dependency:
-```json
-"@casehubio/pages-diagram-core": "*"
+Delete all source files from `packages/diagram-core/src/`. The entire package is being replaced by `@casehubio/pages-diagram-core`.
+
+Either remove the package from the workspace entirely, or leave a minimal `package.json` with a deprecation notice pointing to `@casehubio/pages-diagram-core`.
+
+- [ ] **Step 3: Update casehub-diagram imports**
+
+`components/casehub-diagram/package.json` — replace dep:
+```diff
+- "@casehubio/diagram-core": "workspace:*",
++ "@casehubio/pages-diagram-core": "*",
 ```
 
-`packages/diagram-core/src/index.ts` — re-export everything:
+`components/casehub-diagram/src/casehub-diagram.ts` — update all imports:
 ```ts
-export { DiagramBaseMixin, type AdapterResult } from '@casehubio/pages-diagram-core';
-export { PagesDiagramToolbar as DiagramToolbar } from '@casehubio/pages-diagram-core';
-export { exportDiagram, type ExportFormat } from '@casehubio/pages-diagram-core';
-export { registerPropertySchema, getPropertySchema } from '@casehubio/pages-diagram-core';
-export { PagesPromptEditor as BlocksPromptEditorElement } from '@casehubio/pages-diagram-core';
-export { PagesJsonViewer as BlocksJsonEditorElement } from '@casehubio/pages-diagram-core';
+// Before:
+import { DiagramBaseMixin, type AdapterResult } from '@casehubio/diagram-core';
+// After:
+import { DiagramBaseMixin, type AdapterResult } from '@casehubio/pages-diagram-core';
 ```
 
-For element compat registration, each component file becomes a thin wrapper:
+Update template element names:
+- `<diagram-toolbar` → `<pages-diagram-toolbar`
+- `<blocks-prompt-editor` → `<pages-prompt-editor`
+- `<blocks-json-editor` → `<pages-json-viewer`
+- Any `toolbar-save`/`toolbar-export` event listeners stay unchanged (event names don't change)
 
-`packages/diagram-core/src/diagram-toolbar.ts`:
-```ts
-import { PagesDiagramToolbar } from '@casehubio/pages-diagram-core';
+- [ ] **Step 4: Update swf-diagram imports**
 
-class DiagramToolbar extends PagesDiagramToolbar {}
+Same pattern as Step 3 for `components/swf-diagram/`.
 
-if (!customElements.get('diagram-toolbar')) {
-  customElements.define('diagram-toolbar', DiagramToolbar);
-}
+- [ ] **Step 5: Switch stencil YAML functions to pages primitives**
 
-export { DiagramToolbar };
-```
-
-Apply same pattern for `blocks-prompt-editor.ts` and `blocks-json-editor.ts`.
-
-- [ ] **Step 3: Update status-badge to re-export from pages**
-
-`packages/blocks-ui-core/package.json` — add dependency:
-```json
-"@casehubio/pages-ui-components": "*"
-```
-
-`packages/blocks-ui-core/src/types/status.ts` — import SPI from pages, keep domain registrations:
-```ts
-export { registerStatus, lookupStatus, FALLBACK_DESCRIPTOR } from '@casehubio/pages-ui-components/status-badge';
-export type { StateCategory, StatusDescriptor } from '@casehubio/pages-ui-components/status-badge';
-
-import { registerStatus } from '@casehubio/pages-ui-components/status-badge';
-
-// Domain registrations — these stay in blocks-ui
-registerStatus('case', 'STARTING', { category: 'info', icon: '◐' });
-registerStatus('case', 'WAITING',  { category: 'warning', icon: '⏳' });
-// ... all ~60 domain-specific entries from the original file
-```
-
-`packages/blocks-ui-core/src/styles/category.ts`:
-```ts
-export { stateCategoryStyles, type CategoryStyle } from '@casehubio/pages-ui-components/status-badge';
-```
-
-`packages/blocks-ui-core/src/status-badge/status-badge.ts`:
-```ts
-import { PagesStatusBadge } from '@casehubio/pages-ui-components/status-badge';
-
-class StatusBadge extends PagesStatusBadge {}
-
-if (!customElements.get('status-badge')) {
-  customElements.define('status-badge', StatusBadge);
-}
-
-export { StatusBadge };
-```
-
-- [ ] **Step 4: Update split-workbench and event-trail to re-export**
-
-Same compat pattern: import pages class, create trivial subclass, register under old name, re-export.
-
-`components/split-workbench/package.json` — add dependency:
-```json
-"@casehubio/pages-ui-components": "*"
-```
-
-`components/split-workbench/src/split-workbench.ts`:
-```ts
-import { PagesSplitWorkbench } from '@casehubio/pages-ui-components/split-workbench';
-
-class SplitWorkbench extends PagesSplitWorkbench {}
-
-if (!customElements.get('blocks-split-workbench')) {
-  customElements.define('blocks-split-workbench', SplitWorkbench);
-}
-
-export { SplitWorkbench };
-```
-
-`components/event-trail/src/event-trail.ts`:
-```ts
-import { PagesEventTrail } from '@casehubio/pages-ui-components/event-trail';
-
-class BlocksEventTrail extends PagesEventTrail {}
-
-if (!customElements.get('blocks-event-trail')) {
-  customElements.define('blocks-event-trail', BlocksEventTrail);
-}
-
-export { BlocksEventTrail };
-```
-
-- [ ] **Step 5: Switch stencil YAML imports to pages primitives**
-
-`packages/graph-stencil-case/src/adapter/yaml-editor.ts`:
-Replace the generic `applyPropertyEdit` function with an import from pages:
+`packages/graph-stencil-case/src/adapter/yaml-editor.ts` — replace the generic `applyPropertyEdit` body:
 ```ts
 import { yamlSetField, yamlDeleteField } from '@casehubio/pages-diagram-core';
 
@@ -1404,35 +1333,48 @@ export function applyPropertyEdit(
 }
 ```
 
-The function signature stays the same for backward compat — it delegates to the pages primitives internally.
+The function signature stays the same — it wraps the pages primitives. Domain-specific functions (`addElement`, `removeElement`, `switchBindingTarget`, etc.) stay unchanged — they are case-domain logic, not generic primitives.
 
-Apply same pattern to `packages/graph-stencil-swf/src/adapter/swf-yaml-editor.ts` for `applySwfPropertyEdit`.
-
-- [ ] **Step 6: Switch GitHubBackend to re-export**
-
-`packages/graph-stencil-case/src/persistence/github-backend.ts`:
+Apply same pattern to `packages/graph-stencil-swf/src/adapter/swf-yaml-editor.ts`:
 ```ts
-export { GitHubBackend, type GitHubBackendConfig } from '@casehubio/pages-diagram-core';
+import { yamlSetField, yamlDeleteField } from '@casehubio/pages-diagram-core';
+
+export function applySwfPropertyEdit(
+  yaml: string,
+  nodePath: readonly (string | number)[],
+  field: (string | number)[],
+  value: unknown,
+): string {
+  const fullPath = [...nodePath, ...field];
+  return value === undefined
+    ? yamlDeleteField(yaml, fullPath)
+    : yamlSetField(yaml, fullPath, value);
+}
 ```
 
-Note: consumers that used `new GitHubBackend({ commitMessage: 'Update case definition' })` will now get 'Update document' as default. The `commitMessage` constructor param allows overriding, so existing code that already passes a custom message is unaffected. Code relying on the old default needs to pass it explicitly.
+- [ ] **Step 6: Delete GitHubBackend from graph-stencil-case**
 
-Add `@casehubio/pages-diagram-core` as dependency to `packages/graph-stencil-case/package.json` and `packages/graph-stencil-swf/package.json`.
+Delete `packages/graph-stencil-case/src/persistence/github-backend.ts` and its test.
 
-- [ ] **Step 7: Run blocks-ui tests and build**
+Update `packages/graph-stencil-case/src/index.ts` — remove the GitHubBackend export line. Consumers import `GitHubBackend` from `@casehubio/pages-diagram-core` directly.
+
+Add `@casehubio/pages-diagram-core` dep to `packages/graph-stencil-case/package.json` and `packages/graph-stencil-swf/package.json`.
+
+- [ ] **Step 7: Run blocks-ui build and tests**
 
 Run: full blocks-ui build and test suite
-Expected: PASS — all existing tests pass, old element names still work
+Expected: PASS
 
-- [ ] **Step 8: Commit to blocks-ui**
+- [ ] **Step 8: Commit**
 
 ```bash
 git -C /Users/mdproctor/claude/casehub/blocks-ui add .
-git -C /Users/mdproctor/claude/casehub/blocks-ui commit -m "refactor: re-export migrated primitives from casehub-pages
+git -C /Users/mdproctor/claude/casehub/blocks-ui commit -m "refactor: delete diagram-core, migrate to pages-diagram-core
 
-diagram-core, status-badge, split-workbench, event-trail now live in
-casehub-pages. This package re-exports with backward-compatible element
-names and import paths. Both stencil packages use pages YAML primitives.
+Source deleted from packages/diagram-core/. casehub-diagram and
+swf-diagram now import directly from @casehubio/pages-diagram-core.
+Stencil YAML functions delegate to pages yamlSetField/yamlDeleteField.
+GitHubBackend deleted — consumers import from pages-diagram-core.
 
 Refs casehubio/casehub-pages#389
 Refs blocks-ui#<N>"
@@ -1440,11 +1382,209 @@ Refs blocks-ui#<N>"
 
 ---
 
+### Task 7: Delete status-badge, split-workbench, event-trail — update all consumers
+
+**Files (all in blocks-ui repo):**
+- Delete: `packages/blocks-ui-core/src/status-badge/status-badge.ts`
+- Delete: `packages/blocks-ui-core/src/status-badge/status-badge.test.ts`
+- Delete: `packages/blocks-ui-core/src/status-badge/index.ts`
+- Delete: `packages/blocks-ui-core/src/styles/category.ts`
+- Modify: `packages/blocks-ui-core/src/types/status.ts` (keep domain registrations, import SPI from pages)
+- Modify: `packages/blocks-ui-core/src/index.ts` (remove status-badge and category exports)
+- Modify: `packages/blocks-ui-core/package.json` (add `@casehubio/pages-ui-components` dep)
+- Delete: `components/split-workbench/src/split-workbench.ts` (entire source)
+- Delete: `components/split-workbench/src/split-workbench.test.ts`
+- Delete: `components/split-workbench/src/index.ts`
+- Delete: `components/event-trail/src/event-trail.ts` (entire source)
+- Delete: `components/event-trail/src/event-trail.test.ts`
+- Delete: `components/event-trail/src/index.ts`
+- Modify: 9 split-workbench consumers (update import + element name)
+- Modify: 1 event-trail consumer (update import + element name)
+- Modify: 1 status-badge consumer (update import + element name)
+
+**Interfaces:**
+- Consumes: `@casehubio/pages-ui-components/status-badge`, `@casehubio/pages-ui-components/split-workbench`, `@casehubio/pages-ui-components/event-trail`
+- Produces: nothing new — deletes source, updates imports
+
+- [ ] **Step 1: Update blocks-ui-core status types**
+
+`packages/blocks-ui-core/src/types/status.ts` — import SPI from pages, keep only domain registrations:
+```ts
+import { registerStatus } from '@casehubio/pages-ui-components/status-badge';
+export type { StateCategory, StatusDescriptor } from '@casehubio/pages-ui-components/status-badge';
+
+// Domain registrations — CaseHub business state mappings
+registerStatus('case', 'STARTING', { category: 'info',    icon: '◐' });
+registerStatus('case', 'WAITING',  { category: 'warning', icon: '⏳' });
+registerStatus('task', 'DELEGATED', { category: 'info',    icon: '→', border: true });
+registerStatus('task', 'REJECTED',  { category: 'warning', icon: '✕' });
+registerStatus('task', 'OBSOLETE',  { category: 'neutral', icon: '—' });
+// ... all remaining domain-specific entries (work, workitem, milestone,
+// outcome, group, sla, node, session, commitment, execution, agent, pattern)
+```
+
+The `lookupStatus`, `registerStatus`, `FALLBACK_DESCRIPTOR`, `stateCategoryStyles` functions are no longer exported from blocks-ui-core. Consumers import directly from `@casehubio/pages-ui-components/status-badge`.
+
+Delete `packages/blocks-ui-core/src/status-badge/` directory entirely.
+Delete `packages/blocks-ui-core/src/styles/category.ts`.
+
+Update `packages/blocks-ui-core/src/index.ts`:
+```diff
+- export * from './commitment-pill/index.js';
+- export * from './status-badge/index.js';
+- export { stateCategoryStyles, type CategoryStyle } from './styles/category.js';
++ export * from './commitment-pill/index.js';
+```
+
+(types/index.ts barrel still exports domain types — `StateCategory` and `StatusDescriptor` are now type re-exports from pages via status.ts, which is acceptable for types.)
+
+- [ ] **Step 2: Update status-badge consumer**
+
+`components/session-list/src/session-list.ts`:
+```diff
+- import '@casehubio/blocks-ui-core/status-badge/status-badge.js';
++ import '@casehubio/pages-ui-components/status-badge';
+```
+
+Update template: `<status-badge` → `<pages-status-badge`.
+
+Update `components/session-list/package.json` — add `@casehubio/pages-ui-components` dep.
+
+- [ ] **Step 3: Delete split-workbench source and update 9 consumers**
+
+Delete `components/split-workbench/src/` directory. Either remove the package from the workspace or mark deprecated.
+
+Update each consumer (trust-workbench, work-item-workbench, session-workbench, case-explorer, diagram-workbench, contributor-workbench, orchestration-workbench, channel-activity, conversation-viewer):
+
+For each:
+1. `package.json`: replace `@casehubio/blocks-ui-split-workbench` dep with `@casehubio/pages-ui-components`
+2. Source file: update import:
+   ```diff
+   - import '@casehubio/blocks-ui-split-workbench';
+   + import '@casehubio/pages-ui-components/split-workbench';
+   ```
+3. Template: `<blocks-split-workbench` → `<pages-split-workbench`
+
+The split-workbench API (selection-topic, title, storage-key attributes, list/detail/header slots) is unchanged — only the element name and import path change.
+
+- [ ] **Step 4: Delete event-trail source and update consumer**
+
+Delete `components/event-trail/src/` directory. Either remove the package or mark deprecated.
+
+`components/audit-trail-viewer/`:
+1. `package.json`: replace `@casehubio/blocks-ui-event-trail` dep with `@casehubio/pages-ui-components`
+2. Source: update import:
+   ```diff
+   - import '@casehubio/blocks-ui-event-trail';
+   + import '@casehubio/pages-ui-components/event-trail';
+   ```
+3. Template: `<blocks-event-trail` → `<pages-event-trail`
+
+- [ ] **Step 5: Run blocks-ui build and tests**
+
+Run: full blocks-ui build and test suite
+Expected: PASS — all tests pass with new imports and element names
+
+- [ ] **Step 6: Commit**
+
+```bash
+git -C /Users/mdproctor/claude/casehub/blocks-ui add .
+git -C /Users/mdproctor/claude/casehub/blocks-ui commit -m "refactor: delete status-badge, split-workbench, event-trail — import from pages
+
+Source deleted. All consumers updated to import directly from
+@casehubio/pages-ui-components sub-paths. Element names updated to
+pages- prefix. Domain status registrations stay in blocks-ui-core.
+
+Refs casehubio/casehub-pages#389
+Refs blocks-ui#<N>"
+```
+
+---
+
+## Batch 4: pages internal re-export cleanup
+
+After this batch: no package in pages re-exports another package's API in a way that confuses what lives where. Every import points to the actual owning package.
+
+### Task 8: Remove confusing re-exports within pages
+
+**Files (all in casehub-pages repo):**
+- Modify: `packages/pages-component/src/events.ts` (delete file — entire contents are re-exports from pages-data)
+- Modify: `packages/pages-component/src/index.ts` (remove events.ts re-export, replace with direct pages-data imports where needed)
+- Modify: `packages/graph-renderer/src/index.ts` (remove `emitPagesEvent`/`PagesEventDetail` re-export from pages-data, remove `GraphModel`/`GraphNode`/`GraphEdge`/`NodeDecoration` re-export from graph-core)
+- Modify: `packages/pages-ui/src/index.ts` (remove `renderComponent`/`RenderOptions` re-export from pages-component)
+- Modify: `packages/pages-viz/src/index.ts` (remove type re-exports from pages-component and pages-ui-components)
+- Modify: `packages/pages-runtime/src/index.ts` (remove type re-exports from pages-component)
+- Modify: all consumers that imported the re-exported symbols from the wrong package
+
+**Approach:** For each re-export removed, find all consumers that import the symbol from the re-exporting package and update them to import from the actual owning package. Use IntelliJ `ide_find_references` to locate all usages before removing.
+
+- [ ] **Step 1: Remove pages-component/events.ts re-export**
+
+This file re-exports `emitPagesEvent`, `onPagesEvent`, `PagesEventDetail` from `@casehubio/pages-data`. These functions live in pages-data — that's where consumers should import them.
+
+1. Use `ide_find_references` on `emitPagesEvent` from `pages-component` to find all consumers
+2. Update each consumer to import from `@casehubio/pages-data` instead
+3. Delete `packages/pages-component/src/events.ts`
+4. Remove the events barrel from `packages/pages-component/src/index.ts`
+
+Note: the newly migrated `PagesSplitWorkbench` (Task 5) imports `onPagesEvent`/`emitPagesEvent` from `@casehubio/pages-component`. Update it to import from `@casehubio/pages-data` as part of this step.
+
+- [ ] **Step 2: Remove graph-renderer re-exports**
+
+`packages/graph-renderer/src/index.ts` re-exports:
+- `emitPagesEvent` from `@casehubio/pages-data`
+- `PagesEventDetail` type from `@casehubio/pages-data`
+- `GraphModel`, `GraphNode`, `GraphEdge`, `NodeDecoration` types from `@casehubio/graph-core`
+
+1. Use `ide_find_references` on each re-exported symbol from `graph-renderer`
+2. Update consumers to import from the actual owning package (`pages-data` or `graph-core`)
+3. Remove the re-export lines from `packages/graph-renderer/src/index.ts`
+
+- [ ] **Step 3: Remove pages-ui re-exports**
+
+`packages/pages-ui/src/index.ts` re-exports `renderComponent` and `RenderOptions` from `@casehubio/pages-component`.
+
+1. Find references, update consumers, remove re-export lines
+
+- [ ] **Step 4: Remove pages-viz type re-exports**
+
+`packages/pages-viz/src/index.ts` re-exports types from `@casehubio/pages-component` (`FieldSchema`, `SchemaFormProps`, `EventTimelineLayout`) and from `@casehubio/pages-ui-components` (`PagesNumberInput`, `PagesDateInput`).
+
+1. Find references, update consumers, remove re-export lines
+
+- [ ] **Step 5: Remove pages-runtime type re-exports**
+
+`packages/pages-runtime/src/index.ts` re-exports `DataReceiver`, `LayoutState`, `PanelEntry` from `@casehubio/pages-component`.
+
+1. Find references, update consumers, remove re-export lines
+
+- [ ] **Step 6: Typecheck and full build**
+
+Run: `yarn typecheck`
+Run: `yarn build`
+Expected: PASS — all packages compile, no broken imports
+
+- [ ] **Step 7: Commit**
+
+```bash
+git -C /Users/mdproctor/claude/casehub/pages add .
+git -C /Users/mdproctor/claude/casehub/pages commit -m "refactor: remove internal re-exports — every import points to the actual owner
+
+Removed re-export chains: pages-component/events.ts shim deleted,
+graph-renderer no longer re-exports pages-data events or graph-core
+types, pages-ui/pages-viz/pages-runtime no longer re-export pages-component
+symbols. All consumers updated to import from the owning package.
+
+Refs #389"
+```
+
+---
+
 ## Post-Batch: CLAUDE.md + ARC42STORIES.MD update
 
-After all three batches:
+After all four batches:
 
-- [ ] **Update CLAUDE.md package overview:** Add `pages-diagram-core` to the package list with its description.
+- [ ] **Update CLAUDE.md package overview:** Add `pages-diagram-core` to the package list with its description. Update `pages-ui-components` description to include status-badge, split-workbench, event-trail.
 - [ ] **Update ARC42STORIES.MD:** Reflect the new package in the architecture diagram (§9–10) — pages-diagram-core sits alongside graph-renderer in the framework tier.
 
 ---
@@ -1461,6 +1601,8 @@ After all three batches:
 - [blocks-ui packages/blocks-ui-core/src/styles/category.ts] — stateCategoryStyles
 - [blocks-ui components/split-workbench/src/split-workbench.ts] — SplitWorkbench source
 - [blocks-ui components/event-trail/src/event-trail.ts] — EventTrail source
+- [blocks-ui consumer scan] — casehub-diagram, swf-diagram, 9 workbench consumers, session-list, audit-trail-viewer
+- [pages re-export scan] — pages-component/events.ts, graph-renderer, pages-ui, pages-viz, pages-runtime
 - [PP-20260705-c7687d] — web-component-strategy protocol (Lit conventions, pages- prefix, sub-path exports)
 - [PP-20260810-cdcc8f] — content-agnostic-workbench protocol
 - [PP-20260826-507928] — graph-core-pure-data protocol
