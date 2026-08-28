@@ -172,8 +172,34 @@ guard belongs in the coordinator (it's a drag constraint, not a grammar rule).
 
 Domain adapters may override `canSpliceOntoEdge` for custom splice validation
 (e.g., forbidding splicing entirely for certain diagram types). When the method
-is not provided, the coordinator falls back to the `defaultEditPolicy`
-implementation.
+is not provided by the current policy, the coordinator falls back to a
+standalone `defaultCanSpliceOntoEdge` function that executes the same
+projected-model algorithm but calls **the current policy's** `canConnect`:
+
+```typescript
+function defaultCanSpliceOntoEdge(
+  policy: EditPolicy, edge: GraphEdge, node: GraphNode, model: GraphModel
+): boolean {
+  const projected = buildProjectedModel(model, edge, node);
+  const source = nodeById(projected, edge.source);
+  const target = nodeById(projected, edge.target);
+  if (!source || !target) return false;
+  return policy.canConnect(source, node, projected)
+      && policy.canConnect(node, target, projected);
+}
+
+// Coordinator usage:
+const canSplice = editPolicy.canSpliceOntoEdge?.(edge, node, model)
+  ?? defaultCanSpliceOntoEdge(editPolicy, edge, node, model);
+```
+
+This ensures domain-specific `canConnect` rules are never bypassed in the
+fallback path. `defaultEditPolicy()` still provides `canSpliceOntoEdge` as
+a built-in convenience — policies created via `defaultEditPolicy()` have it
+on the object itself, so the fallback is never reached for them. The fallback
+matters only for domain adapters that implement `EditPolicy` independently
+with custom `canConnect` rules but choose not to implement
+`canSpliceOntoEdge`.
 
 **Source-side cleanup strategy:** The coordinator pre-computes the source-side
 cleanup strategy by calling the existing `getDeleteStrategy(node, model)` and
@@ -353,6 +379,10 @@ need drag lifecycle events, they can be added later via `emitPagesEvent`:
 - **Unit tests** for `canSpliceOntoEdge` — valid and invalid states with
   various grammar configurations, including projected-model correctness:
   nodes at cardinality limits where the splice frees the necessary slots
+- **Unit test** for `defaultCanSpliceOntoEdge` fallback — verify that a
+  custom `EditPolicy` with domain-specific `canConnect` restrictions (but
+  no `canSpliceOntoEdge`) has its `canConnect` rules respected via the
+  standalone fallback function
 - **Unit tests** for `applyGraphEdit('moveNodeToEdge')` — source cleanup
   (auto-join, disconnect, no edges) × target splice, verifying:
   - Edge type inheritance from original edge
