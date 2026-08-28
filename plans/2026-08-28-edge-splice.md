@@ -214,7 +214,7 @@ Create `packages/graph-renderer/src/editing/splice-validation.ts`:
 
 ```typescript
 import type { GraphModel, GraphNode, GraphEdge } from '@casehubio/graph-core';
-import { nodeById, edgesOf, removeEdge } from '@casehubio/graph-core';
+import { nodeById, edgesOf } from '@casehubio/graph-core';
 import type { EditPolicy } from './types.js';
 
 export function buildProjectedModel(
@@ -697,28 +697,28 @@ export function createNodeMoveCoordinator(opts: NodeMoveCoordinatorOptions): Nod
   }
 
   function onPointerUp(_e: PointerEvent): void {
-    cleanup();
-
     if (!dragActive || !activeModel || !draggedNodeId) {
+      cleanup();
       onResult({ type: 'cancelled' });
       return;
     }
 
+    let result: DragEndResult = { type: 'cancelled' };
     if (highlightedEdgeEl) {
       const edgeId = highlightedEdgeEl.dataset['id'];
       const node = nodeById(activeModel, draggedNodeId);
       if (edgeId && node) {
-        onResult({
+        result = {
           type: 'splice',
           nodeId: draggedNodeId,
           edgeId,
           sourceCleanup: getSourceCleanup(node, activeModel),
-        });
-        return;
+        };
       }
     }
 
-    onResult({ type: 'cancelled' });
+    cleanup();
+    onResult(result);
   }
 
   function clearEdgeHighlight(): void {
