@@ -1,0 +1,15 @@
+# Work Plan — issue-389-promote-diagram-primitives
+
+## State
+branch: issue-389-promote-diagram-primitives
+state: scaffolded
+project-sha: 84fb6bb5ddafa373791df3d6b527ca074cf7c1ab
+date: 2026-08-28
+issue-repo: casehubio/casehub-pages
+covers: 389
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#389 — Issue #389 ← active
