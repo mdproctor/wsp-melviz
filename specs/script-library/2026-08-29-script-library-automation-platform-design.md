@@ -478,7 +478,7 @@ steps:
     forEach:                           # optional iteration
       as: ticket
       in: tickets
-    when: "${each.ticket.priority}"    # optional conditional
+    when: "${each.ticket.active}"     # optional conditional (boolean column)
     commands:                          # one or more commands
       - action: click
         target: {role: button, name: Submit}
@@ -511,14 +511,17 @@ When a script is loaded (for execution or call-graph validation):
 4. Load data sources (CSV files, inline CSV) → parse and type-check
 5. Expand forEach → stamp steps per iteration value
 6. Evaluate when → exclude conditional steps
-7. Resolve call references → inline callee steps from registry
+7. Build call graph → resolve all call references transitively
 8. Validate acyclicity → reject if call graph has cycles
-9. Flatten to execution plan → dispatch via orchestrator
+9. Inline callee steps → prefix names, merge into execution plan
+10. Flatten to execution plan → dispatch via orchestrator
 ```
 
 Steps 2-6 use shared primitives from `casehub-yaml-core` (D3).
-Steps 7-8 are scenario-specific (the registry and call graph are
-scenario concepts).
+Steps 7-9 are scenario-specific (the registry and call graph are
+scenario concepts). Acyclicity is validated before inlining (step 8
+before step 9) — a cycle in the call graph would cause infinite
+expansion if inlined first.
 
 ## 7. Relationship to Existing Architecture
 
