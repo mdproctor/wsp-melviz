@@ -134,7 +134,12 @@ current row's column values.
 
 #### CSV data sources
 
-The `data` block declares named data sources. Two forms:
+The `data` block declares named data sources. This coexists with the
+existing `data` section in the executor protocol spec (§3.6), which
+holds lookup maps. Disambiguation: if a `data` entry has `source` or
+`inline`, it is a CSV data source; otherwise it is a lookup map.
+
+Two forms:
 
 **File reference:**
 ```yaml
@@ -175,6 +180,16 @@ iterations:
 
 Steps reference by name: `forEach: {as: region, in: regions}` or
 shorthand `forEach: regions` when the step doesn't need to override `as`.
+
+#### forEach + trigger resolution
+
+When a forEach-expanded step has a `trigger: {after: "step-name"}`,
+trigger references are resolved using the same-group pairing rule from
+desired-state's dependency alignment: if both the triggering and
+triggered steps share the same iteration group, triggers pair by value
+(`step.us-east` triggers `other.us-east`). If the referenced step is
+not in a forEach group, all stamped copies trigger from the same fixed
+step.
 
 #### Conditional steps — when
 
@@ -241,6 +256,11 @@ in the `call` command override inherited values. The callee's own
 Results from callee steps are available to subsequent caller steps via
 `${create-user-account.step-name.field}`.
 
+Inlined callee steps retain their `target` field and participate in
+the orchestrator's normal dispatch grouping (§4.9 of the executor
+protocol spec). A callee with mixed targets (browser + service) is
+split across dispatch sequences like any other multi-target section.
+
 #### Acyclic enforcement
 
 At parse/load time, the system builds a call graph by resolving all
@@ -279,7 +299,7 @@ public record ScriptDescriptor(
     List<ParamDescriptor> params,
     List<String> calls,         // scripts this one calls
     ScriptProvenance provenance,
-    boolean ready               // readiness probe result (live, per-request)
+    List<AriaTarget> firstStepTargets  // ARIA targets from first step, for client-side readiness probe
 ) {}
 
 public record ParamDescriptor(
@@ -294,13 +314,19 @@ public enum ScriptProvenance { BUNDLED, UPLOADED, EXTERNAL }
 ### 3.3 REST endpoints
 
 ```
-GET  /scenario/library              → ScriptDescriptor[]
-GET  /scenario/library?labels=domain:hr&tags=onboarding  → filtered
-GET  /scenario/library/{name}       → ScriptDescriptor (single)
-GET  /scenario/library/{name}/yaml  → raw YAML content
-POST /scenario/library              → upload YAML, returns ScriptDescriptor
-PUT  /scenario/library/{name}/meta  → update metadata (description, labels, tags)
+GET    /scenario/library              → ScriptDescriptor[]
+GET    /scenario/library?labels=domain:hr&tags=onboarding  → filtered
+GET    /scenario/library/{name}       → ScriptDescriptor (single)
+GET    /scenario/library/{name}/yaml  → raw YAML content
+POST   /scenario/library              → upload YAML, returns ScriptDescriptor
+PUT    /scenario/library/{name}/meta  → update metadata (description, labels, tags)
+DELETE /scenario/library/{name}       → delete uploaded script (bundled/external rejected)
 ```
+
+Readiness probing is client-side: `ScriptDescriptor.firstStepTargets`
+contains the ARIA targets from the first step (extracted at parse time
+by the server). The browser's library view runs `findByRole()` against
+these targets to compute green/amber/red status locally.
 
 GraphQL equivalents follow the existing controller API pattern (D13):
 
@@ -308,12 +334,14 @@ GraphQL equivalents follow the existing controller API pattern (D13):
 type Query {
     scriptLibrary(labels: [String], tags: [String]): [ScriptDescriptor!]!
     scriptDescriptor(name: String!): ScriptDescriptor
+    scriptYaml(name: String!): String
 }
 
 type Mutation {
     uploadScript(yaml: String!): ScriptDescriptor!
     updateScriptMeta(name: String!, description: String,
                      labels: [String], tags: [String]): ScriptDescriptor!
+    deleteScript(name: String!): Boolean!
 }
 ```
 
@@ -522,7 +550,10 @@ Steps 2-6 use shared primitives from `casehub-platform-yaml-core`:
   caller > preferences > defaults > config resolution order
 - Step 4: `CsvParser.parse()` → `CsvDataSource` with typed columns
 - Steps 5-6: `ForEachExpander.expand()` with a `ScenarioStepAdapter`
-  implementing `ForEachAdapter<ScenarioStep>`. `when` evaluation uses
+  implementing `ForEachAdapter<ScenarioStep>`. The expander takes
+  `Map<String, E>` — the adapter converts the ordered step list to a
+  `LinkedHashMap` (keyed by step name/label) for expansion and back
+  to a list afterward, preserving step order. `when` evaluation uses
   `Truthiness.isTruthy()` internally via the expander.
 
 Steps 7-9 are scenario-specific (the registry and call graph are
