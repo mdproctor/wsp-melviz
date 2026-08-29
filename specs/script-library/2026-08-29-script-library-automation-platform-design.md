@@ -517,7 +517,14 @@ When a script is loaded (for execution or call-graph validation):
 10. Flatten to execution plan → dispatch via orchestrator
 ```
 
-Steps 2-6 use shared primitives from `casehub-yaml-core` (D3).
+Steps 2-6 use shared primitives from `casehub-platform-yaml-core`:
+- Step 3: `VariableResolver` with `VariableSource.chain()` wiring the
+  caller > preferences > defaults > config resolution order
+- Step 4: `CsvParser.parse()` → `CsvDataSource` with typed columns
+- Steps 5-6: `ForEachExpander.expand()` with a `ScenarioStepAdapter`
+  implementing `ForEachAdapter<ScenarioStep>`. `when` evaluation uses
+  `Truthiness.isTruthy()` internally via the expander.
+
 Steps 7-9 are scenario-specific (the registry and call graph are
 scenario concepts). Acyclicity is validated before inlining (step 8
 before step 9) — a cycle in the call graph would cause infinite
@@ -551,9 +558,41 @@ expansion if inlined first.
 
 | Module | Depends on | Why |
 |---|---|---|
-| `casehub-pages-scenario` | `casehub-yaml-core` (platform) | Shared forEach, when, variable resolver, CSV parser |
+| `casehub-pages-scenario` | `casehub-platform-yaml-core` | Shared forEach, when, variable resolver, CSV parser |
 | `casehub-pages-scenario` | `casehub-pages-push` | Existing — push wire protocol |
 | `pages-aria` (TS) | — | Library browser is UI-only, no new TS dependencies |
+
+### 7.4 Platform YAML Core API surface (`io.casehub.yaml.core`)
+
+The scenario compilation pipeline consumes these types from `casehub-platform-yaml-core`:
+
+| Type | Package | Purpose |
+|---|---|---|
+| `VariableResolver` | `resolver` | `${prefix.name}` resolution with pluggable `VariableSource` chain, `withEachContext()` for simple iteration, `withEachRowContext()` for CSV row iteration, `withScope()` for caller context inheritance |
+| `VariableSource` | `resolver` | `@FunctionalInterface` — `resolve(name) → String`. Static `chain()` composes ordered sources |
+| `ForEachExpander` | `foreach` | Generic `<E> expand(elements, groups, resolver, adapter, maxExpansion)`. Domain provides `ForEachAdapter<E>` |
+| `ForEachAdapter<E>` | `foreach` | `stamp()`, `getForEach()`, `getId()`, `getWhen()` — scenario provides `ScenarioStepAdapter` |
+| `IterationGroup` | `foreach` | `record(as, in)` — named iteration group |
+| `ExpansionResult<E>` | `foreach` | `record(elements, excludedIds)` — expansion output |
+| `CsvParser` | `data` | `parse(name, csvContent) → CsvDataSource` — header parsing, type validation |
+| `CsvDataSource` | `data` | `record(name, columns, rows)` — parsed CSV with typed rows |
+| `CsvColumn` | `data` | `record(name, type)` |
+| `CsvColumnType` | `data` | `STRING, INTEGER, BOOLEAN, DECIMAL` with `parse()` method |
+| `Truthiness` | `condition` | `isTruthy(String) → boolean` — shared `when` evaluation |
+
+The scenario `ScenarioCompiler` wires these as:
+```java
+var paramSource = VariableSource.chain(
+    callerParams::get,          // caller-supplied
+    preferences::get,           // platform preferences
+    scriptDefaults::get,        // params[].default
+    config::getOptionalValue    // MicroProfile Config
+);
+var resolver = new VariableResolver(
+    Map.of("params", paramSource, "var", paramSource),
+    Set.of("step")              // deferred — resolved at execution time
+);
+```
 
 ## 8. Non-Goals
 
@@ -574,8 +613,11 @@ expansion if inlined first.
 - Distributed executor protocol spec (casehubio/parent#418)
 - Cross-platform scenario engine spec (casehub-life)
 - ARIA interaction contract (PP-20260817-a11y01)
-- Desired-state YAML: `ForEachExpander.java`, `VariableResolver.java`,
-  `YamlNode.java` in `casehub-desiredstate/yaml/runtime/`
+- `casehub-platform-yaml-core` — shared YAML primitives:
+  `VariableResolver`, `ForEachExpander`, `CsvParser`, `Truthiness`
+  in `/Users/mdproctor/claude/casehub/platform/yaml-core/`
+- Desired-state YAML (migration source): `ForEachExpander.java`,
+  `VariableResolver.java` in `casehub-desiredstate/yaml/runtime/`
 - Existing scenario specs: `docs/specs/issue-408-scenario-engine/`
   (D8-D27)
 - `scenario-handler.ts` — browser executor
