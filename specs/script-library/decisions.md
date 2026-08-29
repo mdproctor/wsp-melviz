@@ -102,3 +102,15 @@
 **Depends on:** D1 (registry API), D5 (labels/tags for filtering), D8 (readiness indicator)
 **Exploration:** quick
 **Status:** captured
+
+## D10: Name collision — overwrite uploaded, protect bundled
+
+**Choice:** Uploaded scripts can overwrite other uploaded scripts (same name = update). Bundled scripts are protected — upload with a bundled name is rejected with an error naming the collision. External registry scripts are read-only (never overwritten by upload). The library browser shows provenance (bundled / uploaded / registry-name) per script.
+**Alternatives:**
+- Namespace by source — each source gets a prefix (bundled/foo, uploaded/foo). No collisions but more complex naming, breaks `call` references that assume flat namespace.
+- Always reject duplicates — no two scripts share a name. Forces rename on every update.
+**Rationale:** Uploaded scripts are user-owned — the user who uploaded can update. Bundled scripts are distribution-owned — protecting them prevents accidental override of curated content. Same-name upload is the natural "save new version" gesture.
+**Trade-offs:** No version history for uploaded scripts — overwrite is destructive. Acceptable for current stage. Versioning can be added later without changing the collision semantics.
+**Depends on:** D1 (registry), D7 (paste/upload)
+**Exploration:** quick
+**Status:** captured
