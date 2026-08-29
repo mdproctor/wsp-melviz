@@ -1,0 +1,15 @@
+# Work Plan — issue-146-ci-green
+
+## State
+branch: issue-146-ci-green
+state: active
+project-sha: slot-creation
+date: 2026-08-29
+issue-repo: casehubio/blocks-ui
+covers: 146
+design-repo: project
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/blocks-ui#146 — Issue #146 ← active
