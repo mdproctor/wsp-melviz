@@ -35,8 +35,8 @@ evidence-era: true
   - [x] Batch 1: Batch 1 Registry Foundation
     - [x] Task 1: ScriptDescriptor model + ScriptRegistry
     - [x] Task 2: ScenarioLibraryResource REST endpoints
-  - [ ] Batch 2: Batch 2 Compilation Pipeline
-    - [ ] Task 3: yaml-core dependency + ScenarioCompiler
+  - [x] Batch 2: Batch 2 Compilation Pipeline
+    - [x] Task 3: yaml-core dependency + ScenarioCompiler
   - [ ] Batch 3: Batch 3 Composability
     - [ ] Task 4: CallGraphValidator + call command resolution
   - [ ] Batch 4: Batch 4 Library Browser UI
