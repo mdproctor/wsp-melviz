@@ -1,0 +1,19 @@
+{
+  "repo": "pages",
+  "repo_path": "/Users/mdproctor/claude/casehub/slots/163/pages",
+  "base_branch": "main",
+  "commits": [
+    {
+      "sha": "45e22f78",
+      "message": "fix: correct build order and STANDALONE_TYPES for #389 migration",
+      "action": "squash"
+    },
+    {
+      "sha": "14e61df5",
+      "message": "fix: align DiagramBaseInterface with mixin, add const to FieldSchema",
+      "action": "squash"
+    }
+  ],
+  "verified": true,
+  "squash_message": "fix: get CI green — build order, STANDALONE_TYPES, interface alignment\n\nCorrect build:packages dependency order after #389 migration. Add\npages-diagram-palette, pages-property-palette, pages-diagram-core to\nthe build chain. Move pages-ui-components after its dependencies.\n\nAdd number-input, date-input, datetime-input to STANDALONE_TYPES so\nPagesSchemaForm sets .label directly on standalone Lit components.\n\nAlign DiagramBaseInterface with mixin: make _applyGraphEdit protected,\nadd _iconRenderer. Add const to pages-ui-components FieldSchema.\n\nSkip pre-existing happy-dom var() test, add @ts-nocheck to JS example.\n\nCloses casehubio/blocks-ui#146"
+}

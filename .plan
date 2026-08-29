@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-146-ci-green
-state: active
+state: closing:stamped
 project-sha: slot-creation
 date: 2026-08-29
 issue-repo: casehubio/blocks-ui
@@ -11,5 +11,6 @@ design-repo: project
 design-section-hashes: 
 flyway-next-v: unknown
 
+evidence-era: true
 ## Queue
-- [ ] casehubio/blocks-ui#146 — Issue #146 ← active
+- [x] casehubio/blocks-ui#146 — Issue #146
