@@ -13,3 +13,17 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#395 — Issue #395 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: Refactor Scenario types to discriminated union
+    - [ ] Task 2: Extend parser + fix runner
+  - [ ] Batch 2: Browser-only
+    - [ ] Task 3: HTML sanitizer + narrative htmlMode
+    - [ ] Task 4: Controller browser-only fixes
+  - [ ] Batch 3: Runner
+    - [ ] Task 5: Implement runSectionedScenario
+  - [ ] Batch 4: Catalog
+    - [ ] Task 6: Tutorial types + catalog component
+    - [ ] Task 7: Registry build script
+  - [ ] Batch 5: Content
+    - [ ] Task 8: Tutorial 0 Architecture
+    - [ ] Task 9: Tutorial 1 Form Automation + path
