@@ -37,8 +37,8 @@ evidence-era: true
     - [x] Task 2: ScenarioLibraryResource REST endpoints
   - [x] Batch 2: Batch 2 Compilation Pipeline
     - [x] Task 3: yaml-core dependency + ScenarioCompiler
-  - [ ] Batch 3: Batch 3 Composability
-    - [ ] Task 4: CallGraphValidator + call command resolution
+  - [x] Batch 3: Batch 3 Composability
+    - [x] Task 4: CallGraphValidator + call command resolution
   - [ ] Batch 4: Batch 4 Library Browser UI
     - [ ] Task 5: Library view in scenario controller
   - [ ] Batch 5: Batch 5 External Registries
