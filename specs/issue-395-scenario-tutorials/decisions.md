@@ -69,3 +69,27 @@
 **Sources:** Script library spec §2.1 (labels and tags), user requirement for multi-dimensional filtering
 **Exploration:** quick
 **Status:** captured
+
+## D7: Catalog component location
+
+**Choice:** In pages-aria package
+**Alternatives:**
+- New pages-tutorials package — cleaner separation but another package to maintain and wire into the build
+- In pages-component — keeps pages-aria focused on ARIA concerns but pages-component has different dependencies
+**Rationale:** Alongside scenario-controller, library-view, and scenario-narrative. Same package, same dependency tree. casehub/examples already depends on pages-aria for the scenario infrastructure.
+**Trade-offs:** pages-aria grows larger. Acceptable — tutorials are a natural extension of the scenario/demo ecosystem.
+**Sources:** Existing pages-aria package structure (controller/, executor/, scenario/)
+**Exploration:** quick
+**Status:** captured
+
+## D8: Content scope for this issue
+
+**Choice:** Infrastructure + Tutorials 0 and 1
+**Alternatives:**
+- Infrastructure + Tutorial 0 only — validates slides-only but not hands-on
+- All 6 tutorials — too large, infrastructure is the primary deliverable
+**Rationale:** Two tutorials validate both content modes: Tutorial 0 (slides-only with SVG diagrams) and Tutorial 1 (hands-on form automation with executable steps). Remaining tutorials (2-5) as follow-up issues.
+**Trade-offs:** Tutorials 2-5 deferred. The infrastructure is designed to support them — they are content authoring, not new code.
+**Sources:** Issue #395 tutorial list, infrastructure-first scope agreement
+**Exploration:** quick
+**Status:** captured
