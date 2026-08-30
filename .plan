@@ -41,5 +41,5 @@ evidence-era: true
     - [x] Task 4: CallGraphValidator + call command resolution
   - [x] Batch 4: Batch 4 Library Browser UI
     - [x] Task 5: Library view in scenario controller
-  - [ ] Batch 5: Batch 5 External Registries
-    - [ ] Task 6: External registry source
+  - [x] Batch 5: Batch 5 External Registries
+    - [x] Task 6: External registry source
