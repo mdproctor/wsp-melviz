@@ -47,7 +47,7 @@ is designed to support them as content authoring.
 | D4 | Separate learning path manifests | Paths evolve without touching tutorials |
 | D5 | Inline SVG in markdown | Theme-adaptive via CSS variables, self-contained |
 | D6 | Typed labels + free-form tags | Structured filtering by concept, difficulty, area |
-| D7 | Catalog component in pages-aria | Same package as scenario controller/library |
+| D7 | Catalog in pages-aria tutorial module | Source-agnostic; decoupled from controller/execution |
 | D8 | Infrastructure + Tutorials 0-1 | Validates both slides-only and hands-on modes |
 
 ## 2. Tutorial Descriptor Schema
@@ -56,7 +56,18 @@ is designed to support them as content authoring.
 
 A tutorial is a scenario YAML with an extended `meta` block and a
 `sections` array (replacing the flat `steps` array for structured
-tutorials):
+tutorials).
+
+**Format relationship:** Tutorial YAML uses the **client-side ARIA
+shorthand format** — the same `fill: {role, name, value}` syntax used
+by existing flat scenarios and parsed by `parseScenario()` in
+`packages/pages-aria/src/scenario/parser.ts`. This is distinct from the
+backend hierarchical format (chapters → sections → steps → commands with
+explicit `action/target/value` fields) parsed by `HierarchicalParser` in
+`backend/scenario`. The sectioned extension here extends the client-side
+parser only. The backend parser already supports its own `sections`
+keyword — the two share the keyword but differ in step format.
+Tutorials are never processed by the backend parser.
 
 ```yaml
 scenario: form-automation-tutorial
@@ -135,16 +146,50 @@ Content is rendered by `PagesScenarioNarrative`. Steps are executed by
 the scenario runner. The controller outline shows section titles as
 clickable navigation points.
 
-### 2.4 Backward compatibility
+**Content resolution:** Section content is either inline or a file
+reference. Resolution depends on the runtime environment:
+
+- `type: 'inline'` — markdown is embedded in the YAML. No resolution
+  needed — the narrative component renders it directly.
+- `type: 'template'` — content is in an external markdown file at `path`.
+  - **Browser-only mode:** `PagesScenarioNarrative` gains a `contentBase`
+    property. When set, template paths resolve via
+    `fetch(contentBase + '/' + path)`. The tutorial runner sets
+    `contentBase` to the tutorial's content directory (derived from the
+    registry entry's `path` field). This uses a static file server
+    (webpack-dev-server, Quinoa static serving, etc.).
+  - **Server mode:** Falls back to the existing
+    `fetch(restBase + '/scenario/content?path=...')` REST endpoint.
+  - Resolution strategy: `contentBase` takes precedence when set.
+    Absent `contentBase` falls back to the REST endpoint via `restBase`.
+    The template cache (`_templateCache`) is shared across both paths.
+
+### 2.4 Backward compatibility and validation
 
 The parser supports both formats:
 - **Flat format** (`scenario` + `steps`): existing scenarios, unchanged
 - **Sectioned format** (`scenario` + `sections`): tutorials and
   structured demos
 
-If both `steps` and `sections` are present, `sections` takes precedence
-and `steps` is ignored. The `meta` block is always optional — existing
-scenarios without `meta` continue to work.
+If both `steps` and `sections` are present, the parser rejects the
+input with an error — the two formats are mutually exclusive. This
+mirrors the backend `HierarchicalParser` which throws
+`IllegalArgumentException` when `chapters`, `sections`, and `steps`
+co-occur at the top level. On a pre-release platform with no existing
+content to migrate, silent override is unnecessary complexity that
+hides authoring mistakes. The `meta` block is always optional —
+existing scenarios without `meta` continue to work.
+
+**Validation rules:**
+
+| Condition | Result |
+|-----------|--------|
+| `scenario` missing or empty | Error: scenario name required |
+| Neither `steps` nor `sections` present | Error: must have `steps` or `sections` |
+| Both `steps` and `sections` present | Error: mutually exclusive — use one or the other |
+| `sections` is empty array | Valid — produces a `slides-only` tutorial with no content |
+| `sections` present without `meta` | Valid — `meta` is always optional |
+| Section has no `steps` field | Valid — treated as slides-only section (equivalent to `steps: []`) |
 
 ## 3. Tutorial Registry
 
@@ -181,21 +226,58 @@ A build script scans the `tutorials/` directory, reads each
 All `meta` block fields plus:
 - `scenario` — scenario name from the YAML
 - `path` — relative path to the tutorial YAML
-- `contentType` — `slides-only` (no executable steps) or `hands-on`
-  (has executable steps), derived from section analysis
+- `contentType` — `slides-only` or `hands-on`, derived from section
+  analysis
+
+**`contentType` derivation rule:** `hands-on` if ANY section has a
+non-empty `steps` array (at least one executable step anywhere in the
+tutorial). `slides-only` if ALL sections have empty or absent `steps`.
+This is deterministic — a tutorial with 6 narrative sections and 1
+section containing a single step is `hands-on`.
+
+**Relationship to `ScriptDescriptor`:**
+
+`TutorialDescriptor` (registry) and `ScriptDescriptor` (script library,
+`library-view.ts`) serve different domains and are intentionally
+separate types:
+
+- **Scripts** are operational automations — browsed by capability,
+  executed on demand. `ScriptDescriptor` carries `params`, `calls`,
+  `provenance`, and `firstStepTargets` for readiness probing.
+- **Tutorials** are instructional content — browsed by concept and
+  difficulty, followed as learning exercises. `TutorialDescriptor`
+  carries `area`, `estimated`, `prerequisites`, and `hero` for
+  catalog presentation.
+
+Both use the shared typed label format (`namespace:value`) and
+free-form tags. A tutorial and a script may share the same `scenario`
+name — the tutorial teaches the automation that the script executes.
+The tutorial catalog and script library are separate browsing contexts
+with separate data sources; no name collision mechanism exists.
+Tutorials do NOT appear in the script library. Scripts do NOT appear
+in the tutorial catalog.
 
 ### 3.3 Aggregation contract
 
 For `casehub/examples` integration:
 1. Each tutorial source (pages, helpdesk, etc.) produces its own
-   `tutorial-registry.json` as part of its build
-2. `casehub/examples` imports these JSON files and merges them with
-   a simple array concat script (no conflict resolution — scenario
-   names must be globally unique across sources)
-3. Each source's registry entries include a `basePath` field (the
-   directory root relative to the aggregated output). The aggregator
-   prepends this to each entry's `path` field so content resolution
-   works from the aggregated root
+   `tutorial-registry.json` as part of its build. Registry entries
+   use paths relative to the source's own root.
+2. `casehub/examples` imports these JSON files and merges them.
+   The aggregation script validates that all `scenario` names are
+   globally unique across sources — duplicate names fail the build
+   with an error identifying both conflicting entries and their
+   source registries. No conflict resolution — uniqueness is
+   enforced, not negotiated
+3. The aggregation script adds a `basePath` field to each source's
+   registry entries at merge time. `basePath` is the source's content
+   directory relative to the aggregated output root (e.g.,
+   `pages/tutorials/` for pages-sourced tutorials). The aggregator
+   prepends `basePath` to each entry's `path` field so content
+   resolution works from the aggregated root. **`basePath` is not a
+   source-level field** — it does not appear in the meta block or
+   individual registry files. It is added exclusively by the
+   aggregation script.
 4. The catalog component receives the merged array — it is
    source-agnostic. It resolves tutorial content paths relative to
    the page's base URL
@@ -205,16 +287,41 @@ For `casehub/examples` integration:
 The registry build step validates:
 - All required meta fields are present
 - Labels follow the typed format (`namespace:value`)
+- Scenario names are unique across all sources in the merged registry
+  (duplicates are an error, not silently last-wins)
 - Prerequisites reference valid scenario names within the registry
+  (standalone build scope — see below)
 - Learning path references (§5) point to valid tutorials
+- Learning path ordering is consistent with prerequisites (warning,
+  not error — paths may intentionally skip prerequisites for curated
+  audiences, e.g., "Task Automation" skips the architecture overview)
+- `SectionContent` consistency: `type: 'inline'` requires `markdown`
+  and must not have `path`; `type: 'template'` requires `path` and
+  must not have `markdown`. Mismatches fail the build.
+
+**Prerequisite validation scope:**
+- **Standalone build** (single source, e.g. `pages`): prerequisites
+  are validated within that source's registry. Unknown prerequisites
+  produce warnings, not errors — the prerequisite may exist in another
+  source's registry (e.g. `helpdesk-basics` lives in the helpdesk
+  registry). This preserves typo detection for within-source refs
+  while allowing cross-source prerequisites.
+- **Aggregation build** (`casehub/examples`): prerequisites are
+  validated against the merged registry. Unknown prerequisites at
+  this level are errors — all sources are present, so an unresolved
+  prerequisite is either a typo or a missing tutorial.
 
 ## 4. Catalog Component
 
 ### 4.1 `<pages-tutorial-catalog>`
 
-A Lit web component in `packages/pages-aria/src/controller/` that
+A Lit web component in `packages/pages-aria/src/tutorial/` that
 renders the tutorial catalog. Accepts a `TutorialDescriptor[]` array
-and supports two display modes.
+and supports two display modes. The `tutorial/` module boundary
+separates source-agnostic, data-driven catalog components from the
+execution-coupled `controller/` module. The catalog has zero coupling
+to push wire, REST endpoints, or execution state — it receives
+descriptors and emits selection events.
 
 **Properties:**
 
@@ -246,12 +353,18 @@ Cards grouped by area. Each area card shows:
 
 **Area level (area filter set):**
 Tutorial cards within the selected area:
-- Hero icon + title + subtitle
+- Hero icon + title + subtitle (when `hero` is present in meta)
 - Difficulty chip (beginner/intermediate/advanced)
 - Estimated duration
 - Concept label chips
 - Prerequisites indicator (if any)
 - Click to select and launch the tutorial
+
+**Hero fallback:** When `hero` is absent, the card displays `title` and
+`description` from the meta block directly. No icon placeholder — the
+card layout adapts to a text-only variant without the hero section.
+This matches the existing `PagesLibraryView` card pattern (which shows
+name + description without hero fields).
 
 **Breadcrumb navigation:** `All Tutorials > [Area Name]`
 
@@ -266,8 +379,10 @@ Flat filterable list across all tutorials (all areas):
 ### 4.4 Mode toggle
 
 A segmented control in the catalog header switches between tiles and
-list modes. The active mode is stored in local storage so it persists
-across sessions. URL hash parameter `#mode=list` allows direct linking.
+list modes. The active mode is stored in local storage
+(`tutorial:catalog-mode` → `tiles` | `list`) so it persists across
+sessions. URL hash parameter `#mode=list` allows direct linking and
+overrides the stored preference for that page load.
 
 ### 4.5 Styling
 
@@ -316,6 +431,38 @@ When a user selects a learning path:
 - Progress is shown (3/6 complete)
 - The user can exit the path and return to browse mode at any time
 
+**Completion criteria:** A tutorial is marked complete when the runner
+reaches the end of the final section. For hands-on tutorials, all
+steps in the final section must execute. For slides-only tutorials,
+the final section's content must be rendered (the runner reaches the
+end-of-scenario state). Completion is persisted to local storage:
+
+- Key: `tutorial:completed:{scenario-name}` → `true`
+- Path progress: count of entries in the path's `tutorials` array
+  that have a `true` value in local storage
+
+**Local storage graceful degradation:** If `localStorage` throws
+(disabled, quota exceeded, or private browsing mode), completion
+tracking degrades silently — tutorials work normally, progress is
+not persisted. The catalog shows 0% path progress. No error is
+surfaced. Cross-origin: `localStorage` is per-origin, so tutorials
+aggregated from different sources on the same origin share completion
+state correctly.
+
+**Tutorial rename handling:** The scenario name is the stable key.
+If a tutorial is renamed (scenario name changes), the old completion
+entry is orphaned (harmless stale data, not leaked). The new name
+starts as incomplete. No migration mechanism — the scenario name is
+intended to be stable across content revisions.
+
+**Prerequisite behavior:** Prerequisites are advisory, not blocking.
+When a tutorial has incomplete prerequisites, the catalog card shows
+a prerequisite indicator. Clicking the card shows a dismissible
+notice ("Recommended: complete [prerequisite titles] first") but does
+not block — the user can proceed immediately. This avoids frustrating
+users who are familiar with the material but haven't completed the
+formal tutorial sequence.
+
 ### 5.4 Multiple paths
 
 A tutorial can appear in multiple paths. Paths can span areas.
@@ -329,7 +476,16 @@ Example paths:
 ### 6.1 Sectioned format support
 
 Extend `parseScenario()` in `packages/pages-aria/src/scenario/parser.ts`
-to handle the `sections` array:
+to handle the `sections` array.
+
+**Type hierarchy — discriminated union:**
+
+The existing `Scenario` type has a required `steps` field. A sectioned
+scenario has steps inside sections, not at the top level. Rather than
+making `steps` optional (which weakens the base type) or inheriting a
+contradictory required field, the types use a discriminated union —
+matching the backend `HierarchicalParser`'s mutual exclusivity of
+`chapters`, `sections`, and `steps`:
 
 ```typescript
 export interface TutorialMeta {
@@ -356,33 +512,166 @@ export interface TutorialSection {
   steps: ScenarioStep[];
 }
 
-export interface SectionedScenario extends Scenario {
+export interface ScenarioBase {
+  scenario: string;
   meta?: TutorialMeta;
+}
+
+export interface FlatScenario extends ScenarioBase {
+  steps: ScenarioStep[];
+}
+
+export interface SectionedScenario extends ScenarioBase {
   sections: TutorialSection[];
+}
+
+export type Scenario = FlatScenario | SectionedScenario;
+
+export function isSectioned(s: Scenario): s is SectionedScenario {
+  return 'sections' in s;
 }
 ```
 
 The parser detects `sections` vs `steps` at the top level and returns
-the appropriate type. The `Scenario` type gains an optional `meta`
-field. `SectionedScenario` extends it with `sections`.
+the appropriate variant. Callers that only handle flat scenarios
+narrow with `if (!isSectioned(s))`. This is a breaking change to the
+`Scenario` type — call sites that access `scenario.steps` directly
+must narrow first. The migration is mechanical.
 
 ### 6.2 Scenario runner extension
 
 The runner needs to handle sectioned scenarios. In browser-only mode
-(no server), the runner dispatches events on the shared `EventTarget`
-that the controller and narrative component already listen to:
+(no server), the runner acts as a client-side orchestrator, dispatching
+events on the shared `EventTarget` that the controller and narrative
+component already listen to.
+
+**Runner API:**
+
+```typescript
+export interface TutorialRunnerOptions {
+  eventTarget: EventTarget;
+  speed?: number;       // default: 1.0
+  startPaused?: boolean; // default: true
+}
+
+export interface TutorialRunner {
+  play(): void;
+  pause(): void;
+  step(): void;
+  runTo(sectionTitle: string): void;
+  setSpeed(speed: number): void;
+  dispose(): void;
+}
+
+export function runSectionedScenario(
+  scenario: SectionedScenario,
+  options: TutorialRunnerOptions,
+): TutorialRunner;
+```
+
+**Runner behavior:**
 
 1. Build an outline from sections: `OutlineNode[]` with section titles
    as top-level nodes and steps nested under each
-2. Fire `pages-event` with `op: 'event', topic: 'scenario:state'` on
-   the `eventTarget` — the same format the controller consumes from
-   push wire. Include `scenario`, `section` (title), `step` (name),
-   `paused`, `progress`, and `content` (the section's narrative)
-3. For each section: fire a state update with the section's content,
-   then iterate its steps, firing state updates per step
-4. Between sections: pause (if in step mode) or continue (if playing)
-5. Fire `scenario-narrative` custom event with the section's `content`
-   payload — the narrative component listens for this directly
+2. For each section:
+   a. Fire `pages-event` with `op: 'event', topic: 'scenario:state'`
+      on the `eventTarget` — the same format the controller consumes
+      from push wire. Include `scenario`, `section` (title), `step`
+      (null initially), `paused`, `progress`, and `content` (the
+      section's narrative payload)
+   b. For slides-only sections (no steps): pause regardless of play
+      mode. User must explicitly advance (play/step/outline click)
+   c. For sections with steps: execute each step in sequence using the
+      existing `executeStep()` function, firing state updates per step
+      with current step name and progress
+   d. Between sections: pause (if in step mode) or continue (if
+      playing)
+
+**ScenarioState mapping:**
+
+The `ScenarioState` interface (`scenario-connection-controller.ts`)
+has `scenario`, `chapter`, `section`, `step`, `paused`, `speed`,
+`progress`, `content`, and `slides` fields. The existing controller
+breadcrumb renders `[chapter] → [section] → [step]` (null segments
+filtered). The sectioned runner populates all fields:
+
+| ScenarioState field | Tutorial source |
+|---------------------|-----------------|
+| `scenario` | Tutorial's `scenario` field |
+| `chapter` | Tutorial's `meta.title` (tutorial title as chapter-level label) |
+| `section` | Current section's `title` |
+| `step` | Current step's generated name (same as flat scenarios); `null` for slides-only sections |
+| `paused` | Runner execution state |
+| `speed` | Runner speed multiplier |
+| `progress` | Steps completed / total steps across all sections |
+| `content` | Current section's `content` object (templates pre-resolved to inline by runner) |
+| `slides` | `null` (tutorials don't use reveal.js slides) |
+
+Breadcrumb renders as: `Form Automation Basics → Your first fill
+command → fill-textbox-Full Name`. `chapter` is never null for
+tutorials — it always carries the tutorial title, providing context
+in the status bar.
+
+**Naming relationship to executor protocol:** The tutorial format
+uses `title` for sections (content-authoring convention). The backend
+`ScenarioSection` uses `label` (protocol convention). Both refer to
+the human-readable name displayed in navigation. The client-side
+runner maps `title` → `section` in `ScenarioState`. If tutorials are
+ever server-parsed, `HierarchicalParser` can accept `title` as an
+alias for `label` — but this is out of scope since tutorials are
+browser-only (§1.2).
+
+**Event path:** The sectioned runner uses ONLY the `pages-event` with
+topic `scenario:state` path. It does NOT fire `scenario-narrative`
+custom events. The `scenario-narrative` event is used exclusively by
+`scenario-handler.ts` for server-dispatched `show-markdown` commands.
+The `ScenarioConnectionController` extracts content from the state
+payload and the narrative component renders from
+`this._conn.state.content` — one event path, no duplication.
+
+**Pause/resume mechanism:** The runner maintains internal `paused` and
+`speed` state. Between sections and between steps, the runner checks
+`paused`. If paused, execution suspends on a Promise that resolves
+when `play()` or `step()` is called:
+
+```typescript
+if (paused) {
+  await new Promise<void>(resolve => { resumeResolve = resolve; });
+}
+```
+
+`step()` resumes and immediately re-pauses via `queueMicrotask`:
+
+```typescript
+step(): void {
+  paused = false;
+  if (resumeResolve) { resumeResolve(); resumeResolve = null; }
+  queueMicrotask(() => { paused = true; });
+}
+```
+
+This is identical to the server-side handler pattern in
+`scenario-handler.ts` (lines 862-863). The default start state is
+`paused: true` — the user sees the first section's content and
+outline, then advances with play or step.
+
+**Transport commands:** The runner listens for `scenario-control`
+custom events on the eventTarget (same event format as
+`scenario-handler.ts` uses for `pause`/`resume`/`step`/`speed`
+commands). This reuses the existing control protocol without REST.
+
+**Controller integration in browser-only mode:**
+
+| Concern | Server mode | Browser-only mode |
+|---------|-------------|-------------------|
+| Outline | `GET /scenario/outline` | Built client-side from `SectionedScenario.sections` |
+| Transport commands | REST POST (`/pause`, `/resume`, `/step`) | `scenario-control` events on eventTarget |
+| State updates | Push wire → `pages-event` | Runner fires `pages-event` directly |
+| Content resolution | `/scenario/content?path=...` | `fetch(contentBase + '/' + path)` |
+
+The `ScenarioConnectionController` already supports local eventTarget
+operation — it listens for `pages-event` with topic `scenario:state`
+regardless of whether a server connection exists.
 
 ### 6.3 Controller outline integration
 
@@ -391,24 +680,119 @@ navigation points. Each section's steps are nested under it. The
 `runTo` feature works at the section level — clicking a section
 title in the outline runs to that section.
 
-## 7. Narrative Renderer Enhancement
+**Outline population in browser-only mode:**
 
-### 7.1 `allowHtml` property
-
-Add a boolean property to `PagesScenarioNarrative`:
+The runner includes the outline in the initial `scenario:state` event
+payload. The `ScenarioState` type gains an optional `outline` field:
 
 ```typescript
-@property({ type: Boolean }) allowHtml = false;
+export interface ScenarioState {
+  // ... existing fields ...
+  outline?: OutlineNode[];  // present in initial state, absent in updates
+}
 ```
 
-When `true`, skip the HTML escaping step in `_renderMarkdown()`.
-This enables inline SVG and other HTML in markdown content.
+The controller's `_onStateChange` checks for this field:
 
-Default is `false` — existing behavior preserved. Tutorials set
-`allowHtml` on the narrative component they mount.
+```typescript
+private _onStateChange(s: ScenarioState): void {
+  if (s.outline) {
+    this._outline = s.outline;
+  } else if (s.scenario && this._outline.length === 0) {
+    void this._fetchOutline();  // server mode fallback
+  }
+  if (!s.scenario) this._outline = [];
+  // ...
+}
+```
 
-**Security note:** This is for trusted authored content only
-(tutorials, specs). User-generated content must never use this mode.
+The outline is sent once (in the first state event) — subsequent
+state updates omit it. This avoids a new event type while keeping
+the outline delivery lazy.
+
+**RunTo in browser-only mode:**
+
+The controller detects browser-only mode when `eventTarget` is set
+but no `connection` or `baseUrl` is configured. In this mode, outline
+click handlers dispatch `scenario-control` events instead of REST
+calls:
+
+```typescript
+@click=${() => {
+  if (this._browserOnly) {
+    this.eventTarget?.dispatchEvent(new CustomEvent('scenario-control', {
+      detail: { command: 'run-to', target: node.label }
+    }));
+  } else {
+    void this._conn.sendCommand('/run-to', { label: node.label });
+  }
+}}
+```
+
+The runner listens for `scenario-control` with `command: 'run-to'`
+and advances to the target section, skipping intervening
+sections/steps without executing them.
+
+## 7. Narrative Renderer Enhancement
+
+### 7.1 SVG sanitization mode
+
+Add a property to `PagesScenarioNarrative` that enables inline SVG
+in rendered markdown while maintaining security:
+
+```typescript
+@property({ type: String }) htmlMode: 'escape' | 'sanitized' = 'escape';
+```
+
+**Modes:**
+- `'escape'` (default) — all HTML is escaped. Existing behavior
+  preserved. Non-tutorial scenarios use this mode.
+- `'sanitized'` — HTML is parsed and sanitized. Only SVG elements
+  and a restricted set of attributes pass through. All other HTML
+  (including `<script>`, `<iframe>`, event handler attributes) is
+  stripped.
+
+**Allowed elements (sanitizer allowlist):**
+- SVG structural: `svg`, `g`, `defs`, `use`, `symbol`, `clipPath`,
+  `mask`, `pattern`
+- SVG shapes: `rect`, `circle`, `ellipse`, `line`, `polyline`,
+  `polygon`, `path`
+- SVG text: `text`, `tspan`
+- SVG paint: `linearGradient`, `radialGradient`, `stop`, `marker`
+
+**Allowed attributes:**
+- Geometry: `viewBox`, `xmlns`, `width`, `height`, `x`, `y`, `cx`,
+  `cy`, `r`, `rx`, `ry`, `x1`, `y1`, `x2`, `y2`, `d`, `points`,
+  `transform`
+- Presentation: `fill`, `stroke`, `stroke-width`, `opacity`,
+  `font-size`, `font-family`, `text-anchor`, `dominant-baseline`,
+  `stroke-dasharray`, `stroke-linecap`
+- Style: `style` attribute permitted, but only CSS custom property
+  references (`var(--pages-*)`) and safe CSS properties. Values
+  containing `url()`, `expression()`, `javascript:`, or
+  `-moz-binding` are stripped.
+- Identity: `id`, `class`, `aria-label`
+
+**Blocked (stripped silently):**
+- Elements: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`,
+  `<input>`, `<link>`, `<meta>`
+- Attributes: event handlers (`on*`), `href`/`xlink:href` with
+  `javascript:` protocol
+- Style values: `url()`, `expression()`, `-moz-binding`
+
+**Who sets it:** The tutorial runner sets `htmlMode = 'sanitized'`
+on the narrative component when running a tutorial. Regular scenario
+execution never sets this — the default `'escape'` mode applies.
+This is set programmatically by the runner, not declaratively in
+YAML — the YAML content has no ability to control its own rendering
+mode.
+
+**Implementation:** A small inline sanitizer (~50 LOC) using
+`DOMParser` and element/attribute allowlists. No external dependency.
+The sanitizer parses the markdown output with `DOMParser`, walks the
+DOM tree, removes disallowed elements and attributes, and serializes
+back to HTML. This runs after markdown-to-HTML conversion but before
+`innerHTML` assignment.
 
 ### 7.2 SVG theming
 
@@ -584,10 +968,13 @@ Label dimensions are shared across all tutorial sources:
 - `concept:*` — technical concept being taught
 - `difficulty:*` — beginner / intermediate / advanced
 - `capability:*` — platform capability demonstrated
-- `area:*` — inherited from each tutorial's area field
 
-The catalog's filter bar works across the aggregate — a user can filter
-by `difficulty:beginner` and see tutorials from all sources.
+The `area` meta field is a direct filter dimension in the catalog, not
+a label namespace. The catalog's filter bar supports `area` as a
+built-in grouping/filter alongside label-based filtering — no `area:*`
+label synthesis is needed. A user can filter by `difficulty:beginner`
+and see tutorials from all sources, or drill into a specific area via
+the tiled view.
 
 ## References
 
