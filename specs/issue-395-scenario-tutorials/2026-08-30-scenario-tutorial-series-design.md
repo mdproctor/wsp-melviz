@@ -733,7 +733,7 @@ field, and includes `run-to` for section navigation:
 interface ScenarioCommand {
   command: 'pause' | 'resume' | 'step' | 'speed' | 'run-to';
   speed?: number;
-  target?: string;
+  label?: string;
 }
 ```
 
