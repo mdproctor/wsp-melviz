@@ -188,11 +188,17 @@ All `meta` block fields plus:
 
 For `casehub/examples` integration:
 1. Each tutorial source (pages, helpdesk, etc.) produces its own
-   `tutorial-registry.json`
-2. The aggregator merges registry arrays into one combined array
-3. Paths are rebased relative to the aggregated root
+   `tutorial-registry.json` as part of its build
+2. `casehub/examples` imports these JSON files and merges them with
+   a simple array concat script (no conflict resolution — scenario
+   names must be globally unique across sources)
+3. Each source's registry entries include a `basePath` field (the
+   directory root relative to the aggregated output). The aggregator
+   prepends this to each entry's `path` field so content resolution
+   works from the aggregated root
 4. The catalog component receives the merged array — it is
-   source-agnostic
+   source-agnostic. It resolves tutorial content paths relative to
+   the page's base URL
 
 ### 3.4 Build-time validation
 
@@ -257,7 +263,13 @@ Flat filterable list across all tutorials (all areas):
 - Sort: by area, by difficulty, alphabetical
 - Same click-to-select behavior as tiles
 
-### 4.4 Styling
+### 4.4 Mode toggle
+
+A segmented control in the catalog header switches between tiles and
+list modes. The active mode is stored in local storage so it persists
+across sessions. URL hash parameter `#mode=list` allows direct linking.
+
+### 4.5 Styling
 
 Uses design tokens throughout (`--pages-*` CSS custom properties).
 Light/dark theme via token values. Card styles follow the existing
@@ -320,14 +332,27 @@ Extend `parseScenario()` in `packages/pages-aria/src/scenario/parser.ts`
 to handle the `sections` array:
 
 ```typescript
+export interface TutorialMeta {
+  title: string;
+  description: string;
+  area: string;
+  labels?: string[];
+  tags?: string[];
+  estimated?: string;
+  prerequisites?: string[];
+  hero?: { title: string; subtitle?: string; icon?: string };
+}
+
+export interface SectionContent {
+  type: 'inline' | 'template';
+  markdown?: string;
+  path?: string;
+  section?: string;
+}
+
 export interface TutorialSection {
   title: string;
-  content?: {
-    type: 'inline' | 'template';
-    markdown?: string;
-    path?: string;
-    section?: string;
-  };
+  content?: SectionContent;
   steps: ScenarioStep[];
 }
 
@@ -343,12 +368,21 @@ field. `SectionedScenario` extends it with `sections`.
 
 ### 6.2 Scenario runner extension
 
-The runner needs to handle sectioned scenarios:
-1. Iterate sections in order
-2. For each section: emit a `scenario-narrative` event with the
-   section's content, then execute the section's steps
-3. Between sections: pause (if in step mode) or continue (if playing)
-4. Emit outline state for the controller to render section navigation
+The runner needs to handle sectioned scenarios. In browser-only mode
+(no server), the runner dispatches events on the shared `EventTarget`
+that the controller and narrative component already listen to:
+
+1. Build an outline from sections: `OutlineNode[]` with section titles
+   as top-level nodes and steps nested under each
+2. Fire `pages-event` with `op: 'event', topic: 'scenario:state'` on
+   the `eventTarget` — the same format the controller consumes from
+   push wire. Include `scenario`, `section` (title), `step` (name),
+   `paused`, `progress`, and `content` (the section's narrative)
+3. For each section: fire a state update with the section's content,
+   then iterate its steps, firing state updates per step
+4. Between sections: pause (if in step mode) or continue (if playing)
+5. Fire `scenario-narrative` custom event with the section's `content`
+   payload — the narrative component listens for this directly
 
 ### 6.3 Controller outline integration
 
