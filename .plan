@@ -2,7 +2,7 @@
 
 ## State
 branch: feat/script-library-automation
-state: active
+state: closing:review
 project-sha: slot-creation
 date: 2026-08-11
 issue-repo: casehubio/parent
