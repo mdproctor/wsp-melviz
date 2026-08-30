@@ -1,0 +1,15 @@
+# Work Plan — issue-395-scenario-tutorials
+
+## State
+branch: issue-395-scenario-tutorials
+state: scaffolded
+project-sha: dcdb97ebbc58a5c480ad1059b27f8624dacc9fae
+date: 2026-08-30
+issue-repo: casehubio/casehub-pages
+covers: 395
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#395 — Issue #395 ← active

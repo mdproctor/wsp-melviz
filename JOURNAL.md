@@ -1,1 +1,1 @@
-# Design Journal — issue-146-ci-green
+# Design Journal — issue-395-scenario-tutorials
