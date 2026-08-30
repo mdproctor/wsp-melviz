@@ -57,6 +57,7 @@
 **Sources:** Issue #395 (4 SVG diagrams specified), ARIA interaction contract protocol (theming via CSS variables)
 **Exploration:** quick
 **Status:** captured
+**Review note:** PagesScenarioNarrative._renderMarkdown() escapes all HTML (`<` → `&lt;`), breaking inline SVG. Requires adding an `allowHtml` property for trusted content. Implementation requirement, not a decision revision.
 
 ## D6: Labeling dimensions
 
