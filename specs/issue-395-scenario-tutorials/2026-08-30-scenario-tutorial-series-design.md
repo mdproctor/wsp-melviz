@@ -298,6 +298,11 @@ The registry build step validates:
 - `SectionContent` consistency: `type: 'inline'` requires `markdown`
   and must not have `path`; `type: 'template'` requires `path` and
   must not have `markdown`. Mismatches fail the build.
+- Template file existence: for `type: 'template'` sections, the build
+  script verifies that `path` resolves to an actual file relative to
+  the tutorial's directory. Missing files fail the build with a message
+  identifying the tutorial, section title, and unresolved path. This
+  catches typos at build time rather than at runtime.
 
 **Prerequisite validation scope:**
 - **Standalone build** (single source, e.g. `pages`): prerequisites
@@ -550,7 +555,8 @@ component already listen to.
 ```typescript
 export interface TutorialRunnerOptions {
   eventTarget: EventTarget;
-  speed?: number;       // default: 1.0
+  contentBase?: string;  // base URL for template content resolution
+  speed?: number;        // default: 1.0
   startPaused?: boolean; // default: true
 }
 
@@ -604,7 +610,7 @@ filtered). The sectioned runner populates all fields:
 | `paused` | Runner execution state |
 | `speed` | Runner speed multiplier |
 | `progress` | Hands-on: steps completed / total steps across all sections. Slides-only (total steps = 0): sections visited / total sections. Avoids 0/0 NaN. |
-| `content` | Current section's `content` object (templates pre-resolved to inline by runner) |
+| `content` | Current section's `content` object (templates pre-resolved to inline by runner — see template pre-resolution below) |
 | `slides` | `null` (tutorials don't use reveal.js slides) |
 
 Breadcrumb renders as: `Form Automation Basics → Your first fill
@@ -660,6 +666,33 @@ custom events on the eventTarget (same event format as
 `scenario-handler.ts` uses for `pause`/`resume`/`step`/`speed`
 commands). This reuses the existing control protocol without REST.
 
+**Template pre-resolution:** Before starting section iteration, the
+runner pre-resolves all `type: 'template'` sections by fetching
+their content via `fetch(contentBase + '/' + path)`. If any fetch
+fails (404, network error), `runSectionedScenario` throws with a
+message identifying the unresolved path and section title. This is
+a fail-fast startup error — the tutorial does not partially load.
+Build-time validation (§3.4) catches most path errors; runtime
+pre-resolution is the second line of defense for paths valid at
+build time but missing at serve time (e.g., deploy artifact issues).
+
+**Dispose contract:** `dispose()` performs four cleanup actions,
+mirroring the server-side handler's dispose
+(`scenario-handler.ts:905-919`):
+
+1. Remove the `scenario-control` event listener from the eventTarget
+2. Resolve any pending pause Promise (prevents memory leak — the
+   suspended async function completes and releases references)
+3. Set an internal `disposed` flag checked by the execution loop —
+   the next `await` point exits cleanly rather than continuing to
+   the next section
+4. Fire a final state event with `scenario: null` to clear the
+   controller's display (outline, breadcrumb, transport controls
+   reset to their empty state)
+
+After `dispose()`, calling `play()`, `step()`, or `runTo()` is a
+no-op (the runner checks the disposed flag).
+
 **Controller integration in browser-only mode:**
 
 | Concern | Server mode | Browser-only mode |
@@ -701,6 +734,23 @@ require modifications to support eventTarget-only operation (no
    mode, the outline is provided directly via a new `outline`
    property, populated by the tutorial host page from the parsed
    `SectionedScenario.sections`.
+
+5. **`PagesScenarioController._renderNode()` and
+   `_isBeforeCurrent()`** — current highlighting logic matches
+   leaf nodes against `state.step` (line 404:
+   `node.label === this._conn?.state.step`). For slides-only
+   sections where `step` is `null`, no node is ever highlighted.
+   `_isBeforeCurrent` uses `labels.indexOf(state.step ?? '')`
+   which returns -1 when step is null, so no completion markers
+   appear either. Fix: when `state.step` is `null` and
+   `state.section` is set, match section-level nodes (outline
+   headings) against `state.section` instead of leaf nodes
+   against `state.step`. A section node is "current" when its
+   label equals `state.section` and `state.step` is null. A
+   section node is "completed" when it precedes the current
+   section in the outline. `_isBeforeCurrent` falls back to
+   section-level comparison using `state.section` when
+   `state.step` is null.
 
 ### 6.3 Controller outline integration
 
@@ -759,8 +809,21 @@ calls:
 ```
 
 The runner listens for `scenario-control` with `command: 'run-to'`
-and advances to the target section, skipping intervening
-sections/steps without executing them.
+and navigates to the target section. Navigation is bidirectional:
+
+- **Forward** (target after current position): skip intervening
+  sections and their steps without executing them. The runner
+  repositions to the target section's initial state and pauses.
+- **Backward** (target before current position): reset the runner's
+  position to the target section. Fire a state event with the
+  target section's content. No steps are re-executed — the runner
+  repositions and pauses at the target section's initial state.
+  Step completion state for sections after the target is reset
+  (the user can re-execute them).
+
+In both directions, the runner pauses at the target section
+regardless of the current play/pause state. This gives the user
+a stable reading position after navigation.
 
 ## 7. Narrative Renderer Enhancement
 
