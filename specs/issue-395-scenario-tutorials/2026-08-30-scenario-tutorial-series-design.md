@@ -164,6 +164,17 @@ reference. Resolution depends on the runtime environment:
     Absent `contentBase` falls back to the REST endpoint via `restBase`.
     The template cache (`_templateCache`) is shared across both paths.
 
+**Relationship to runner pre-resolution (§6.2):** In tutorial
+execution, the runner pre-resolves all templates before starting and
+delivers them as `type: 'inline'` in state events. The narrative
+component never sees `type: 'template'` during tutorial runs —
+`contentBase` is not exercised. The narrative's `contentBase` is a
+structural capability enabling browser-only template resolution
+independently of the runner — useful when the narrative is used
+outside `runSectionedScenario` (e.g., standalone markdown display).
+Pre-resolution (§6.2) is the primary mechanism for tutorials;
+`contentBase` is the general-purpose fallback.
+
 ### 2.4 Backward compatibility and validation
 
 The parser supports both formats:
@@ -460,6 +471,42 @@ entry is orphaned (harmless stale data, not leaked). The new name
 starts as incomplete. No migration mechanism — the scenario name is
 intended to be stable across content revisions.
 
+**Completion writer:** The runner signals completion via the
+`onComplete` callback in `TutorialRunnerOptions` (§6.2). The host
+page provides the callback implementation that writes to localStorage:
+
+```typescript
+runSectionedScenario(scenario, {
+  eventTarget,
+  onComplete: (name) => {
+    try { localStorage.setItem(`tutorial:completed:${name}`, 'true'); }
+    catch { /* graceful degradation — completion not persisted */ }
+  },
+});
+```
+
+This keeps the runner persistence-agnostic — it signals the event,
+the host page decides where to store it.
+
+**Completion irrevocability:** Once the completion flag is written to
+localStorage, backward navigation does not revoke it. The flag
+records "the user has reached the end of this tutorial at least
+once." The in-execution progress bar and the localStorage completion
+flag serve different purposes: progress tracks current execution
+position, completion tracks historical achievement.
+
+**Slides-only visited state:** For slides-only tutorials, a section's
+"visited" status is monotonic — backward navigation does not reset it.
+Progress for slides-only tutorials never decreases. If the user has
+visited 5/6 sections and navigates back to section 3, progress
+remains 5/6. This matches the mental model of a presentation — the
+user can flip back without losing their place marker.
+
+For hands-on tutorials, step completion state resets on backward
+navigation (per §6.3), which decreases in-execution progress. The
+localStorage completion flag is unaffected — it records historical
+completion, not current execution position.
+
 **Prerequisite behavior:** Prerequisites are advisory, not blocking.
 When a tutorial has incomplete prerequisites, the catalog card shows
 a prerequisite indicator. Clicking the card shows a dismissible
@@ -558,6 +605,7 @@ export interface TutorialRunnerOptions {
   contentBase?: string;  // base URL for template content resolution
   speed?: number;        // default: 1.0
   startPaused?: boolean; // default: true
+  onComplete?: (scenarioName: string) => void;
 }
 
 export interface TutorialRunner {
@@ -590,8 +638,20 @@ export function runSectionedScenario(
    c. For sections with steps: execute each step in sequence using the
       existing `executeStep()` function, firing state updates per step
       with current step name and progress
-   d. Between sections: pause (if in step mode) or continue (if
+   d. **Step execution errors:** The runner wraps each
+      `executeStep()` call in try/catch. On error, the runner fires a
+      state event with an `error` field (`{ step: string, message:
+      string }`) and pauses. The user can skip past the failed step
+      via `step()` or `play()`, or navigate to another section via
+      `runTo()`. The error field is cleared from subsequent state
+      events when execution moves past the failed step. This mirrors
+      the server handler's error reporting adapted for the interactive
+      tutorial context where the user must be able to recover.
+   e. Between sections: pause (if in step mode) or continue (if
       playing)
+3. After the final section completes: call
+   `options.onComplete?.(scenario.scenario)` to signal tutorial
+   completion to the host page.
 
 **ScenarioState mapping:**
 
@@ -612,6 +672,7 @@ filtered). The sectioned runner populates all fields:
 | `progress` | Hands-on: steps completed / total steps across all sections. Slides-only (total steps = 0): sections visited / total sections. Avoids 0/0 NaN. |
 | `content` | Current section's `content` object (templates pre-resolved to inline by runner — see template pre-resolution below) |
 | `slides` | `null` (tutorials don't use reveal.js slides) |
+| `error` | `{ step: string, message: string }` on step failure; `null` otherwise |
 
 Breadcrumb renders as: `Form Automation Basics → Your first fill
 command → fill-textbox-Full Name`. `chapter` is never null for
@@ -661,10 +722,24 @@ This is identical to the server-side handler pattern in
 `paused: true` — the user sees the first section's content and
 outline, then advances with play or step.
 
-**Transport commands:** The runner listens for `scenario-control`
-custom events on the eventTarget (same event format as
-`scenario-handler.ts` uses for `pause`/`resume`/`step`/`speed`
-commands). This reuses the existing control protocol without REST.
+**Transport commands:** The runner listens for `scenario-command`
+custom events on the eventTarget. This is a distinct protocol from
+the server handler's `ExecutorControl` (which uses `scenario-control`
+events with `op`, `sessionId`, and a restricted command set). The
+tutorial runner's protocol is simpler — no session tracking, no `op`
+field, and includes `run-to` for section navigation:
+
+```typescript
+interface ScenarioCommand {
+  command: 'pause' | 'resume' | 'step' | 'speed' | 'run-to';
+  speed?: number;
+  target?: string;
+}
+```
+
+`ScenarioConnectionController.sendCommand()` dispatches these events
+in browser-only mode (see modification 3 below). The runner is the
+sole listener.
 
 **Template pre-resolution:** Before starting section iteration, the
 runner pre-resolves all `type: 'template'` sections by fetching
@@ -680,7 +755,7 @@ build time but missing at serve time (e.g., deploy artifact issues).
 mirroring the server-side handler's dispose
 (`scenario-handler.ts:905-919`):
 
-1. Remove the `scenario-control` event listener from the eventTarget
+1. Remove the `scenario-command` event listener from the eventTarget
 2. Resolve any pending pause Promise (prevents memory leak — the
    suspended async function completes and releases references)
 3. Set an internal `disposed` flag checked by the execution loop —
@@ -698,7 +773,7 @@ no-op (the runner checks the disposed flag).
 | Concern | Server mode | Browser-only mode |
 |---------|-------------|-------------------|
 | Outline | `GET /scenario/outline` | Built client-side from `SectionedScenario.sections` |
-| Transport commands | REST POST (`/pause`, `/resume`, `/step`) | `scenario-control` events on eventTarget |
+| Transport commands | REST POST (`/pause`, `/resume`, `/step`) | `scenario-command` events on eventTarget (via `sendCommand()` dual-mode) |
 | State updates | Push wire → `pages-event` | Runner fires `pages-event` directly |
 | Content resolution | `/scenario/content?path=...` | `fetch(contentBase + '/' + path)` |
 
@@ -723,11 +798,30 @@ require modifications to support eventTarget-only operation (no
    configuration as valid. The guard becomes:
    `!this.connection && !this.baseUrl && !this.eventTarget`.
 
-3. **`PagesScenarioController` keyboard shortcuts** — currently call
-   `this._conn.sendCommand(...)` (lines 208-212) which issues REST
-   `fetch()`. Fix: in browser-only mode (no `baseUrl`), dispatch
-   `scenario-control` events on the `eventTarget` instead, matching
-   the same event format the runner listens for.
+3. **`ScenarioConnectionController.sendCommand()`** — currently
+   unconditionally issues `fetch()` to the REST endpoint (line 89).
+   Fix: detect browser-only mode (`!baseUrl && !connection`) when
+   `eventTarget` is available and dispatch `scenario-command` events
+   instead:
+
+   ```typescript
+   async sendCommand(path: string, body?: object): Promise<void> {
+     const target = this._getEventTarget();
+     if (!this._opts.baseUrl && !this._opts.connection && target) {
+       const command = path.replace(/^\//, '');
+       target.dispatchEvent(new CustomEvent('scenario-command', {
+         detail: { command, ...body },
+       }));
+       return;
+     }
+     await fetch(`${this.restBase}/scenario${path}`, { ... });
+   }
+   ```
+
+   This fixes ALL controller call sites in one place — transport
+   buttons, keyboard shortcuts, speed slider, compact pill, outline
+   clicks (both full and compact) — without patching each
+   individually. Future call sites are automatically handled.
 
 4. **`PagesScenarioController._fetchOutline()`** — currently fetches
    from `GET /scenario/outline` (line 249). Fix: in browser-only
@@ -768,6 +862,7 @@ payload. The `ScenarioState` type gains an optional `outline` field:
 export interface ScenarioState {
   // ... existing fields ...
   outline?: OutlineNode[];  // present in initial state, absent in updates
+  error?: { step: string; message: string } | null;
 }
 ```
 
@@ -791,25 +886,12 @@ the outline delivery lazy.
 
 **RunTo in browser-only mode:**
 
-The controller detects browser-only mode when `eventTarget` is set
-but no `connection` or `baseUrl` is configured. In this mode, outline
-click handlers dispatch `scenario-control` events instead of REST
-calls:
-
-```typescript
-@click=${() => {
-  if (this._browserOnly) {
-    this.eventTarget?.dispatchEvent(new CustomEvent('scenario-control', {
-      detail: { command: 'run-to', target: node.label }
-    }));
-  } else {
-    void this._conn.sendCommand('/run-to', { label: node.label });
-  }
-}}
-```
-
-The runner listens for `scenario-control` with `command: 'run-to'`
-and navigates to the target section. Navigation is bidirectional:
+With `sendCommand()` dual-mode (§6.2, modification 3), outline click
+handlers require no special browser-only logic. The existing
+`sendCommand('/run-to', { label: node.label })` call automatically
+dispatches a `scenario-command` event when no REST endpoint is
+available. The runner listens for `scenario-command` with
+`command: 'run-to'` and navigates to the target section. Navigation is bidirectional:
 
 - **Forward** (target after current position): skip intervening
   sections and their steps without executing them. The runner
@@ -872,12 +954,14 @@ in rendered markdown while maintaining security:
   `javascript:` protocol
 - Style values: `url()`, `expression()`, `-moz-binding`
 
-**Who sets it:** The tutorial runner sets `htmlMode = 'sanitized'`
-on the narrative component when running a tutorial. Regular scenario
-execution never sets this — the default `'escape'` mode applies.
-This is set programmatically by the runner, not declaratively in
-YAML — the YAML content has no ability to control its own rendering
-mode.
+**Who sets it:** The tutorial host page sets `htmlMode = 'sanitized'`
+on the narrative element when assembling the tutorial DOM. The runner
+has no reference to the narrative component — it communicates
+exclusively through state events on the eventTarget. Regular scenario
+execution never sets `htmlMode` — the default `'escape'` mode
+applies. This is set programmatically by the host page, not
+declaratively in YAML — the YAML content has no ability to control
+its own rendering mode.
 
 **Implementation:** A small inline sanitizer (~50 LOC) using
 `DOMParser` and element/attribute allowlists. No external dependency.
