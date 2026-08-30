@@ -189,7 +189,7 @@ existing scenarios without `meta` continue to work.
 | Both `steps` and `sections` present | Error: mutually exclusive — use one or the other |
 | `sections` is empty array | Valid — produces a `slides-only` tutorial with no content |
 | `sections` present without `meta` | Valid — `meta` is always optional |
-| Section has no `steps` field | Valid — treated as slides-only section (equivalent to `steps: []`) |
+| Section has no `steps` field | Valid — parser normalizes to `steps: []` (slides-only section) |
 
 ## 3. Tutorial Registry
 
@@ -509,7 +509,7 @@ export interface SectionContent {
 export interface TutorialSection {
   title: string;
   content?: SectionContent;
-  steps: ScenarioStep[];
+  steps: ScenarioStep[];  // always present after parsing — YAML may omit, parser normalizes to []
 }
 
 export interface ScenarioBase {
@@ -603,7 +603,7 @@ filtered). The sectioned runner populates all fields:
 | `step` | Current step's generated name (same as flat scenarios); `null` for slides-only sections |
 | `paused` | Runner execution state |
 | `speed` | Runner speed multiplier |
-| `progress` | Steps completed / total steps across all sections |
+| `progress` | Hands-on: steps completed / total steps across all sections. Slides-only (total steps = 0): sections visited / total sections. Avoids 0/0 NaN. |
 | `content` | Current section's `content` object (templates pre-resolved to inline by runner) |
 | `slides` | `null` (tutorials don't use reveal.js slides) |
 
@@ -669,9 +669,38 @@ commands). This reuses the existing control protocol without REST.
 | State updates | Push wire → `pages-event` | Runner fires `pages-event` directly |
 | Content resolution | `/scenario/content?path=...` | `fetch(contentBase + '/' + path)` |
 
-The `ScenarioConnectionController` already supports local eventTarget
-operation — it listens for `pages-event` with topic `scenario:state`
-regardless of whether a server connection exists.
+**Required component modifications for browser-only mode:**
+
+`ScenarioConnectionController` and `PagesScenarioController` both
+require modifications to support eventTarget-only operation (no
+`connection`, no `baseUrl`):
+
+1. **`ScenarioConnectionController.hostConnected()`** — currently
+   gates event listener registration on `conn && target` (line 66 of
+   `scenario-connection-controller.ts`). Without a connection, the
+   `pages-event` listener is never registered. Fix: register the
+   `pages-event` listener when `eventTarget` is provided, even
+   without a connection. The `conn.listen()` call (server-side topic
+   subscription) is skipped; only the DOM event listener is needed
+   for the runner's locally-dispatched state events.
+
+2. **`PagesScenarioController.render()`** — currently returns an
+   error div when `!this.connection && !this.baseUrl` (line 276 of
+   `scenario-controller.ts`). Fix: accept `eventTarget`-only
+   configuration as valid. The guard becomes:
+   `!this.connection && !this.baseUrl && !this.eventTarget`.
+
+3. **`PagesScenarioController` keyboard shortcuts** — currently call
+   `this._conn.sendCommand(...)` (lines 208-212) which issues REST
+   `fetch()`. Fix: in browser-only mode (no `baseUrl`), dispatch
+   `scenario-control` events on the `eventTarget` instead, matching
+   the same event format the runner listens for.
+
+4. **`PagesScenarioController._fetchOutline()`** — currently fetches
+   from `GET /scenario/outline` (line 249). Fix: in browser-only
+   mode, the outline is provided directly via a new `outline`
+   property, populated by the tutorial host page from the parsed
+   `SectionedScenario.sections`.
 
 ### 6.3 Controller outline integration
 
