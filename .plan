@@ -13,3 +13,5 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#396 — Issue #396 ← active
+  - [ ] Batch 1: Fix and verify
+    - [ ] Task 1: Test and fix composite live snapshot replacement
