@@ -1,0 +1,15 @@
+# Work Plan — issue-396-composite-rest-snapshot
+
+## State
+branch: issue-396-composite-rest-snapshot
+state: scaffolded
+project-sha: 7c78a75ff8ec74063bcc1a3c3fd0c5a9defe7609
+date: 2026-08-31
+issue-repo: casehubio/casehub-pages
+covers: 396
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#396 — Issue #396 ← active
