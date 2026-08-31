@@ -1,0 +1,18 @@
+# Work Plan — issue-392-consolidate-fieldschema
+
+## State
+branch: issue-392-consolidate-fieldschema
+state: closing:stamped
+project-sha: c2bcb8e58e62bad3b08f8428ecc3b5cb85c70e4d
+date: 2026-08-31
+issue-repo: casehubio/casehub-pages
+covers: 392
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+evidence-era: true
+## Queue
+- [ ] casehubio/casehub-pages#392 — Issue #392 ← active
+  - [x] Batch 1: Consolidate
+    - [x] Task 1: Merge superset and delete duplicates and update all imports
