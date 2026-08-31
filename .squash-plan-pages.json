@@ -1,19 +1,20 @@
 {
   "repo": "pages",
-  "repo_path": "/Users/mdproctor/claude/casehub/slots/163/pages",
+  "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
+  "branch": "issue-396-composite-rest-snapshot",
   "commits": [
     {
-      "sha": "45e22f78",
-      "message": "fix: correct build order and STANDALONE_TYPES for #389 migration",
-      "action": "squash"
+      "sha": "c05dcd9d",
+      "message": "fix(#396): composite() converts first live snapshot to append — preserves REST data",
+      "action": "keep"
     },
     {
-      "sha": "14e61df5",
-      "message": "fix: align DiagramBaseInterface with mixin, add const to FieldSchema",
+      "sha": "f76c06de",
+      "message": "docs(#396): promote design spec and decisions from workspace",
       "action": "squash"
     }
   ],
   "verified": true,
-  "squash_message": "fix: get CI green — build order, STANDALONE_TYPES, interface alignment\n\nCorrect build:packages dependency order after #389 migration. Add\npages-diagram-palette, pages-property-palette, pages-diagram-core to\nthe build chain. Move pages-ui-components after its dependencies.\n\nAdd number-input, date-input, datetime-input to STANDALONE_TYPES so\nPagesSchemaForm sets .label directly on standalone Lit components.\n\nAlign DiagramBaseInterface with mixin: make _applyGraphEdit protected,\nadd _iconRenderer. Add const to pages-ui-components FieldSchema.\n\nSkip pre-existing happy-dom var() test, add @ts-nocheck to JS example.\n\nCloses casehubio/blocks-ui#146"
+  "squash_message": "fix(#396): composite() converts first live snapshot to append — preserves REST data\n\nInterpose a wrapping sink between live source and outer sink. First\nsnapshot from the live source is converted to an append event so REST-\nloaded data is preserved. Subsequent snapshots pass through as full\nreplacements. Phase guard prevents stale events after disconnect.\n\nCloses #396\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }
