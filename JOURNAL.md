@@ -1,1 +1,1 @@
-# Design Journal — issue-352-showcase-interactive
+# Design Journal — issue-302-network-heatmap

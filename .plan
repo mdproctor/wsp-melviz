@@ -1,0 +1,15 @@
+# Work Plan — issue-302-network-heatmap
+
+## State
+branch: issue-302-network-heatmap
+state: scaffolded
+project-sha: c2bcb8e58e62bad3b08f8428ecc3b5cb85c70e4d
+date: 2026-08-31
+issue-repo: casehubio/casehub-pages
+covers: 302
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#302 — Issue #302 ← active
