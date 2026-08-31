@@ -2,19 +2,14 @@
   "repo": "pages",
   "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
-  "branch": "issue-396-composite-rest-snapshot",
+  "branch": "issue-397-fittopleft-clips-tall",
   "commits": [
     {
-      "sha": "c05dcd9d",
-      "message": "fix(#396): composite() converts first live snapshot to append — preserves REST data",
+      "sha": "d5488edf",
+      "message": "fix(#397): FitTopLeft uses absolute positions for correct nested-node bounds",
       "action": "keep"
-    },
-    {
-      "sha": "f76c06de",
-      "message": "docs(#396): promote design spec and decisions from workspace",
-      "action": "squash"
     }
   ],
   "verified": true,
-  "squash_message": "fix(#396): composite() converts first live snapshot to append — preserves REST data\n\nInterpose a wrapping sink between live source and outer sink. First\nsnapshot from the live source is converted to an append event so REST-\nloaded data is preserved. Subsequent snapshots pass through as full\nreplacements. Phase guard prevents stale events after disconnect.\n\nCloses #396\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "fix(#397): FitTopLeft uses absolute positions for correct nested-node bounds\n\ncomputeBounds and doFit now read internals.positionAbsolute (with\nfallback to node.position) so child nodes inside container groups\ncontribute correct absolute coordinates. doFit reads from nodeLookup\ninstead of getNodes() to access InternalNode objects.\n\nCloses #397\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }
