@@ -13,3 +13,7 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#352 — Issue #352 ← active
+  - [ ] Batch 1: Config UI
+    - [ ] Task 1: Add config-driven interactive controls
+  - [ ] Batch 2: Stack overflow
+    - [ ] Task 2: Investigate data-component stack overflow in pills/tabs
