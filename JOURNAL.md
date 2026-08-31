@@ -1,1 +1,1 @@
-# Design Journal — issue-397-fittopleft-clips-tall
+# Design Journal — issue-352-showcase-interactive
