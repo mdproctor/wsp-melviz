@@ -13,3 +13,5 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#397 — Issue #397 ← active
+  - [ ] Batch 1: Fix and verify
+    - [ ] Task 1: Fix computeBounds and doFit to use absolute node positions
