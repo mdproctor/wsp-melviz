@@ -2,14 +2,14 @@
   "repo": "pages",
   "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
-  "branch": "issue-397-fittopleft-clips-tall",
+  "branch": "issue-302-network-heatmap",
   "commits": [
     {
-      "sha": "d5488edf",
-      "message": "fix(#397): FitTopLeft uses absolute positions for correct nested-node bounds",
+      "sha": "d183be8e",
+      "message": "feat(#302): add NetworkHeatmapProps and type guard",
       "action": "keep"
     }
   ],
   "verified": true,
-  "squash_message": "fix(#397): FitTopLeft uses absolute positions for correct nested-node bounds\n\ncomputeBounds and doFit now read internals.positionAbsolute (with\nfallback to node.position) so child nodes inside container groups\ncontribute correct absolute coordinates. doFit reads from nodeLookup\ninstead of getNodes() to access InternalNode objects.\n\nCloses #397\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "feat(#302): PagesNetworkHeatmap — graph topology with density overlay\n\nNew pages-network-heatmap web component. Extracts edge data from dataset\ncolumns, interpolates heatmap points along edges weighted by traffic,\nrenders @drdreo/heatmap base layer with SVG overlay for node circles\nand labels. Gallery sample included.\n\nCloses #302\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }

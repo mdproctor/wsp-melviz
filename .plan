@@ -1,0 +1,19 @@
+# Work Plan — issue-302-network-heatmap
+
+## State
+branch: issue-302-network-heatmap
+state: closing:stamped
+project-sha: c2bcb8e58e62bad3b08f8428ecc3b5cb85c70e4d
+date: 2026-08-31
+issue-repo: casehubio/casehub-pages
+covers: 302
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+evidence-era: true
+## Queue
+- [ ] casehubio/casehub-pages#302 — Issue #302 ← active
+  - [x] Batch 1: Component
+    - [x] Task 1: Add NetworkHeatmapProps and type guard
+    - [x] Task 2: Implement PagesNetworkHeatmap with tests
