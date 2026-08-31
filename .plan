@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-395-scenario-tutorials
-state: scaffolded
+state: active
 project-sha: dcdb97ebbc58a5c480ad1059b27f8624dacc9fae
 date: 2026-08-30
 issue-repo: casehubio/casehub-pages
@@ -13,17 +13,17 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#395 — Issue #395 ← active
-  - [ ] Batch 1: Foundation
-    - [ ] Task 1: Refactor Scenario types to discriminated union
-    - [ ] Task 2: Extend parser + fix runner
-  - [ ] Batch 2: Browser-only
-    - [ ] Task 3: HTML sanitizer + narrative htmlMode
-    - [ ] Task 4: Controller browser-only fixes
-  - [ ] Batch 3: Runner
-    - [ ] Task 5: Implement runSectionedScenario
-  - [ ] Batch 4: Catalog
-    - [ ] Task 6: Tutorial types + catalog component
-    - [ ] Task 7: Registry build script
-  - [ ] Batch 5: Content
-    - [ ] Task 8: Tutorial 0 Architecture
-    - [ ] Task 9: Tutorial 1 Form Automation + path
+  - [x] Batch 1: Foundation
+    - [x] Task 1: Refactor Scenario types to discriminated union
+    - [x] Task 2: Extend parser + fix runner
+  - [x] Batch 2: Browser-only
+    - [x] Task 3: HTML sanitizer + narrative htmlMode
+    - [x] Task 4: Controller browser-only fixes
+  - [x] Batch 3: Runner
+    - [x] Task 5: Implement runSectionedScenario
+  - [x] Batch 4: Catalog
+    - [x] Task 6: Tutorial types + catalog component
+    - [x] Task 7: Registry build script
+  - [x] Batch 5: Content
+    - [x] Task 8: Tutorial 0 Architecture
+    - [x] Task 9: Tutorial 1 Form Automation + path
