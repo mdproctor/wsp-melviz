@@ -2,7 +2,7 @@
 
 ## State
 branch: panel-activation-hash-binding
-state: closing:promoted
+state: closing:stamped
 issue-repo: casehubio/casehub-pages
 covers: 382,383,384,385
 Current: casehubio/casehub-pages#382 — centralize dock-toggle exclusivity

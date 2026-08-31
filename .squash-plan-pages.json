@@ -1,0 +1,15 @@
+{
+  "repo": "pages",
+  "repo_path": "/Users/mdproctor/claude/casehub/pages",
+  "base_branch": "main",
+  "branch": "panel-activation-hash-binding",
+  "commits": [
+    {
+      "sha": "63ec61d5",
+      "message": "refactor: centralize dock-toggle exclusivity in site.ts handler",
+      "action": "keep"
+    }
+  ],
+  "verified": true,
+  "squash_message": "feat: dock-toggle exclusivity, panel deep linking, and activateDockPanel\n\nCentralize dock-toggle exclusivity in site.ts handler. Add\nactivateDockPanel to LiveSite interface. Fix restoreFromUrl to dispatch\ndock-toggle events on popstate. Wire panel= hash param for dock panel\ndeep linking.\n\nCloses #382, closes #383, closes #384, closes #385\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+}
