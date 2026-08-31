@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-396-composite-rest-snapshot
-state: active
+state: closing:verified
 project-sha: 7c78a75ff8ec74063bcc1a3c3fd0c5a9defe7609
 date: 2026-08-31
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#396 — Issue #396 ← active
   - [x] Batch 1: Fix and verify
