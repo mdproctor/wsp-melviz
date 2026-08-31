@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-397-fittopleft-clips-tall
-state: scaffolded
+state: active
 project-sha: 613c0c58e5b2fb4d95021a1ddd62877bee04cbed
 date: 2026-08-31
 issue-repo: casehubio/casehub-pages
@@ -13,5 +13,5 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#397 — Issue #397 ← active
-  - [ ] Batch 1: Fix and verify
-    - [ ] Task 1: Fix computeBounds and doFit to use absolute node positions
+  - [x] Batch 1: Fix and verify
+    - [x] Task 1: Fix computeBounds and doFit to use absolute node positions
