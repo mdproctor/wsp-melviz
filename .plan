@@ -13,3 +13,6 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#302 — Issue #302 ← active
+  - [ ] Batch 1: Component
+    - [ ] Task 1: Add NetworkHeatmapProps and type guard
+    - [ ] Task 2: Implement PagesNetworkHeatmap with tests
