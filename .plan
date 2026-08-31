@@ -1,0 +1,15 @@
+# Work Plan — issue-397-fittopleft-clips-tall
+
+## State
+branch: issue-397-fittopleft-clips-tall
+state: scaffolded
+project-sha: 613c0c58e5b2fb4d95021a1ddd62877bee04cbed
+date: 2026-08-31
+issue-repo: casehubio/casehub-pages
+covers: 397
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#397 — Issue #397 ← active

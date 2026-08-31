@@ -1,1 +1,1 @@
-# Design Journal — issue-396-composite-rest-snapshot
+# Design Journal — issue-397-fittopleft-clips-tall
