@@ -2,14 +2,14 @@
   "repo": "pages",
   "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
-  "branch": "issue-392-consolidate-fieldschema",
+  "branch": "panel-activation-hash-binding",
   "commits": [
     {
-      "sha": "d13151ad",
-      "message": "chore(#392): consolidate FieldSchema to single canonical definition in pages-component",
+      "sha": "63ec61d5",
+      "message": "refactor: centralize dock-toggle exclusivity in site.ts handler",
       "action": "keep"
     }
   ],
   "verified": true,
-  "squash_message": "chore(#392): consolidate FieldSchema to single canonical definition in pages-component\n\nMerge superset fields from pages-ui-components into pages-component's\nform-input-types.ts. Delete duplicates from displayer-types.ts and\npages-ui-components/types.ts. Update all consumer imports to point\ndirectly to @casehubio/pages-component. No cross-package re-exports.\n\nCloses #392\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "feat: dock-toggle exclusivity, panel deep linking, and activateDockPanel\n\nCentralize dock-toggle exclusivity in site.ts handler. Add\nactivateDockPanel to LiveSite interface. Fix restoreFromUrl to dispatch\ndock-toggle events on popstate. Wire panel= hash param for dock panel\ndeep linking.\n\nCloses #382, closes #383, closes #384, closes #385\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }
