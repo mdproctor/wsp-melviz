@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-392-consolidate-fieldschema
-state: scaffolded
+state: active
 project-sha: c2bcb8e58e62bad3b08f8428ecc3b5cb85c70e4d
 date: 2026-08-31
 issue-repo: casehubio/casehub-pages
@@ -13,5 +13,5 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#392 — Issue #392 ← active
-  - [ ] Batch 1: Consolidate
-    - [ ] Task 1: Merge superset and delete duplicates and update all imports
+  - [x] Batch 1: Consolidate
+    - [x] Task 1: Merge superset and delete duplicates and update all imports
