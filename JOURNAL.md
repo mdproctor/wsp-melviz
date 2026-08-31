@@ -1,1 +1,1 @@
-# Design Journal — issue-302-network-heatmap
+# Design Journal — issue-392-consolidate-fieldschema
