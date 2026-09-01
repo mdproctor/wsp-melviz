@@ -1,17 +1,26 @@
-# HANDOFF — casehub-pages (slot 112)
+# Handoff — 2026-09-01
 
-Branch: `issue-408-scenario-engine`
-Epic: casehubio/parent#408
+## Branch: `issue-401-terminal-backend`  Issue: #401
 
-## Last Session
+### What happened
+- Created `casehub-pages-terminal` (core) and `casehub-pages-terminal-runtime` (Quarkus) — two new backend modules generalized from trellis's terminal backend
+- Echo duplication fix: stop pipe-pane before reconnect, delay pipe-pane after forceRedraw
+- 8 source files + 4 test files + 2 POMs created, contributor guide updated
+- Maven can't run in this session — **test verification needed before work-end**
 
-Spec session — wrote the scenario format protocol document (`parent/docs/platform/scenario-format.md`) for #409 and the demo SPI convention (`parent/docs/platform/demo-spi-convention.md`) for #410. Amended the design spec with 9 review findings: ControlChannel resilience, DataTrigger as server-side polling, fill resolution, on-error policy, file distribution via bootstrap endpoint, shared DemoCurrentPrincipal.
+### What's next
+1. Run `mvn -f backend/pom.xml test -pl terminal,terminal-runtime --also-make` — verify all tests pass
+2. If green: run `work-end` to close the branch
+3. If red: fix compilation/test issues (likely dependency resolution in POM)
 
-## Immediate Next Step
+### Session stats
+- 5 issues implemented (#396, #397, #352, #302, #392)
+- 9 issues verified as already landed and closed
+- 9 S/XS issues triaged and closed (4 already fixed, 3 deferred, 2 implemented)
+- 13 issues labeled with scale/complexity
+- 1 new issue filed (#401)
+- #401 implementation in progress (code written, needs Maven verification)
 
-Queue is at position 2/7. Active issue: **#311 — Scenario executor backend (XL / High) [pages]**. This is the first implementation issue — TypeScript/Java code. Run `/work` to continue. Invoke brainstorming before implementation — #311 is XL scope.
-
-## Cross-Module
-
-**Enabled** (delivered, downstream unblocked):
-- `parent` — scenario format spec (#409) and demo SPI convention (#410) are published; pages#311, connectors#93, connectors#94 can proceed
+### Decisions
+- `specs/issue-401-terminal-backend/decisions.md` — tmux backend, core-only scope
+- `feedback-no-cross-package-reexports.md` — new memory: no cross-package re-exports
