@@ -1,0 +1,15 @@
+# Work Plan — issue-401-terminal-backend
+
+## State
+branch: issue-401-terminal-backend
+state: scaffolded
+project-sha: 72f73de8afb1fece16555361b352b59bf5b70a85
+date: 2026-09-01
+issue-repo: casehubio/casehub-pages
+covers: 401
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#401 — Issue #401 ← active
