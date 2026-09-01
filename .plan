@@ -13,3 +13,7 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#401 — Issue #401 ← active
+  - [ ] Batch 1: Core
+    - [ ] Task 1: Create core module with TmuxManager FifoRelay SessionLogger
+  - [ ] Batch 2: Runtime
+    - [ ] Task 2: Create runtime module with WebSocket Registry REST
