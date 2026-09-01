@@ -1,0 +1,15 @@
+# Work Plan — issue-399-htn-tree-diagram
+
+## State
+branch: issue-399-htn-tree-diagram
+state: scaffolded
+project-sha: 57bb101bf9c50c8bc143964789c59be91848ee03
+date: 2026-09-01
+issue-repo: casehubio/casehub-pages
+covers: 399
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#399 — Issue #399 ← active
