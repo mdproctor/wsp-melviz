@@ -146,7 +146,7 @@ is allowed.
 | **Nested parent** | Parent P with child C, select {P} | valid if P has 1-in/1-out |
 | **Empty set** | select {} | valid: empty, no boundary |
 | **Entire graph** | Linear A→B→C, select all | valid if A has 0 in, C has 0 out → invalid (0≠1 boundary) |
-| **Disconnected node** | No edges, select {X} | valid: {X}, no boundary edges (0 in, 0 out) ... invalid per 1-in/1-out |
+| **Disconnected node** | No edges, select {X} | invalid (0 in, 0 out — fails 1-in/1-out) |
 | **Shift-click add valid** | {B,C} selected, add D in A→B→C→D | valid: {B,C,D} |
 | **Shift-click add invalid** | {B,C} selected, add A (no inbound) | rejected |
 | **Shift-click remove valid** | {B,C,D} selected, remove D in chain | valid: {B,C} |
@@ -155,12 +155,10 @@ is allowed.
 | **Max cardinality** | Node at outbound max, boundary crossing counts | validator uses current model cardinality |
 
 Edge case: a disconnected node with 0 inbound and 0 outbound has 0 boundary
-crossings, not 1. The validator must handle this — a disconnected node can
-be drag-selected alone (it doesn't break any constraint), but it has no
-meaningful auto-join or splice targets. Decision: allow it in a constrained
-selection (it's valid — nothing dangles), but delete is disconnect-only
-(no predecessor/successor to auto-join) and drag-splice validates normally
-via `canConnect`.
+crossings, not 1. This fails the 1-in/1-out constraint, so a disconnected
+node alone cannot form a constrained selection via drag-select. Single-node
+operations (single-node delete, single-node drag-splice) already handle
+disconnected nodes — no special-casing needed here.
 
 ## 5. Rubber-Band Interaction (graph-renderer)
 
