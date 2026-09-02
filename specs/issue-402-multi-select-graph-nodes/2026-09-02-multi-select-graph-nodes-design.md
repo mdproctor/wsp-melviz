@@ -107,11 +107,19 @@ function validateSelection(
 1. Compute boundary edges — edges with exactly one endpoint in the candidate set
 2. Partition into inbound (source outside, target inside) and outbound
    (source inside, target outside)
-3. If exactly 1 inbound and 1 outbound → all candidates valid
-4. If not → identify nodes causing extra boundary crossings. A node
-   contributes to extra crossings if it has edges to nodes outside the
-   candidate set beyond the single allowed input/output. Mark these invalid.
-   Check if the remaining subset satisfies 1-in/1-out.
+3. If exactly 1 inbound and 1 outbound:
+   a. **Internal connectivity check** — starting from the entry node
+      (`inbound.target`), traverse only edges whose both endpoints are in the
+      candidate set. If the exit node (`outbound.source`) is reachable, all
+      candidates are valid. If not, all candidates are invalid (the selection
+      spans disconnected subgraphs that happen to satisfy 1-in/1-out by
+      coincidence).
+   b. This is O(|internal edges|) — negligible for expected graph sizes.
+4. If boundary count ≠ (1 in, 1 out) → all candidates are invalid. The
+   algorithm is binary: either the full candidate set satisfies the
+   constraint (all valid) or it doesn't (all invalid). No partial subset
+   extraction is attempted during rubber-band drag — this keeps live
+   feedback deterministic and fast.
 
 ### 4.2 Shift-click validation
 
@@ -147,6 +155,7 @@ is allowed.
 | **Empty set** | select {} | valid: empty, no boundary |
 | **Entire graph** | Linear A→B→C, select all | valid if A has 0 in, C has 0 out → invalid (0≠1 boundary) |
 | **Disconnected node** | No edges, select {X} | invalid (0 in, 0 out — fails 1-in/1-out) |
+| **Disconnected groups** | X→A→B, C→D→Y, select {B,C} | invalid (1-in/1-out passes but B and C not internally connected) |
 | **Shift-click add valid** | {B,C} selected, add D in A→B→C→D | valid: {B,C,D} |
 | **Shift-click add invalid** | {B,C} selected, add A (no inbound) | rejected |
 | **Shift-click remove valid** | {B,C,D} selected, remove D in chain | valid: {B,C} |
@@ -187,11 +196,15 @@ type RubberBandResult =
 
 1. **Pointer-down on canvas background** (not on a node, not on an edge) —
    record start position, begin tracking
-2. **Pointer-move** — draw a selection rectangle as a semi-transparent overlay
-   (`position: absolute` within the canvas container, using flow coordinates).
+2. **Pointer-move** — draw a selection rectangle as a semi-transparent overlay.
+   The rectangle is rendered in **screen/DOM coordinates** (`position: fixed`)
+   using pointer `clientX`/`clientY`. For hit-testing, the rectangle corners
+   are converted to **flow coordinates** via `screenToFlowPosition()` and
+   compared against node positions from the ReactFlow node array.
    On each move:
-   a. Compute which ReactFlow nodes fall inside the rectangle (compare node
-      position + dimensions against rectangle bounds in flow coordinates)
+   a. Convert rectangle bounds to flow coordinates, then compute which
+      ReactFlow nodes fall inside (compare node position + dimensions
+      against converted rectangle bounds)
    b. Pass candidate node IDs through `validateSelection()`
    c. Apply CSS classes to node elements:
       - `multi-select-valid` → selection colour highlight
@@ -200,12 +213,16 @@ type RubberBandResult =
 3. **Pointer-up** — if `result.valid` is non-empty and satisfies 1-in/1-out,
    call `onComplete` with the valid set. Otherwise call with `{ type: 'empty' }`.
    Clean up rectangle overlay and all CSS classes.
+4. **Escape** — cancel the drag immediately. Remove rectangle overlay, remove
+   all CSS classes, call `onComplete({ type: 'empty' })`. Per infra spec §7,
+   Escape dismisses the innermost active UI element — an in-progress
+   rubber-band drag counts.
 
 ### 5.3 Visual design
 
 ```css
 .multi-select-rect {
-  position: absolute;
+  position: fixed;
   border: 1.5px solid var(--pages-accent-9);
   background: var(--pages-accent-a3);
   pointer-events: none;
@@ -234,6 +251,12 @@ hit-testing is O(nodes). Both are sub-millisecond for expected graph sizes.
 No debouncing needed.
 
 ## 6. Shift-Click Handler (graph-renderer)
+
+**ReactFlow conflict prevention:** Add `multiSelectionKeyCode={null}` to the
+`<ReactFlow>` element in `ReactFlowApp.tsx` to disable ReactFlow's built-in
+Shift+click multi-selection. All multi-selection semantics are owned by the
+custom handler. Without this, ReactFlow fires `onSelectionChange` with its
+own selection state before the custom handler runs, producing spurious events.
 
 Extension of existing `onNodeClick` in `GraphCanvas.ts`.
 
@@ -289,7 +312,10 @@ When Delete/Backspace is pressed with a constrained selection:
    b. Add a bridge edge: `boundaryInput.source → boundaryOutput.target`
       with type inherited from `boundaryInput.type`
 3. Validate the bridge edge via `editPolicy.canConnect()` — this should
-   always pass (the original chain was valid), but validate as a safety check
+   always pass (the original chain was valid), but validate as a safety check.
+   If validation fails (e.g., custom EditPolicy, edge type mismatch), fall
+   back to disconnect strategy — remove all selected nodes and their edges
+   without creating a bridge.
 4. Dispatch as `onMutation({ type: 'compound', edits: [...] })`
 
 ### 7.2 Unconstrained (disconnect)
@@ -304,8 +330,21 @@ When Delete/Backspace is pressed with an unconstrained selection:
 
 ## 8. Segment Hold-to-Drag Splice
 
-Extends `NodeMoveCoordinator` pattern for multi-node drag. New component:
-`SegmentMoveCoordinator` in `graph-renderer/src/editing/segment-move-coordinator.ts`.
+Extends `NodeMoveCoordinator` directly — not a separate class. The coordinator
+accepts a `DragSubject` discriminated union:
+
+```typescript
+type DragSubject =
+  | { type: 'single'; nodeId: string }
+  | { type: 'segment'; nodeIds: ReadonlySet<string>;
+      entryNodeId: string; exitNodeId: string;
+      boundaryInput: GraphEdge; boundaryOutput: GraphEdge };
+```
+
+The coordinator branches on subject type at: eligibility check, ghost creation,
+edge-skip filter, splice validation, and result construction. Everything else
+(hold timer, drag threshold, pointer lifecycle, edge hit-testing mechanics) is
+shared. This avoids duplicating 300 lines of interaction logic.
 
 ### 8.1 Eligibility
 
@@ -386,10 +425,10 @@ implementation.
 | `SelectionValidator` | `graph-core` | `src/selection-validator.ts` |
 | `validateSelection`, `canAddToSelection`, `canRemoveFromSelection` | `graph-core` | (exported from selection-validator) |
 | `RubberBandSelect` | `graph-renderer` | `src/editing/rubber-band-select.ts` |
-| `SegmentMoveCoordinator` | `graph-renderer` | `src/editing/segment-move-coordinator.ts` |
+| `DragSubject` + segment support | `graph-renderer` | `src/editing/node-move-coordinator.ts` (extended) |
 | Shift-click handler | `graph-renderer` | `src/bridge/GraphCanvas.ts` (extended) |
 | Segment splice validation | `graph-renderer` | `src/editing/splice-validation.ts` (extended) |
-| Compound graph edits | `graph-core` | `src/edit.ts` (extended: `removeNodes`) |
+| Compound graph edits | `graph-core` | `src/edit.ts` (extended: `removeNodes` — iterated `removeNode` with leaf-first containment ordering) |
 | `applyGraphEdit` segment ops | `graph-renderer` | `src/editing/apply-graph-edit.ts` (extended) |
 | Selection CSS | `graph-renderer` | `src/css/multi-select.css` |
 
@@ -410,6 +449,8 @@ combinatorial surface.
   edges), removals from ends vs middle
 - **Grammar constraints**: `allowedFrom`/`allowedTo` restrictions, cardinality
   limits at boundary
+- **Internal connectivity**: disconnected groups that coincidentally satisfy
+  1-in/1-out boundary counts (must fail reachability check)
 - **Edge cases**: empty set, single node, entire graph, selection containing
   all but one node
 
@@ -420,7 +461,7 @@ combinatorial surface.
 - Pointer lifecycle: down → move → up with valid/invalid/empty outcomes
 - Edge case: drag starts, no nodes in rectangle, release
 
-### 11.3 SegmentMoveCoordinator (graph-renderer) — integration
+### 11.3 NodeMoveCoordinator segment mode (graph-renderer) — integration
 
 - Hold timer (300ms) with threshold (5px)
 - Ghost creation for multi-node selection (bounding box)
