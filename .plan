@@ -13,6 +13,6 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#404 — Issue #404 ← active
-  - [ ] Batch 1: Pills type and rendering
-    - [ ] Task 1: Add pills to NodeDecoration and test the type
-    - [ ] Task 2: Render pills in stencil-wrapper
+  - [x] Batch 1: Pills type and rendering
+    - [x] Task 1: Add pills to NodeDecoration and test the type
+    - [x] Task 2: Render pills in stencil-wrapper
