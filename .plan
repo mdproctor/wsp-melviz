@@ -13,3 +13,15 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#222 — Issue #222 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: FormValueProvider interface and FieldSchema additions
+    - [ ] Task 2: FormValueMixin
+    - [ ] Task 3: resolveSchemaRefs and mapFieldToComponentType
+  - [ ] Batch 2: Object Nesting
+    - [ ] Task 4: pages-object-group component
+    - [ ] Task 5: PagesSchemaForm recursive rendering
+  - [ ] Batch 3: Arrays
+    - [ ] Task 6: pages-array-group component
+  - [ ] Batch 4: Variants and Integration
+    - [ ] Task 7: pages-variant-group component
+    - [ ] Task 8: Custom renderers and formScope and pipeline adapter
