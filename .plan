@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-405-statecategorystyles-export
-state: closing:review
+state: closing:stamped
 project-sha: 334ead5e200bf446264e1e26d2d04f36f285078b
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
