@@ -1,0 +1,15 @@
+# Work Plan — issue-222-schema-form-nested
+
+## State
+branch: issue-222-schema-form-nested
+state: scaffolded
+project-sha: fd411e1945c350af706240b66b9d1321a9f105d0
+date: 2026-09-03
+issue-repo: casehubio/casehub-pages
+covers: 222
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#222 — Issue #222 ← active
