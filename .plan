@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-403-selectionkey-dsl
-state: closing:review
+state: closing:stamped
 project-sha: 77c5a99f68d21069b1b62ac9e6b0d955b7d690e2
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
