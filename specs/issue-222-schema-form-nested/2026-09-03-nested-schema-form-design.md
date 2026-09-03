@@ -3,7 +3,9 @@
 **Issue:** casehubio/casehub-pages#222
 **Date:** 2026-09-03
 **Predecessor:** #159 (schema-form runtime integration — flat fields)
-**Related:** #392 (FieldSchema consolidation), #334/#337 (formScope composable layout)
+**Prerequisite:** #337 (formScope composable layout — must be complete before this spec's formScope integration can land; specifically: `pages-field-register` event handling in activation, `FormScopeState` instantiation, and `FormScopeRegistry` wiring)
+**Related:** #392 (FieldSchema consolidation), #334 (schemaForm DSL builder)
+**JSON Schema draft:** draft-07 (siblings alongside `$ref` are ignored per spec)
 
 ## Problem
 
@@ -42,13 +44,19 @@ Every JSON Schema node maps to exactly one component type. PagesSchemaForm walks
 export function mapFieldToComponentType(fieldSchema: FieldSchema): string {
   if (fieldSchema["x-renderer"]) return String(fieldSchema["x-renderer"]);
   if (fieldSchema.oneOf) return "variant-group";
-  if (fieldSchema.type === "array" || fieldSchema.items) return "array-group";
-  if (fieldSchema.type === "object" || (fieldSchema.properties && fieldSchema.type !== "string")) return "object-group";
+
+  // Normalize type — JSON Schema allows type arrays for nullable: ["string", "null"]
+  const effectiveType = Array.isArray(fieldSchema.type)
+    ? fieldSchema.type.find(t => t !== "null")
+    : fieldSchema.type;
+
+  if (effectiveType === "array" || fieldSchema.items) return "array-group";
+  if (effectiveType === "object" || (fieldSchema.properties && effectiveType !== "string")) return "object-group";
   // existing leaf mappings unchanged
-  if (fieldSchema.type === "boolean") return "checkbox";
-  if (fieldSchema.type === "number") return "number-input";
-  if (fieldSchema.type === "integer") return "number-input";
-  if (fieldSchema.type === "string") {
+  if (effectiveType === "boolean") return "checkbox";
+  if (effectiveType === "number") return "number-input";
+  if (effectiveType === "integer") return "number-input";
+  if (effectiveType === "string") {
     if (fieldSchema.enum && fieldSchema.enum.length > 0) return "select";
     if (fieldSchema.format === "date") return "date-input";
     if (fieldSchema.format === "datetime-local") return "datetime-input";
@@ -172,11 +180,14 @@ Renders a fieldset for an object sub-schema.
 ```typescript
 @property({ attribute: false }) schema: FieldSchema;
 @property({ attribute: false }) label: string;
+@property({ attribute: false }) fieldName: string;
 @property({ type: Boolean }) editable = false;
 @property({ type: Boolean }) required = false;
 @property({ type: Boolean }) collapsible = false;
 @state() private _collapsed = false;
 ```
+
+`fieldName` is the key under which this composite appears in its parent's `properties` map. Set by the parent (PagesSchemaForm or another composite) during child creation in the rendering loop.
 
 **Rendering:**
 
@@ -212,14 +223,15 @@ protected validateSelf(): boolean {
   if (!this.schema.required) return true;
   const requiredSet = new Set(this.schema.required);
   const value = this.collectValue();
+  let allValid = true;
   for (const field of requiredSet) {
     if (value[field] === null || value[field] === undefined || value[field] === "") {
       const child = this._children.get(field);
       if (child) setFieldError(child, this._childTypes.get(field) ?? "input", "Required");
-      return false;
+      allValid = false;
     }
   }
-  return true;
+  return allValid;
 }
 
 protected validateChildren(): boolean {
@@ -256,6 +268,7 @@ Renders a list of items with add/remove/reorder controls.
 ```typescript
 @property({ attribute: false }) schema: FieldSchema; // the array schema (has .items)
 @property({ attribute: false }) label: string;
+@property({ attribute: false }) fieldName: string;
 @property({ type: Boolean }) editable = false;
 @property({ type: Boolean }) required = false;
 @state() private _items: ArrayItem[] = [];
@@ -362,6 +375,7 @@ Renders a discriminated union for `oneOf` schemas.
 ```typescript
 @property({ attribute: false }) schema: FieldSchema; // has .oneOf
 @property({ attribute: false }) label: string;
+@property({ attribute: false }) fieldName: string;
 @property({ type: Boolean }) editable = false;
 @state() private _activeVariantIndex = 0;
 @state() private _discriminatorField: string | null = null;
@@ -376,8 +390,15 @@ private detectDiscriminator(): void {
   const variants = this.schema.oneOf;
   if (!variants || variants.length === 0) return;
 
-  const firstProps = Object.keys(variants[0].properties ?? {});
-  for (const prop of firstProps) {
+  // Collect candidate properties from ALL variants, not just the first
+  const candidateProps = new Set<string>();
+  for (const variant of variants) {
+    for (const prop of Object.keys(variant.properties ?? {})) {
+      candidateProps.add(prop);
+    }
+  }
+
+  for (const prop of candidateProps) {
     const allHaveConst = variants.every(v =>
       v.properties?.[prop]?.const !== undefined
     );
@@ -392,6 +413,8 @@ private detectDiscriminator(): void {
   );
 }
 ```
+
+**Undiscriminated non-object unions** (e.g., `[{type: "string"}, {type: "number"}]`) are not supported — use `x-renderer` to provide a custom component for these cases.
 
 **Rendering:**
 
@@ -468,13 +491,14 @@ Forms always produce structured records matching the JSON Schema shape:
 
 ### Pipeline Adapter Layer (D5)
 
-Forms work with structured records. The adapter layer translates between structured records and `TypedDataSet`. Adapter selection is automatic at form mount time — determined by inspecting the dataset's column structure:
+Forms work with structured records. The adapter layer translates between structured records and `TypedDataSet`. Two strategies are in scope for #222:
 
 | Strategy | Detection | Read | Write |
 |----------|-----------|------|-------|
 | **Standalone** | No dataset (create mode, `forceCreate`) | Empty/default values from schema | Emit structured record via `pages-record-create` |
-| **JSON column** | Dataset has a single TEXT column whose name matches the schema root (or no column-per-property matches) | Parse JSON from column value | Serialize to JSON, emit as `pages-field-change` for that column |
 | **Flat projection** | Dataset has individual columns matching top-level property names | Read leaf values from columns directly; parse JSON columns for nested sub-trees | Leaf changes emit per-column `pages-field-change`; nested changes serialize to JSON for their parent column |
+
+**Future work (out of scope for #222):** A JSON column strategy (entire form value stored as JSON in a single TEXT column) may be added later if use cases emerge. This would require strategy detection heuristics and JSON serialization/deserialization — deferred to avoid speculative complexity.
 
 The adapter is a utility function in PagesSchemaForm, called at the start of `renderContent` to extract a structured record from the dataset:
 
@@ -520,7 +544,15 @@ Composites use re-emission: they intercept `pages-field-change` events from thei
 // In each composite component (object-group, array-group, variant-group):
 connectedCallback() {
   super.connectedCallback();
-  this.addEventListener("pages-field-change", this._onChildFieldChange);
+  // Listen on renderRoot (shadow root), NOT on `this` — dispatching a new event
+  // on `this` while `this` has a same-event listener creates an infinite loop
+  // at the AT_TARGET phase.
+  this.renderRoot.addEventListener("pages-field-change", this._onChildFieldChange);
+}
+
+disconnectedCallback() {
+  super.disconnectedCallback();
+  this.renderRoot.removeEventListener("pages-field-change", this._onChildFieldChange);
 }
 
 private _onChildFieldChange = (e: Event): void => {
@@ -531,7 +563,7 @@ private _onChildFieldChange = (e: Event): void => {
   this.dispatchEvent(new CustomEvent("pages-field-change", {
     bubbles: true, composed: true,
     detail: {
-      field: this._fieldName,
+      field: this.fieldName,
       value: this.currentValue,
       committed: true,
     },
@@ -545,11 +577,13 @@ private _onChildFieldChange = (e: Event): void => {
 
 ## formScope Integration (D6)
 
+**Prerequisite:** This section assumes #337 (formScope composable layout) is complete — specifically that the activation handler listens for `pages-field-register` events, instantiates `FormScopeState` via `FormScopeRegistry`, and uses `FormScopeState.validateAll()` for validation dispatch. The current codebase uses ad-hoc property storage (`__formScopeSchema`) and a local `validateFormField()` copy — #337 replaces these with the proper `FormScopeState` machinery. This spec (#222) adds FormValueProvider awareness on top of the completed #337 implementation.
+
 formScope treats composite components as single opaque fields:
 
 1. **Registration:** Composites register with formScope via `pages-field-register` like any other field. The `componentType` is `"object-group"`, `"array-group"`, or `"variant-group"`.
 
-2. **Value collection:** `FormScopeState.collectValues()` calls `readFieldValue()` on each registered element. The existing duck-typing in `readFieldValue` (`"currentValue" in element ? element.currentValue : element.value`) already handles FormValueProvider-conformant elements.
+2. **Value collection:** `FormScopeState.collectValues()` calls `readFieldValue()` on each registered element. The existing duck-typing in `readFieldValue` (`"currentValue" in element ? element.currentValue : element.value`) already handles FormValueProvider-conformant elements. No modification to `readFieldValue` is needed — the duck-typing path is sufficient.
 
 3. **Validation dispatch:** `FormScopeState.validateAll()` gains FormValueProvider awareness:
 
@@ -601,11 +635,20 @@ Defined in `pages-component/src/model/form-value-provider.ts` alongside the inte
 
 ### $ref Resolution
 
+**FieldSchema additions:** `FieldSchema` gains `$defs` and `definitions` fields to support `$ref` resolution with type safety:
+
+```typescript
+readonly $defs?: Readonly<Record<string, FieldSchema>>;
+readonly definitions?: Readonly<Record<string, FieldSchema>>;
+```
+
+These are added to `pages-component/src/model/form-input-types.ts`. The FieldSchema consolidation spec (#392) should also include them.
+
 A pure function that resolves local `#/$defs/...` references before rendering:
 
 ```typescript
 export function resolveSchemaRefs(schema: FieldSchema): FieldSchema {
-  const defs = (schema as any).$defs ?? (schema as any).definitions ?? {};
+  const defs = schema.$defs ?? schema.definitions ?? {};
   return resolveNode(schema, defs, new Set());
 }
 
@@ -646,9 +689,19 @@ function resolveNode(
 
 **Scope:** Only local references (`#/$defs/...`, `#/definitions/...`). External references (URLs, file paths) are not supported — schemas using external refs must be pre-resolved before passing to PagesSchemaForm.
 
+**Draft-07 `$ref` semantics:** When a node has `$ref` alongside sibling properties (e.g., `{ "$ref": "#/$defs/address", "title": "Home Address" }`), the resolver returns only the resolved target and discards siblings. This follows JSON Schema draft-07 where siblings alongside `$ref` are ignored. The spec header declares `draft-07` as the target draft.
+
 **Cycle handling:** The resolver tracks the set of `$ref` paths in the current resolution stack. When a cycle is detected, it inserts a terminal empty schema at the cycle point. This avoids the exponential expansion risk of depth-limited unrolling.
 
 **Location:** `pages-component/src/model/schema-ref-resolver.ts`
+
+### PagesSchemaForm Conformance
+
+PagesSchemaForm gains FormValueProvider conformance and LiveRegionMixin consolidation as part of this spec:
+
+1. **FormValueProvider:** PagesSchemaForm already has `currentValue` (getter returning a record of all field values). This spec adds a `validate(): boolean` method (extracted from `submit()` — validate-only, no event dispatch). With both `currentValue` and `validate()`, `isFormValueProvider()` returns `true` for PagesSchemaForm, making it usable as a composite child in formScope and unifying value collection.
+
+2. **LiveRegionMixin:** PagesSchemaForm currently has an inline `announce()` method (lines 68-83) that is functionally identical to `LiveRegionMixin` from `pages-primitives`. This spec refactors PagesSchemaForm to use `LiveRegionMixin` instead of the inline implementation. Since PagesElement is abstract and cannot be directly passed to the mixin, a standalone `createLiveRegionHelper()` utility is extracted from `LiveRegionMixin` into `pages-primitives/src/a11y/live-region.ts` — both `LiveRegionMixin` and PagesSchemaForm use it internally. This consolidates the implementation without requiring mixin composition through abstract base classes.
 
 ### mapFieldToComponentType Extension
 
@@ -692,6 +745,19 @@ The form still renders the element — the warning prevents silent failures wher
 ### Recursive Model
 
 Each component validates its own sub-schema via `validate(): boolean`. The existing `validateField()` utility stays leaf-only — it is used internally by leaf components, not extended for composite types.
+
+### `validateField` Enhancement
+
+The existing `validateField()` in `pages-component/src/model/field-validation.ts` checks `minimum` and `maximum` but not `exclusiveMinimum` and `exclusiveMaximum`, even though `FieldSchema` declares both. This spec adds the missing checks:
+
+```typescript
+if (typeof value === "number") {
+  if (schema.minimum != null && value < schema.minimum) return `Must be at least ${schema.minimum}`;
+  if (schema.maximum != null && value > schema.maximum) return `Must be at most ${schema.maximum}`;
+  if (schema.exclusiveMinimum != null && value <= schema.exclusiveMinimum) return `Must be greater than ${schema.exclusiveMinimum}`;
+  if (schema.exclusiveMaximum != null && value >= schema.exclusiveMaximum) return `Must be less than ${schema.exclusiveMaximum}`;
+}
+```
 
 ### Submit-Time Flow
 
@@ -854,14 +920,20 @@ Each component validates its own sub-schema via `validate(): boolean`. The exist
 | Package | File | Change |
 |---------|------|--------|
 | `pages-component` | `src/model/index.ts` | Export `FormValueProvider`, `isFormValueProvider`, `FormValueMixin`, `resolveSchemaRefs` |
-| `pages-component` | `src/model/field-access.ts` | `readFieldValue` — add composite type awareness (check `isFormValueProvider` before duck-typing fallback) |
-| `pages-viz` | `src/form-inputs/schema-types.ts` | Extend `mapFieldToComponentType` with composite types |
-| `pages-viz` | `src/form-inputs/PagesSchemaForm.ts` | Call `resolveSchemaRefs` on schema; use shared rendering loop; extract record from dataset via adapter; pass sub-values to composite children |
+| `pages-component` | `src/model/form-input-types.ts` | Add `$defs` and `definitions` fields to `FieldSchema` |
+| `pages-component` | `src/model/field-validation.ts` | Add `exclusiveMinimum`/`exclusiveMaximum` checks to `validateField()` |
+| `pages-viz` | `src/form-inputs/schema-types.ts` | Extend `mapFieldToComponentType` with composite types and type-array normalization |
+| `pages-viz` | `src/form-inputs/PagesSchemaForm.ts` | Call `resolveSchemaRefs` on schema; add `validate()` method (FormValueProvider conformance); replace inline `announce()` with `createLiveRegionHelper()`; use shared rendering loop; extract record from dataset via adapter; pass sub-values to composite children |
 | `pages-viz` | `src/form-inputs/index.ts` | Export new components |
+| `pages-primitives` | `src/a11y/live-region.ts` | Extract `createLiveRegionHelper()` utility; refactor `LiveRegionMixin` to use it |
 | `pages-runtime` | `src/form-scope.ts` | `FormScopeState.validateAll()` — detect FormValueProvider, call `validate()` for composites |
-| `pages-runtime` | `src/activation.ts` | Register `"object-group"`, `"array-group"`, `"variant-group"` in `DATA_COMPONENT_TYPES` |
-| `pages-ui` | `src/dsl/builders.ts` | Add `objectGroup()`, `arrayGroup()`, `variantGroup()` builder functions (if DSL builders are desired) |
-| `pages-ui` | `src/component-desugar.ts` | Add shorthand handlers for new types |
+| `pages-runtime` | `src/activation.ts` | Replace local `validateFormField()` with import of `validateField` from `@casehubio/pages-component` |
+
+**Not modified (intentional):**
+- `pages-component/src/model/field-access.ts` — `readFieldValue`'s existing duck-typing (`"currentValue" in element ? element.currentValue : element.value`) already handles FormValueProvider-conformant elements. No modification needed.
+- `pages-runtime/src/activation.ts` `DATA_COMPONENT_TYPES` — composites are NOT registered here. They are internal rendering primitives created programmatically by PagesSchemaForm and by each other during recursive traversal, not standalone DSL/YAML component types. They don't go through the activation callback and would fail if cast to `PagesElement<VizComponentProps>`.
+- `pages-ui/src/dsl/builders.ts` — no builder functions for composites. These components are never authored in DSL or YAML.
+- `pages-ui/src/component-desugar.ts` — no desugar handlers for composites.
 
 ### Dependencies
 
@@ -930,7 +1002,7 @@ Each component validates its own sub-schema via `validate(): boolean`. The exist
 - YAML with oneOf schema → variant-group renders, switching works
 - Nested form in formScope → composite registers as opaque field, formScope collects nested value
 - formScope `validateAll()` calls composite `validate()` → errors surface at nested level
-- Pipeline adapter: flat projection reads leaf columns, JSON column reads/writes JSON
+- Pipeline adapter: flat projection reads leaf columns, parses JSON for nested sub-trees
 - Standalone (no pipeline): create mode with nested schema, submit emits structured record
 - `$ref` schema with definitions → resolved before rendering, form works
 - `x-renderer` with conformant element → renders and collects values
