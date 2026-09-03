@@ -112,3 +112,16 @@
 **Sources:** Issue #222 scope discussion
 **Exploration:** quick
 **Status:** captured
+
+## D11: Component base class — PagesContentElement
+
+**Choice:** The three new components (pages-object-group, pages-array-group, pages-variant-group) extend PagesContentElement. They are pure renderers: receive values from their parent, not from the pipeline. PagesSchemaForm remains the sole pipeline participant.
+**Alternatives:**
+- Plain LitElement — lighter but loses the `props` convention that all pages-viz components share
+- PagesFormInput — has `currentValue` and `dataSet`, but `dataSet` binding doesn't apply to nested sub-components that receive values from their parent
+**Rationale:** PagesContentElement is "props trigger render, no data machinery" — exactly the contract for nested sub-components. The FormValueProvider protocol (currentValue/value/error) is implemented directly on each component as an additional interface.
+**Trade-offs:** PagesContentElement provides `renderContent(props)` without a `dataset` parameter. Nested components receive their value via a separate `value` property, not through the PagesElement data pipeline. This is the correct separation.
+**Depends on:** D3 (three new component types), D4 (FormValueProvider protocol)
+**Sources:** PagesContentElement (pages-viz base class), web-component-strategy protocol (Lit base class hierarchy)
+**Exploration:** quick
+**Status:** captured
