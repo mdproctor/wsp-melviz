@@ -1,0 +1,15 @@
+# Work Plan — issue-372-pages-code-editor
+
+## State
+branch: issue-372-pages-code-editor
+state: scaffolded
+project-sha: slot-creation
+date: 2026-09-03
+issue-repo: casehubio/casehub-pages
+covers: 372
+design-repo: project
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#372 — Issue #372 ← active
