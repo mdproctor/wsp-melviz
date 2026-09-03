@@ -184,6 +184,7 @@ Renders a fieldset for an object sub-schema.
 @property({ type: Boolean }) editable = false;
 @property({ type: Boolean }) required = false;
 @property({ type: Boolean }) collapsible = false;
+@property({ type: Boolean }) validateOnBlur = false;
 @state() private _collapsed = false;
 ```
 
@@ -271,6 +272,7 @@ Renders a list of items with add/remove/reorder controls.
 @property({ attribute: false }) fieldName: string;
 @property({ type: Boolean }) editable = false;
 @property({ type: Boolean }) required = false;
+@property({ type: Boolean }) validateOnBlur = false;
 @state() private _items: ArrayItem[] = [];
 private _nextKey = 0;
 
@@ -560,6 +562,25 @@ private _onChildFieldChange = (e: Event): void => {
   if (!detail.committed) return; // only re-emit committed changes
 
   e.stopPropagation();
+
+  // Blur-time validation: validate the changed child before re-emitting
+  if (this.validateOnBlur) {
+    const childField = detail.field;
+    const child = this._children.get(childField);
+    if (child) {
+      if (isFormValueProvider(child)) {
+        child.validate();
+      } else {
+        const fieldSchema = this.schema.properties?.[childField];
+        if (fieldSchema) {
+          const requiredSet = new Set(this.schema.required ?? []);
+          const error = validateField(fieldSchema, detail.value, requiredSet.has(childField));
+          setFieldError(child, this._childTypes.get(childField) ?? "input", error ?? undefined);
+        }
+      }
+    }
+  }
+
   this.dispatchEvent(new CustomEvent("pages-field-change", {
     bubbles: true, composed: true,
     detail: {
@@ -590,6 +611,7 @@ formScope treats composite components as single opaque fields:
 ```typescript
 validateAll(): Record<string, string> {
   this.pruneDisconnected();
+  const requiredSet = new Set(this.schema?.required ?? []);
   const errors: Record<string, string> = {};
 
   for (const [field, entry] of this.fields) {
@@ -638,6 +660,7 @@ Defined in `pages-component/src/model/form-value-provider.ts` alongside the inte
 **FieldSchema additions:** `FieldSchema` gains `$defs` and `definitions` fields to support `$ref` resolution with type safety:
 
 ```typescript
+readonly $ref?: string;
 readonly $defs?: Readonly<Record<string, FieldSchema>>;
 readonly definitions?: Readonly<Record<string, FieldSchema>>;
 ```
@@ -657,7 +680,7 @@ function resolveNode(
   defs: Record<string, FieldSchema>,
   visiting: Set<string>,
 ): FieldSchema {
-  const ref = (node as any).$ref as string | undefined;
+  const ref = node.$ref;
   if (ref) {
     const defName = ref.replace(/^#\/\$defs\/|^#\/definitions\//, "");
     if (visiting.has(defName)) return {}; // cycle detected — terminal empty schema
@@ -920,7 +943,7 @@ if (typeof value === "number") {
 | Package | File | Change |
 |---------|------|--------|
 | `pages-component` | `src/model/index.ts` | Export `FormValueProvider`, `isFormValueProvider`, `FormValueMixin`, `resolveSchemaRefs` |
-| `pages-component` | `src/model/form-input-types.ts` | Add `$defs` and `definitions` fields to `FieldSchema` |
+| `pages-component` | `src/model/form-input-types.ts` | Add `$ref`, `$defs`, and `definitions` fields to `FieldSchema` |
 | `pages-component` | `src/model/field-validation.ts` | Add `exclusiveMinimum`/`exclusiveMaximum` checks to `validateField()` |
 | `pages-viz` | `src/form-inputs/schema-types.ts` | Extend `mapFieldToComponentType` with composite types and type-array normalization |
 | `pages-viz` | `src/form-inputs/PagesSchemaForm.ts` | Call `resolveSchemaRefs` on schema; add `validate()` method (FormValueProvider conformance); replace inline `announce()` with `createLiveRegionHelper()`; use shared rendering loop; extract record from dataset via adapter; pass sub-values to composite children |
