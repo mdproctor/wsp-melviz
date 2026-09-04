@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-222-schema-form-nested
-state: scaffolded
+state: active
 project-sha: fd411e1945c350af706240b66b9d1321a9f105d0
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
@@ -13,15 +13,15 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#222 — Issue #222 ← active
-  - [ ] Batch 1: Foundation
-    - [ ] Task 1: FormValueProvider interface and FieldSchema additions
-    - [ ] Task 2: FormValueMixin
-    - [ ] Task 3: resolveSchemaRefs and mapFieldToComponentType
-  - [ ] Batch 2: Object Nesting
-    - [ ] Task 4: pages-object-group component
-    - [ ] Task 5: PagesSchemaForm recursive rendering
-  - [ ] Batch 3: Arrays
-    - [ ] Task 6: pages-array-group component
-  - [ ] Batch 4: Variants and Integration
-    - [ ] Task 7: pages-variant-group component
-    - [ ] Task 8: Custom renderers and formScope and pipeline adapter
+  - [x] Batch 1: Foundation
+    - [x] Task 1: FormValueProvider interface and FieldSchema additions
+    - [x] Task 2: FormValueMixin
+    - [x] Task 3: resolveSchemaRefs and mapFieldToComponentType
+  - [x] Batch 2: Object Nesting
+    - [x] Task 4: pages-object-group component
+    - [x] Task 5: PagesSchemaForm recursive rendering
+  - [x] Batch 3: Arrays
+    - [x] Task 6: pages-array-group component
+  - [x] Batch 4: Variants and Integration
+    - [x] Task 7: pages-variant-group component
+    - [x] Task 8: Custom renderers and formScope and pipeline adapter
