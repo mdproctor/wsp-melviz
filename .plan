@@ -1,0 +1,15 @@
+# Work Plan — issue-406-sse-event-connection
+
+## State
+branch: issue-406-sse-event-connection
+state: scaffolded
+project-sha: 70a2d3317e94f06008bd0908c09028864a86a8cf
+date: 2026-09-04
+issue-repo: casehubio/casehub-pages
+covers: 406
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#406 — Issue #406 ← active
