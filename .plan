@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-222-schema-form-nested
-state: active
+state: closing:promoted
 project-sha: fd411e1945c350af706240b66b9d1321a9f105d0
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#222 — Issue #222 ← active
   - [x] Batch 1: Foundation
