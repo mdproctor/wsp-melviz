@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-372-pages-code-editor
-state: active
+state: closing:promoted
 project-sha: slot-creation
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: project
 design-section-hashes: 
 flyway-next-v: unknown
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#372 — Issue #372 ← active
   - [x] Batch 1: Package scaffold
