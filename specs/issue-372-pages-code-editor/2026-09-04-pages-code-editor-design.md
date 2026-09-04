@@ -9,28 +9,61 @@
 Three deliverables:
 
 1. **`<pages-code-editor>`** — a reusable Web Component for editing/viewing structured text with syntax highlighting, built on CodeMirror 6
-2. **Export promotion** — document `exportDiagram()` availability from `@casehubio/pages-diagram-core` in the graph-renderer consumer guide
-3. **Standalone diagram export tool** — an example page composing the code editor with graph canvas and export buttons
+2. **Export promotion** — move `exportDiagram()` from `@casehubio/pages-diagram-core` to `@casehubio/graph-renderer`, consolidating React Flow DOM coupling in the rendering layer
+3. **Standalone diagram export tool** — a standalone HTML entry point composing the code editor with graph canvas and export buttons
 
-The editor is designed for a future where CaseHub YAML and jq expressions have context-aware completion via a Language Server Protocol (LSP) server, and where the same language intelligence powers VS Code and IntelliJ plugins. The LSP server is a separate effort (D8); this branch ships the editor with basic syntax highlighting.
+The editor is designed for a future where CaseHub YAML and jq expressions have context-aware completion via a Language Server Protocol (LSP) server, and where the same language intelligence powers VS Code and IntelliJ plugins. The LSP server is a separate effort (D8, tracked as casehubio/casehub-pages#407); this branch ships the editor with basic syntax highlighting.
 
 ## 1. Component: `<pages-code-editor>`
 
 ### Package placement
 
-In `@casehubio/pages-ui-components`, following the established `src/{name}/pages-{name}.ts` pattern. Files:
+Standalone package `@casehubio/pages-code-editor`, following the `@casehubio/pages-table` precedent — heavyweight components with their own dependency profile and architectural complexity live in their own packages. `pages-ui-components` is a collection of lightweight form primitives (`PagesInput`, `PagesSelect`, `PagesTextarea`, etc.) whose only third-party dependency is `lit`. Adding six `@codemirror/*` packages (40-80KB gzipped) would fundamentally change its character.
 
 ```
-packages/pages-ui-components/src/
-  code-editor/
+packages/pages-code-editor/
+  package.json
+  tsconfig.json
+  tsconfig.build.json
+  src/
     pages-code-editor.ts       # LitElement wrapping CodeMirror 6
     pages-code-editor.test.ts  # Vitest unit tests
     index.ts                   # Barrel re-export
 ```
 
+Package structure:
+
+```json
+{
+  "name": "@casehubio/pages-code-editor",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": ["./dist/index.js", "./src/index.ts"],
+  "dependencies": {
+    "@codemirror/view": "^6.x",
+    "@codemirror/state": "^6.x",
+    "@codemirror/language": "^6.x",
+    "@codemirror/lang-yaml": "^6.x",
+    "@codemirror/lang-json": "^6.x",
+    "@codemirror/commands": "^6.x",
+    "lit": "^3.3.3"
+  },
+  "devDependencies": {
+    "@casehubio/pages-tsconfig": "workspace:*",
+    "jsdom": "^26.0.0",
+    "rimraf": "^6.1.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.1"
+  }
+}
+```
+
+The code editor is for programmatic use — it is not registered as a component type in the YAML dashboard component model (no three-point registration needed).
+
 ### Dependencies
 
-New npm dependencies for `pages-ui-components`:
+New npm dependencies for `pages-code-editor`:
 
 - `@codemirror/view` — EditorView, themes, DOM integration
 - `@codemirror/state` — EditorState, transactions, extensions
@@ -60,6 +93,9 @@ class PagesCodeEditor extends LitElement {
   @property({ type: Number, attribute: 'tab-size' })
   tabSize = 2;
 
+  @property({ type: String })
+  label: string | undefined;
+
   @property({ attribute: false })
   extensions: Extension[] = [];
 }
@@ -76,64 +112,132 @@ class PagesCodeEditor extends LitElement {
 | `readonly` | `boolean` | `false` | `readonly` | When true, the editor is not editable. Reflects to attribute for CSS styling (`:host([readonly])`). |
 | `lineNumbers` | `boolean` | `true` | `line-numbers` | Show/hide the line number gutter. |
 | `tabSize` | `number` | `2` | `tab-size` | Spaces per tab/indent level. |
+| `label` | `string \| undefined` | `undefined` | `label` | Accessible label for the editor. Sets `aria-label` on the CodeMirror content area via `EditorView.contentAttributes`. |
 | `extensions` | `Extension[]` | `[]` | none | CodeMirror extensions for LSP client, custom keybindings, or other plugins. Not settable via HTML attribute. |
 
 ### Events
 
 | Event | When | Detail |
 |-------|------|--------|
-| `input` | Every document change | `{ value: string }` — the new document content |
-| `change` | Editor loses focus after content changed | `{ value: string }` — the final document content |
+| `input` | Every document change | None — read `event.target.value` |
+| `change` | Editor loses focus after content changed | None — read `event.target.value` |
 
-Both events dispatch with `bubbles: true, composed: true` to cross shadow DOM boundaries, consistent with other pages-ui-components.
+Both events dispatch as plain `Event` with `bubbles: true, composed: true`, consistent with the `pages-ui-components` convention (`PagesInput`, `PagesTextarea`). Consumers read the value from `event.target.value`, where `event.target` is the `<pages-code-editor>` element (shadow DOM re-targets the event). The component's `value` property is updated before the event fires.
 
 ### CodeMirror integration
 
-**Mounting:** CodeMirror's `EditorView` is created in `firstUpdated()` and mounted into a container `<div>` inside the shadow root. The view is destroyed in `disconnectedCallback()`.
+**Mounting:** CodeMirror's `EditorView` is created when the component connects to the DOM and the shadow root is available. To handle the Lit lifecycle correctly — where `disconnectedCallback()` fires on every DOM removal but `firstUpdated()` fires only once — creation uses a guard pattern:
 
 ```typescript
+private _editorView: EditorView | null = null;
+private _pendingCreate = false;
+
+override connectedCallback() {
+  super.connectedCallback();
+  if (!this._editorView) {
+    this._pendingCreate = true;
+  }
+}
+
 override firstUpdated() {
+  this._createEditor();
+}
+
+override updated(changed: PropertyValues) {
+  if (this._pendingCreate && !this._editorView) {
+    this._createEditor();
+  }
+  if (this._editorView) {
+    this._syncProperties(changed);
+  }
+}
+
+override disconnectedCallback() {
+  this._editorView?.destroy();
+  this._editorView = null;
+  super.disconnectedCallback();
+}
+
+private _createEditor() {
+  this._pendingCreate = false;
   const container = this.shadowRoot!.querySelector('.cm-host')!;
-  this.editorView = new EditorView({
+  this._editorView = new EditorView({
     state: this.createEditorState(),
     parent: container,
   });
 }
-
-override disconnectedCallback() {
-  this.editorView?.destroy();
-  super.disconnectedCallback();
-}
 ```
 
-**State management:** When `value` changes externally (property set), dispatch a transaction to replace the document content — but only if the new value differs from the current document to avoid cursor disruption:
+This ensures:
+- First creation happens after `firstUpdated()` when the shadow DOM is ready
+- Re-insertion after removal (conditional rendering, tab switching) recreates the editor via `updated()`
+- No double-creation (guard on `_editorView` nullness)
+
+**Dynamic property reconfiguration:** When properties change externally, `_syncProperties()` dispatches the appropriate reconfiguration transactions. Each reconfigurable property uses a CodeMirror `Compartment` — the mechanism for dynamically replacing extensions at runtime:
 
 ```typescript
-override updated(changed: PropertyValues) {
-  if (changed.has('value') && this.editorView) {
-    const current = this.editorView.state.doc.toString();
+private _languageCompartment = new Compartment();
+private _readonlyCompartment = new Compartment();
+private _lineNumbersCompartment = new Compartment();
+private _tabSizeCompartment = new Compartment();
+
+private _syncProperties(changed: PropertyValues) {
+  if (!this._editorView) return;
+
+  if (changed.has('value')) {
+    const current = this._editorView.state.doc.toString();
     if (current !== this.value) {
-      this.editorView.dispatch({
+      this._editorView.dispatch({
         changes: { from: 0, to: current.length, insert: this.value },
       });
     }
   }
+
+  if (changed.has('language')) {
+    this._editorView.dispatch({
+      effects: this._languageCompartment.reconfigure(
+        this.language === 'json' ? json() : yaml()
+      ),
+    });
+  }
+
+  if (changed.has('readonly')) {
+    this._editorView.dispatch({
+      effects: this._readonlyCompartment.reconfigure(
+        EditorState.readOnly.of(this.readonly)
+      ),
+    });
+  }
+
+  if (changed.has('lineNumbers')) {
+    this._editorView.dispatch({
+      effects: this._lineNumbersCompartment.reconfigure(
+        this.lineNumbers ? lineNumbers() : []
+      ),
+    });
+  }
+
+  if (changed.has('tabSize')) {
+    this._editorView.dispatch({
+      effects: this._tabSizeCompartment.reconfigure(
+        indentUnit.of(' '.repeat(this.tabSize))
+      ),
+    });
+  }
 }
 ```
-
-**Language switching:** When the `language` property changes, reconfigure the editor state with the appropriate Lezer grammar. Use `EditorView.dispatch()` with a `reconfigure` effect.
 
 **Extensions composition:** The editor composes its base extensions with user-provided extensions:
 
 ```
 base extensions = [
-  lineNumbers() | [],           // conditional on lineNumbers property
-  languageExtension(language),  // yaml() or json()
-  indentUnit.of(' '.repeat(tabSize)),
-  pagesTheme,                   // maps --pages-* tokens to CodeMirror theme
-  EditorState.readOnly.of(readonly),
-  updateListener,               // dispatches input/change events
-  ...extensions,                // user-provided (LSP client, etc.)
+  lineNumbersCompartment.of(lineNumbers() | []),
+  languageCompartment.of(yaml() | json()),
+  tabSizeCompartment.of(indentUnit.of('  ')),
+  readonlyCompartment.of(EditorState.readOnly.of(false)),
+  pagesTheme,
+  updateListener,
+  ...extensions,
 ]
 ```
 
@@ -182,26 +286,46 @@ CodeMirror 6 provides built-in accessibility:
 - Tab key: by default CodeMirror traps Tab for indentation. Provide an Escape-then-Tab pattern to allow keyboard users to leave the editor (CodeMirror's default `keymap` includes this).
 
 The component adds:
-- `aria-label` via a `label` property or slot
+- `aria-label` via the `label` property, applied to the CodeMirror content area via `EditorView.contentAttributes`
 - `aria-readonly` when `readonly` is true
+
+### Relationship to existing editors
+
+The pages monorepo has three existing editor/viewer components:
+
+| Component | Package | Role | Relationship to pages-code-editor |
+|-----------|---------|------|-----------------------------------|
+| `PagesPromptEditor` | `pages-diagram-core` | Lightweight textarea for diagram property editing | Stays as-is. Zero third-party deps, serves its purpose. The code editor is an upgrade path for cases needing syntax highlighting, not a replacement. |
+| `PagesJsonViewer` | `pages-diagram-core` | Read-only `<pre>` JSON display | Stays as-is. Trivially simple, no CodeMirror needed. |
+| `PagesScenarioYamlViewer` | `pages-aria` | Scenario-aware YAML viewer with step highlighting, drag/resize, guide tab | Could use `pages-code-editor` as its rendering engine in a future refactor, but this is a separate effort — the viewer is deeply coupled to the scenario system (`ScenarioConnectionController`, step line mapping, guide tab). |
+
+`yaml-highlighter.ts` (in `pages-aria`) provides the custom YAML tokenizer used by `PagesScenarioYamlViewer`. It remains until any future migration of that component to CodeMirror.
+
+No consolidation or breaking changes to existing components in #372 scope.
 
 ## 2. Export Promotion
 
-`exportDiagram()` remains in `@casehubio/pages-diagram-core`. The function depends on React Flow DOM internals (`.react-flow__viewport`) and `html-to-image@1.11.11` — both belong in diagram-core.
+Move `exportDiagram()` from `@casehubio/pages-diagram-core` to `@casehubio/graph-renderer`, as requested by issue #372.
 
-The dependency direction is `pages-diagram-core → graph-renderer` (not the reverse). Re-exporting from graph-renderer would create a circular dependency.
+**Rationale:** `exportDiagram()` queries `.react-flow__viewport` — this is React Flow DOM coupling that belongs in the package that owns React Flow rendering (`graph-renderer`). The `html-to-image` dependency moves with it. This consolidates all React Flow DOM access in one package and removes `html-to-image` from `pages-diagram-core`'s dependency list.
 
-**Action:** Add a section to `docs/guides/consumer-guide.md` documenting that diagram export is available via:
+**Dependency safety:** The dependency direction is `pages-diagram-core → graph-renderer` (diagram-core depends on graph-renderer, not the reverse). Moving `exportDiagram()` INTO `graph-renderer` means diagram-core imports it from there — the dependency direction is unchanged, no cycle is created.
+
+**What moves:** `exportDiagram()`, `computeNodeBounds()`, `computeExportViewport()`, `ExportBounds`, `ExportViewport`, `ExportFormat` types, and the `html-to-image` dependency.
+
+**Diagram-core update:** Remove `diagram-export.ts`, remove `html-to-image` from dependencies, update imports to re-import from `@casehubio/graph-renderer`.
+
+**Consumer guide update:** Add export documentation to `docs/guides/consumer-guide.md` referencing `@casehubio/graph-renderer`:
 
 ```typescript
-import { exportDiagram } from '@casehubio/pages-diagram-core';
+import { exportDiagram } from '@casehubio/graph-renderer';
 ```
 
-With usage examples for SVG and PNG export.
+Fix the stale component name reference in the consumer guide: currently says `<casehub-diagram-canvas>` (`CasehubDiagramCanvas`) but the actual component is `<pages-graph-canvas>` (`GraphCanvas`).
 
 ## 3. Standalone Diagram Export Tool
 
-A new example page in `examples/` that provides a standalone diagram editing and export environment.
+A standalone HTML entry point in `examples/` that provides a diagram editing and export environment. Per issue #372: "A standalone HTML entry point (not embedded in a shell app)."
 
 ### Layout
 
@@ -224,26 +348,40 @@ Side-by-side split: code editor on the left, graph canvas on the right. Export b
 ### Data flow
 
 1. User edits YAML in `<pages-code-editor>`
-2. `input` event fires with the new YAML content
+2. `input` event fires — parent reads `event.target.value`
 3. Parent page parses YAML via `js-yaml` (or the pages YAML parser)
 4. Parsed model is fed to `<pages-graph-canvas>` as graph data
 5. Canvas renders the diagram
-6. Export buttons call `exportDiagram(canvasElement, nodes, format)` from `pages-diagram-core`
+6. Export buttons call `exportDiagram(canvasElement, nodes, format)` from `@casehubio/graph-renderer`
 
 ### File structure
 
 ```
-examples/src/pages/
-  diagram-export-tool.ts    # The page component
+examples/
+  src/
+    diagram-export-tool.ts    # Entry point and page component
+  diagram-export-tool.html    # Standalone HTML page
 ```
 
-Registered as a route in the existing examples router. Accessible at `localhost:8080/diagram-export-tool` (or similar path in the examples dev server).
+The tool is a separate webpack entry point, independent of the examples gallery:
+
+```javascript
+// webpack.config.js additions
+entry: {
+  "casehub-bundle": path.resolve(__dirname, "src/casehub-entry.ts"),
+  "diagram-export-tool": path.resolve(__dirname, "src/diagram-export-tool.ts"),
+}
+```
+
+Accessible at `localhost:8080/diagram-export-tool.html` during development.
+
+The examples gallery (`app.js`) is a vanilla JS YAML dashboard gallery driven by `samples.json` and hash-based navigation — it has no TypeScript SPA router and no `pages/` directory structure. The diagram export tool is a separate standalone page, not a gallery sample.
 
 ### Error handling
 
 Invalid YAML displays a diagnostic banner between the toolbar and the editor/canvas split, showing the parse error with line number. The previous valid diagram remains rendered — the canvas is not cleared on parse errors.
 
-## 4. Future: Language Server (D8, separate issue)
+## 4. Future: Language Server (D8)
 
 Not in scope for #372, but the architecture is designed for it:
 
@@ -255,40 +393,45 @@ Not in scope for #372, but the architecture is designed for it:
 - **IDE plugins** (VS Code, IntelliJ) use their native editors + the same LSP server
 - **Visual form view** — a complementary guided form UI over the same YAML document model, using the LSP schema for field definitions and validation. The `value` property is the shared state between text and form views.
 
-A new GitHub issue will be created for the LSP server effort during implementation planning.
+Tracked as casehubio/casehub-pages#407.
 
 ## Testing Strategy
 
 ### Unit tests (Vitest + jsdom)
 
-- Property reflection: setting `value`, `language`, `readonly`, `lineNumbers`, `tabSize`
+- Property reflection: setting `value`, `language`, `readonly`, `lineNumbers`, `tabSize`, `label`
+- Extension composition: custom extensions are composed with base extensions
+- Compartment reconfiguration: property changes dispatch correct effects
+
+### Integration tests (Playwright)
+
+CodeMirror 6 uses `contenteditable`, `Selection`, `Range`, `getComputedStyle`, and `MutationObserver` — several of which jsdom doesn't fully support. Tests involving actual editor rendering require a real browser:
+
+- CodeMirror mounts and renders within shadow DOM
 - Event dispatch: `input` fires on content change, `change` fires on blur
 - Language switching: reconfigures grammar without losing content
 - Readonly mode: editor rejects input when `readonly` is true
-- Extensions: custom extensions are composed with base extensions
-
-### Integration tests
-
-- CodeMirror mounts and renders within shadow DOM
 - Theme tokens apply correctly (custom properties cascade through shadow boundary)
+- Re-insertion after DOM removal: editor recreates correctly
 - The standalone export tool page loads and renders both editor and canvas
+
+The existing Playwright config (`examples/playwright.config.ts`) provides the infrastructure.
 
 ### Not tested in #372
 
-- LSP integration (future)
-- Context-aware completion (future)
+- LSP integration (future, #407)
+- Context-aware completion (future, #407)
 - Visual form view (future)
 
 ## References
 
 - [packages/pages-aria/src/controller/yaml-highlighter.ts] — existing YAML tokenizer (stays in pages-aria)
 - [packages/pages-aria/src/controller/scenario-yaml-viewer.ts] — existing YAML viewer component
-- [packages/pages-diagram-core/src/diagram-export.ts] — exportDiagram() function
-- [packages/pages-ui-components/] — target package for the new component
+- [packages/pages-diagram-core/src/diagram-export.ts] — exportDiagram() function (moving to graph-renderer)
 - [GE-20260706-9335b9] — Shadow DOM CSS custom property overrides
 - [GE-20260712-f5b872] — CSS custom properties cascade through shadow DOM
 - [GE-20260810-8df51b] — LitElement defaults to display:inline
 - [GE-20260818-f0257a] — Shadow-aware CSS injection with WeakMap ref-counting
-- [GE-20260823-590f19] — Three-point registration for new component types
 - [GE-20260813-674be0] — YAML desugarer drops unknown component props silently
 - [casehubio/casehub-pages#372] — Issue: pages-code-editor component with YAML syntax highlighting
+- [casehubio/casehub-pages#407] — Issue: LSP server for CaseHub YAML and jq (D8)
