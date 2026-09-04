@@ -49,29 +49,30 @@
 **Status:** revised
 **Supersedes:** Previous D4 (custom stateful tokenizer interface)
 
-## D5: Package placement — pages-ui-components
+## D5: Package placement — standalone @casehubio/pages-code-editor
 
-**Choice:** Add pages-code-editor as a new component in the existing pages-ui-components package, following the `src/{name}/pages-{name}.ts` pattern.
+**Choice:** Create a standalone `@casehubio/pages-code-editor` package, following the `@casehubio/pages-table` precedent — heavyweight components with their own dependency profile live in their own packages.
 **Alternatives:**
-- New standalone package — more isolation but adds build config, package.json, tsconfig overhead for no benefit (no heavy unique dependencies)
-**Rationale:** Follows established conventions. The component uses Lit 3, pages design tokens, and shadow DOM — identical stack to existing components. No new package infrastructure needed.
-**Trade-offs:** pages-ui-components grows slightly larger, but it's already the component collection package.
-**Sources:** packages/pages-ui-components/package.json, packages/pages-ui-components/src/ directory structure
-**Exploration:** quick
-**Status:** captured
-
-## D6: Export promotion — keep in pages-diagram-core, document
-
-**Choice:** Keep exportDiagram() in pages-diagram-core. Do not re-export from graph-renderer. Instead, document in graph-renderer's README that export functionality is available via `@casehubio/pages-diagram-core`.
-**Alternatives:**
-- Re-export from graph-renderer — creates a circular dependency (pages-diagram-core depends on graph-renderer, not the other way around)
-- Move to graph-renderer — adds html-to-image dependency to a pure React Flow/ELK rendering bridge
-- New pages-export-utils package — over-engineered for one function
-**Rationale:** The actual dependency direction is pages-diagram-core → graph-renderer. Re-exporting from graph-renderer would require adding pages-diagram-core as a dependency of graph-renderer, creating a cycle. The function depends on React Flow DOM internals (.react-flow__viewport) and html-to-image — both belong in diagram-core.
-**Trade-offs:** Consumers must know to import from pages-diagram-core for export. Documentation bridges the discoverability gap.
-**Sources:** packages/pages-diagram-core/package.json (depends on graph-renderer), packages/graph-renderer/package.json (no diagram-core dependency), decision review R1-02
+- In pages-ui-components — pages-ui-components is lightweight form primitives (only `lit` as third-party dep). Adding 6 `@codemirror/*` packages (40-80KB gzipped) fundamentally changes its character and bloats every consumer's install.
+**Rationale:** pages-table already established the pattern: complex standalone components with unique dependencies get their own package. The code editor has 6 CodeMirror packages — a distinct dependency profile from the lightweight form primitives in pages-ui-components.
+**Trade-offs:** Adds a new package to the monorepo (package.json, tsconfig, build script entry). Justified by dependency isolation.
+**Sources:** packages/pages-table/ (precedent), spec review R1-02
 **Exploration:** quick
 **Status:** revised
+**Supersedes:** Previous D5 (pages-ui-components)
+
+## D6: Export promotion — move to graph-renderer
+
+**Choice:** Move `exportDiagram()`, `computeNodeBounds()`, `computeExportViewport()`, types, and `html-to-image@1.11.11` from pages-diagram-core to graph-renderer, as issue #372 requests.
+**Alternatives:**
+- Keep in pages-diagram-core with documentation — was the previous D6 decision, but spec review R1-05 showed the move is safe: the dependency direction is diagram-core → graph-renderer, so moving export INTO graph-renderer means diagram-core imports from there with no cycle
+- Re-export from graph-renderer — would create a cycle if graph-renderer depended on diagram-core, but the actual direction makes a move (not re-export) the right approach
+**Rationale:** `exportDiagram()` queries `.react-flow__viewport` — this is React Flow DOM coupling that belongs in the package that owns React Flow rendering. Moving it consolidates all React Flow DOM access in graph-renderer and removes `html-to-image` from diagram-core.
+**Trade-offs:** graph-renderer gains the `html-to-image` dependency (pinned at 1.11.11). Acceptable — export is a rendering concern.
+**Sources:** casehubio/casehub-pages#372, spec review R1-05
+**Exploration:** quick
+**Status:** revised
+**Supersedes:** Previous D6 (keep in diagram-core)
 
 ## D7: Standalone tool location — examples/
 

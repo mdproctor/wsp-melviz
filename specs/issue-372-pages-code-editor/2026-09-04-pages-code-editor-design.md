@@ -180,6 +180,8 @@ private _languageCompartment = new Compartment();
 private _readonlyCompartment = new Compartment();
 private _lineNumbersCompartment = new Compartment();
 private _tabSizeCompartment = new Compartment();
+private _labelCompartment = new Compartment();
+private _extensionsCompartment = new Compartment();
 
 private _syncProperties(changed: PropertyValues) {
   if (!this._editorView) return;
@@ -224,6 +226,22 @@ private _syncProperties(changed: PropertyValues) {
       ),
     });
   }
+
+  if (changed.has('label')) {
+    this._editorView.dispatch({
+      effects: this._labelCompartment.reconfigure(
+        EditorView.contentAttributes.of(
+          this.label ? { 'aria-label': this.label } : {}
+        )
+      ),
+    });
+  }
+
+  if (changed.has('extensions')) {
+    this._editorView.dispatch({
+      effects: this._extensionsCompartment.reconfigure(this.extensions),
+    });
+  }
 }
 ```
 
@@ -235,9 +253,10 @@ base extensions = [
   languageCompartment.of(yaml() | json()),
   tabSizeCompartment.of(indentUnit.of('  ')),
   readonlyCompartment.of(EditorState.readOnly.of(false)),
+  labelCompartment.of(EditorView.contentAttributes.of(label ? { 'aria-label': label } : {})),
   pagesTheme,
   updateListener,
-  ...extensions,
+  extensionsCompartment.of(extensions),
 ]
 ```
 
@@ -248,10 +267,14 @@ CodeMirror 6 themes are defined via `EditorView.theme()`. The pages theme maps `
 ```typescript
 const pagesTheme = EditorView.theme({
   '&': {
+    height: '100%',
     fontFamily: 'var(--pages-font-mono, monospace)',
     fontSize: 'var(--pages-font-size-sm, 13px)',
     backgroundColor: 'var(--pages-neutral-1, #fafafa)',
     color: 'var(--pages-neutral-12, #1a1a1a)',
+  },
+  '.cm-scroller': {
+    overflow: 'auto',
   },
   '.cm-gutters': {
     backgroundColor: 'var(--pages-neutral-2, #f5f5f5)',
@@ -273,7 +296,7 @@ CodeMirror injects styles into its parent container. Inside shadow DOM, this wor
 
 - **`:host { display: block }`** — prevent the LitElement display:inline gotcha (GE-20260810-8df51b)
 - **`:host { position: relative }`** — CodeMirror needs a positioned container
-- **Height:** `:host` should have a default min-height but be resizable via CSS. Default to `height: 300px` with `resize: vertical; overflow: auto`.
+- **Height:** `:host` provides outer dimensions: `height: 300px; overflow: hidden; resize: vertical;` (`overflow: hidden` enables the resize handle). The CodeMirror theme sets `'&': { height: '100%' }` and `'.cm-scroller': { overflow: 'auto' }` so CM6's internal scroller handles scrolling — this preserves virtual rendering, scroll-to-cursor, and sticky line number gutter. Do NOT put `overflow: auto` on `:host` — it breaks CM6's scroll management.
 - **Theme token inheritance:** CSS custom properties cascade through shadow DOM (GE-20260712-f5b872). The component does NOT redeclare `--pages-*` tokens internally — it inherits them from the document-level theme (GE-20260706-9335b9).
 
 ### Accessibility
@@ -313,7 +336,11 @@ Move `exportDiagram()` from `@casehubio/pages-diagram-core` to `@casehubio/graph
 
 **What moves:** `exportDiagram()`, `computeNodeBounds()`, `computeExportViewport()`, `ExportBounds`, `ExportViewport`, `ExportFormat` types, and the `html-to-image` dependency.
 
-**Diagram-core update:** Remove `diagram-export.ts`, remove `html-to-image` from dependencies, update imports to re-import from `@casehubio/graph-renderer`.
+**Diagram-core update:** Remove `diagram-export.ts` and `diagram-export.test.ts` (58 lines, 7 test cases for `computeNodeBounds` and `computeExportViewport`). Remove `html-to-image` from dependencies. Update the existing caller in `diagram-base-mixin.ts` (line ~9: `import { exportDiagram } from './diagram-export.js'` → `import { exportDiagram } from '@casehubio/graph-renderer'`).
+
+**Version pin:** Maintain `html-to-image@1.11.11` (pinned — later versions have rendering bugs, per issue #372).
+
+**Build script:** Add `@casehubio/pages-code-editor` to the root `package.json` `build:packages` script. The existing `graph-renderer` already builds before `diagram-core` in the chain, so the export move does not affect build order.
 
 **Consumer guide update:** Add export documentation to `docs/guides/consumer-guide.md` referencing `@casehubio/graph-renderer`:
 
@@ -349,7 +376,7 @@ Side-by-side split: code editor on the left, graph canvas on the right. Export b
 
 1. User edits YAML in `<pages-code-editor>`
 2. `input` event fires — parent reads `event.target.value`
-3. Parent page parses YAML via `js-yaml` (or the pages YAML parser)
+3. Parent page parses YAML via the `yaml` package (v2.x — the YAML 1.2 parser used throughout the monorepo)
 4. Parsed model is fed to `<pages-graph-canvas>` as graph data
 5. Canvas renders the diagram
 6. Export buttons call `exportDiagram(canvasElement, nodes, format)` from `@casehubio/graph-renderer`
