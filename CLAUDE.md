@@ -1,7 +1,7 @@
 # casehub-pages Workspace
 
 **Name:** casehub-pages
-**Project repo:** /Users/mdproctor/claude/casehub/pages
+**Project repo:** proj/
 **Workspace type:** public
 
 ## Git Remotes
@@ -11,7 +11,7 @@
 
 ## Session Start
 
-Run `add-dir /Users/mdproctor/claude/casehub/pages` and `add-dir /Users/mdproctor/claude/public/casehub/pages` before any other work.
+Run `# add-dir removed — use proj/ symlink instead and `# add-dir removed — use proj/ symlink instead before any other work.
 
 ## Artifact Locations
 
@@ -38,13 +38,13 @@ Run `add-dir /Users/mdproctor/claude/casehub/pages` and `add-dir /Users/mdprocto
 ## Git Discipline
 
 Two git repositories are active in every session:
-- **Workspace** (`/Users/mdproctor/claude/public/casehub/pages`) — plans, blog (staging), snapshots, handover
-- **Project repo** (`/Users/mdproctor/claude/casehub/pages`) — source code, ADRs (`docs/adr/`), specs
+- **Workspace** (wksp/) — plans, blog (staging), snapshots, handover
+- **Project repo** (proj/) — source code, ADRs (`docs/adr/`), specs
 
 Never rely on CWD for git operations — the session may have started in either repo. Always use explicit paths:
 ```bash
-git -C /Users/mdproctor/claude/public/casehub/pages add <file>    # workspace artifacts
-git -C /Users/mdproctor/claude/casehub/pages add <file>      # project artifacts
+git -C proj/ add <file>    # workspace artifacts
+git -C proj/ add <file>      # project artifacts
 ```
 The file path determines the repo: if the file lives under the workspace path, use the workspace; if under the project path, use the project.
 
