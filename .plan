@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-406-sse-event-connection
-state: scaffolded
+state: active
 project-sha: 70a2d3317e94f06008bd0908c09028864a86a8cf
 date: 2026-09-04
 issue-repo: casehubio/casehub-pages
