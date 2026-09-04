@@ -22,3 +22,6 @@ flyway-next-v: unknown
   - [x] Batch 3: Standalone tool
     - [x] Task 5: Create diagram export tool page
     - [x] Task 6: Playwright integration tests
+- [ ] casehubio/casehub-pages#408 — schema-driven YAML completion for pages-code-editor
+- [ ] casehubio/casehub-pages#407 — LSP server for CaseHub YAML and jq
+- [ ] casehubio/casehub-pages#400 — YAML case definition diagram
