@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-372-pages-code-editor
-state: scaffolded
+state: active
 project-sha: slot-creation
 date: 2026-09-03
 issue-repo: casehubio/casehub-pages
@@ -13,3 +13,12 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#372 — Issue #372 ← active
+  - [ ] Batch 1: Package scaffold
+    - [ ] Task 1: Scaffold pages-code-editor package
+    - [ ] Task 2: Implement PagesCodeEditor component
+  - [ ] Batch 2: Export promotion
+    - [ ] Task 3: Move exportDiagram to graph-renderer
+    - [ ] Task 4: Update consumer guide docs
+  - [ ] Batch 3: Standalone tool
+    - [ ] Task 5: Create diagram export tool page
+    - [ ] Task 6: Playwright integration tests
