@@ -36,3 +36,16 @@
 **Exploration:** quick
 **Depends on:** D1 (schemas in pages-schema), D2 (discriminatedUnion structure)
 **Status:** captured
+
+## D4: Initial component scope
+
+**Choice:** All 45 component types
+**Alternatives:**
+- High-value subset (~15) — lower risk per PR but partial regression (some types lose even hardcoded completions)
+- Data components only (~20) — prioritises complex types but leaves layout/form types uncovered
+**Rationale:** The schemas are mechanical translations of existing TypeScript interfaces, not design work. Shipping all at once means completion is immediately better than the hardcoded list for every component type. Partial delivery risks regressing types that had some coverage in the hardcoded list.
+**Trade-offs:** Larger PR. More testing surface. Mitigated by the fact that each schema is independent and testable.
+**Sources:** packages/pages-component/src/model/type-guards.ts (ComponentTypeRegistry — 45 entries)
+**Exploration:** quick
+**Depends on:** D1 (schemas in pages-schema)
+**Status:** captured
