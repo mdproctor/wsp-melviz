@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-408-yaml-schema-completion
-state: active
+state: closing:promoted
 project-sha: slot-creation
 date: 2026-09-05
 issue-repo: 
@@ -11,5 +11,6 @@ design-repo: project
 design-section-hashes: 
 flyway-next-v: unknown
 
+evidence-era: true
 ## Queue
 (empty — issues created during design)
