@@ -13,9 +13,9 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#375 — Issue #375 ← active
-  - [ ] Batch 1: Palette caching
-    - [ ] Task 1: Element cache and accessors
-  - [ ] Batch 2: SchemaForm migration
-    - [ ] Task 2: Rewrite as palette wrapper
-  - [ ] Batch 3: Cleanup
-    - [ ] Task 3: Wire fieldsOnly and remove dead code
+  - [x] Batch 1: Palette caching
+    - [x] Task 1: Element cache and accessors
+  - [x] Batch 2: SchemaForm migration
+    - [x] Task 2: Rewrite as palette wrapper
+  - [x] Batch 3: Cleanup
+    - [x] Task 3: Wire fieldsOnly and remove dead code
