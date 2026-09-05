@@ -103,7 +103,11 @@ get currentValue(): Record<string, unknown> {
 }
 ```
 
-`validate()` delegates to the palette for leaf fields (reading error state) and to composite components via `FormValueProvider.validate()` for composites. `submit()` reads `currentValue`, fires `pages-record-create`, and announces via the live region — unchanged from current behavior.
+`validate()` works in two paths:
+- **Composites:** PagesSchemaForm holds references to composite elements created by the custom resolver. It calls `FormValueProvider.validate()` on each.
+- **Leaf fields:** PagesSchemaForm calls `validateField(fieldSchema, _dataMirror[field], required)` for each leaf field using the data mirror. To display errors on the palette's internal elements, the palette needs a new method: `setFieldErrors(errors: Map<string, string | undefined>)` that sets error state on cached elements by field key. This is a small palette API addition alongside the element caching fix (D4).
+
+`submit()` reads `currentValue`, fires `pages-record-create`, and announces via the live region — unchanged from current behavior.
 
 ### Schema Enrichment for Select Options (D5)
 
@@ -139,15 +143,30 @@ The palette's `PropertyPaletteSource.readonly` maps to PagesSchemaForm's display
 
 ### fieldsOnly Mode
 
-When `fieldsOnly` is true, PagesSchemaForm currently dispatches `pages-field-register` events for each child element. After migration, the palette owns the child elements. PagesSchemaForm accesses them via the custom resolver's render functions (for composites) and via the palette's element cache (for leaf fields — requires the palette to expose a `getFieldElement(key)` method or PagesSchemaForm to query the palette's shadow DOM).
+When `fieldsOnly` is true, PagesSchemaForm dispatches `pages-field-register` events for each child element so that external layout containers (FormScope) can position them.
 
-Alternative: PagesSchemaForm can continue to emit field-register events by querying the palette after render. The palette's `updateComplete` promise signals when rendering is done.
+After migration: composites are created by the custom resolver, so PagesSchemaForm holds direct references. For leaf fields, the palette's element cache (D4) exposes a `getFieldElement(key): HTMLElement | undefined` method. After the palette's `updateComplete`, PagesSchemaForm queries each field and dispatches registration events.
+
+```typescript
+if (this._fieldsOnly) {
+  await this._palette.updateComplete;
+  for (const field of fields) {
+    const element = compositeRefs.get(field) ?? this._palette.getFieldElement(field);
+    if (element) {
+      this.dispatchEvent(new CustomEvent('pages-field-register', {
+        bubbles: true, composed: true,
+        detail: { field, element, componentType: /* resolved type */ },
+      }));
+    }
+  }
+}
+```
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `packages/pages-property-palette/src/palette/pages-property-palette.ts` | Add element cache (D4), prune stale entries |
+| `packages/pages-property-palette/src/palette/pages-property-palette.ts` | Add element cache (D4), prune stale entries, add `getFieldElement(key)` and `setFieldErrors(errors)` public methods |
 | `packages/pages-viz/src/form-inputs/PagesSchemaForm.ts` | Rewrite to thin wrapper: build source, render palette, maintain data mirror |
 | `packages/pages-viz/src/form-inputs/schema-types.ts` | Keep `deriveSchemaFromDataSet` and `validateField` re-export; `mapFieldToComponentType` retained for composite components (they import it directly) |
 | `packages/pages-viz/package.json` | Add `@casehubio/pages-property-palette` dependency |
