@@ -23,3 +23,16 @@
 **Exploration:** deep-analysis
 **Depends on:** D1 (schemas live in pages-schema package)
 **Status:** captured
+
+## D3: Completion walker API
+
+**Choice:** Factory function `createSchemaCompletion(schema: ZodType): Extension`
+**Alternatives:**
+- Built-in + override — ships CaseHub schema as default, override via extensions prop. Simpler for CaseHub users but couples pages-code-editor to pages-schema
+- Registration API — mutable registry `registerCompletionSchema()`. More flexible for multi-schema scenarios but introduces global mutable state
+**Rationale:** A factory function keeps pages-code-editor schema-agnostic. Any consumer passes any Zod schema and gets completion. The existing `yamlCompletion` export is replaced by this generic factory. CaseHub-specific wiring happens at the integration point (examples gallery, app shell), not in the editor package. Domain schemas (Serverless Workflow, Case Diagrams) plug in through the same factory.
+**Trade-offs:** Integration code must explicitly compose the schema and pass it. Slightly more boilerplate at the call site vs built-in default.
+**Sources:** packages/pages-code-editor/src/yaml-completion.ts (existing yamlCompletion export), packages/pages-code-editor/src/index.ts (barrel exports)
+**Exploration:** quick
+**Depends on:** D1 (schemas in pages-schema), D2 (discriminatedUnion structure)
+**Status:** captured
