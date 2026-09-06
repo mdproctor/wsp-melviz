@@ -1,0 +1,15 @@
+# Work Plan — issue-415-theme-designer
+
+## State
+branch: issue-415-theme-designer
+state: scaffolded
+project-sha: 0f9279c003534f09cf994ebcba707bf9a7eb6803
+date: 2026-09-07
+issue-repo: casehubio/casehub-pages
+covers: 415
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#415 — Issue #415 ← active
