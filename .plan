@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-411-auto-generate-zod-schemas
-state: scaffolded
+state: active
 project-sha: adf3ecd07fc2136797d7abfed23fed65b1fd1284
 date: 2026-09-05
 issue-repo: casehubio/casehub-pages
@@ -13,9 +13,9 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#411 — Issue #411 ← active
-  - [ ] Batch 1: Interface Audit
-    - [ ] Task 1: Audit and fix component interfaces
-  - [ ] Batch 2: Schema Generator
-    - [ ] Task 2: Create ts-morph generate-schemas script
-  - [ ] Batch 3: Desugarer Validation
-    - [ ] Task 3: Replace passthrough with schema validation
+  - [x] Batch 1: Interface Audit
+    - [x] Task 1: Audit and fix component interfaces
+  - [x] Batch 2: Schema Generator
+    - [x] Task 2: Create ts-morph generate-schemas script
+  - [x] Batch 3: Desugarer Validation
+    - [x] Task 3: Replace passthrough with schema validation
