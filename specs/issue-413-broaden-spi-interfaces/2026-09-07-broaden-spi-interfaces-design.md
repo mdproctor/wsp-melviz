@@ -151,6 +151,8 @@ backgroundColor?: string;
 
 Two-library mapping: ECharts `color` ↔ Chart.js `defaults.color` ↔ Plotly `colorway`. Background: ECharts `backgroundColor` ↔ Chart.js `plugins.background`.
 
+**Interaction with `PagesChartElement.updated()`:** The current code unconditionally sets `option['backgroundColor'] = 'transparent'` after `buildOption()` returns, overriding any value set by the merge pipeline. With `backgroundColor` now an SPI property, this default must become conditional: `option['backgroundColor'] ??= 'transparent'` — only apply the transparent default when no tier of the pipeline has set a value.
+
 ### Legend extensions
 
 Expand the existing `legend` type:
@@ -566,7 +568,13 @@ The bridge lives in `graph-renderer` as a new `PagesGraphCanvas` Lit element alo
 1. Accepts `GraphCanvasProps` from the desugarer
 2. Subscribes to the dataset via `DataSourceController` (see below)
 3. Builds a `GraphModel` from the dataset rows using the column mappings
-4. Passes the model + layout options to the inner `<pages-graph-canvas>` element
+4. Passes the model + layout options to the inner `<graph-canvas-core>` element
+
+#### Custom element tag rename
+
+The runtime activation convention creates elements via `pages-${type}`. For component type `"graph-canvas"`, this produces `pages-graph-canvas`. But that tag is already registered by the existing `GraphCanvas` element at `graph-renderer/src/bridge/GraphCanvas.ts` (`@customElement('pages-graph-canvas')`), which accepts `model: GraphModel` for the programmatic API.
+
+The bridge must claim `pages-graph-canvas` (it's the YAML-facing element). The existing `GraphCanvas` is renamed from `pages-graph-canvas` to `graph-canvas-core` — it drops the `pages-` prefix since it's not a YAML-activated component. Programmatic consumers update their selectors (`pages-graph-canvas` → `graph-canvas-core`) — a mechanical migration.
 
 #### Dependency addition
 
@@ -579,7 +587,7 @@ The bridge lives in `graph-renderer` as a new `PagesGraphCanvas` Lit element alo
 The composition pattern:
 
 ```typescript
-@customElement('pages-graph-canvas-data')
+@customElement('pages-graph-canvas')
 export class PagesGraphCanvas extends LitElement {
   @property({ attribute: false }) props: GraphCanvasProps | undefined;
 
@@ -660,13 +668,13 @@ test("barWidth reaches ECharts series option", () => {
 
 ## 12. Execution Order
 
-1. **Interface hierarchy + applyChartSettings refactoring** — extract `ChartSettingsBase`, move `maxWidth`/`maxHeight` to `DataComponentCommon`, re-parent non-Cartesian charts, widen `applyChartSettings` to `ChartSettingsBase`, eliminate `cartesianAxes` flag, centralise escape hatch merging
+1. **Interface hierarchy + base class refactoring** — extract `ChartSettingsBase`, move `maxWidth`/`maxHeight` to `DataComponentCommon`, re-parent non-Cartesian charts, widen both `PagesChartElement<P>` constraint and `applyChartSettings` to `ChartSettingsBase`, eliminate `cartesianAxes` flag, centralise escape hatch merging, fix `PagesChartElement.updated()` `backgroundColor` guard
 2. **ChartSettingsBase + ChartSettings promotions** — add tooltip, animation, color, axis extensions, zoom evolution
 3. **Per-chart series promotions** — add bar, line, pie, scatter, heatmap-chart, treemap, meter, timeseries properties
 4. **MapProps + GraphProps promotions** — add roam, center, zoom, labels, etc.
 5. **DensityHeatmapProps** — add new properties, `extra`, fix `radius` wiring
 6. **Typed escape hatch types** — create curated extension interfaces
-7. **GraphCanvasProps + registration** — new interface, all five registration points (ComponentTypeRegistry, DATA_COMPONENT_TYPES, TYPE_MAP, componentSchemaRegistry, exports), data-to-model bridge in `graph-renderer`
+7. **GraphCanvasProps + registration** — new interface, all five registration points (ComponentTypeRegistry, DATA_COMPONENT_TYPES, TYPE_MAP, componentSchemaRegistry, exports), rename existing `GraphCanvas` tag from `pages-graph-canvas` to `graph-canvas-core`, data-to-model bridge in `graph-renderer`
 8. **Schema regeneration** — run `yarn workspace @casehubio/pages-schema run generate`
 9. **Tests** — schema staleness, desugarer round-trips, renderer unit tests
 
