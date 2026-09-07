@@ -27,16 +27,17 @@
 
 ## D3: Graph layout property promotion (scoped to ECharts graph)
 
-**Choice:** Promote ECharts graph-specific layout properties to `GraphProps`: force repulsion strength, edge label visibility, roam (pan/zoom), and symbol (node shape). Keep `layoutOptions?: Record<string, string>` as an ECharts graph passthrough for niche ECharts graph options. ELK layout concepts (direction, spacing, algorithm) are NOT promoted to GraphProps — they belong to the GraphCanvas rendering path (see D7).
+**Choice:** Promote ECharts graph-specific layout properties to `GraphProps`: force repulsion strength, edge label visibility, roam (pan/zoom), and symbol (node shape). No additional passthrough property — niche ECharts graph options are covered by `extra` (from ChartSettingsBase) and `echarts?` (from D4). ELK layout concepts (direction, spacing, algorithm) are NOT promoted to GraphProps — they belong to the GraphCanvas rendering path (see D7).
 **Alternatives:**
 - Promote ELK layout concepts (direction, spacing, algorithm) to GraphProps — WRONG: GraphProps controls PagesGraph (ECharts), not GraphCanvas (React Flow + ELK). These would be dead properties. ELK concepts belong in ElkLayoutOptions and are only accessible when/if GraphCanvas gets YAML integration (D7).
+- Add `layoutOptions?: Record<string, string>` as a GraphProps-specific passthrough — WRONG: `Record<string, string>` is the ELK pattern (flat string pairs like `'elk.algorithm': 'layered'`). ECharts graph options are structured JSON (nested objects like `{ repulsion: 100 }`, arrays like `["none", "arrow"]`, booleans, numbers). The type cannot represent ECharts options without serialization. Also redundant with `extra` and `echarts?`.
 - Promote all internal ECharts graph options — accepts coupling to ECharts' model
 - Keep all layout behind passthrough — only the existing layout enum is typed
-**Rationale:** The original D3 conflated two architecturally independent rendering paths. PagesGraph (pages-viz, ECharts) and GraphCanvas (graph-renderer, React Flow + ELK) share no code, no props interface, and no rendering pipeline. GraphProps controls PagesGraph. Promoting ELK concepts to GraphProps would create dead properties that PagesGraph never reads. Scoping to ECharts graph properties promotes the options that PagesGraph actually uses.
+**Rationale:** The original D3 conflated two architecturally independent rendering paths. PagesGraph (pages-viz, ECharts) and GraphCanvas (graph-renderer, React Flow + ELK) share no code, no props interface, and no rendering pipeline. GraphProps controls PagesGraph. Promoting ELK concepts to GraphProps would create dead properties that PagesGraph never reads. Scoping to ECharts graph properties promotes the options that PagesGraph actually uses. The `extra` and `echarts?` escape hatches already provide two tiers of ECharts-specific access for any graph options beyond the promoted set — adding a third (`layoutOptions`) would be redundant and with the wrong type.
 **Trade-offs:** ELK layout properties are not SPI-accessible until D7 resolves GraphCanvas YAML integration. YAML authors wanting ELK features must use GraphCanvas programmatically.
 **Sources:** PagesGraph.ts (ECharts graph component extending PagesChartElement), GraphCanvas.ts (React Flow + ELK, registered as pages-graph-canvas, NOT in TYPE_MAP), ElkLayoutOptions interface (packages/graph-renderer/src/layout/elk-layout.ts), ARC42STORIES.MD §5 (pages-viz = ECharts wrappers, graph-renderer = React Flow + ELK bridge)
 **Exploration:** quick
-**Status:** revised — R1: scoped to ECharts graph only, removed ELK concepts from GraphProps scope (from R1-01)
+**Status:** revised — R1: scoped to ECharts graph only, removed ELK concepts (from R1-01). R2: dropped layoutOptions passthrough — wrong type for ECharts, redundant with extra/echarts? (from R2-01)
 
 ## D4: Typed escape hatch pattern (complements SPI, does not replace it)
 
