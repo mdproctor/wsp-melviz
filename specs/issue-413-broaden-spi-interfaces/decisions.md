@@ -80,15 +80,15 @@
 **Depends on:** D5 (wiring bugs motivate renderer-level testing)
 **Status:** revised — R1: added desugarer round-trip tests (from R1-05)
 
-## D7: PagesGraph vs GraphCanvas: independent rendering paths
+## D7: GraphCanvas becomes YAML-accessible as a new component type
 
-**Choice:** PENDING — escalated for human decision
+**Choice:** Add GraphCanvas to TYPE_MAP as a new YAML component type (e.g., `graph-canvas` or `diagram`). GraphCanvas gets its own props interface (`GraphCanvasProps`) separate from the existing `GraphProps` (which controls the ECharts PagesGraph). Both component types coexist: `graph` for ECharts-based dashboard visualization, `graph-canvas` for React Flow + ELK interactive diagrams.
 **Alternatives:**
-- **Independent (recommended pending product input)** — PagesGraph stays as the ECharts graph visualization for YAML dashboards. GraphCanvas stays as the programmatic React Flow + ELK diagram editor. SPI broadening scopes to each independently: GraphProps gets ECharts graph properties (D3), GraphCanvas configuration stays in ElkLayoutOptions (programmatic API).
-- **New YAML type** — Add `GRAPH-CANVAS` (or `DIAGRAM`) to TYPE_MAP. GraphCanvas gets its own YAML props interface (`DiagramProps`?) separate from GraphProps. Both component types coexist, serving different use cases (visualization vs. editing).
-- **Replacement** — GraphCanvas replaces PagesGraph as the YAML graph renderer. GraphProps becomes the interface for GraphCanvas. ECharts graph rendering is deprecated.
-**Rationale:** PagesGraph and GraphCanvas are architecturally independent — different packages (pages-viz vs graph-renderer), different rendering engines (ECharts vs React Flow + ELK), different purposes (dashboard visualization vs interactive diagram editing), no shared code or props interface. The issue body's reference to "React Flow 12.4 + ELK 0.9" in the GraphProps context created an implicit assumption that these are the same component. They are not. This is the most consequential decision for the issue because it determines whether D3's ELK concept promotion, D4's `reactFlow?`/`elk?` escape hatches, and D2's graph interface scope target one component or two.
-**Trade-offs:** Independent is simplest but leaves GraphCanvas without YAML integration. New YAML type gives full coverage but adds a new component type. Replacement loses ECharts graph simplicity for cases where React Flow's full editing capability is unnecessary.
-**Sources:** ARC42STORIES.MD §5 (pages-viz = ECharts wrappers, graph-renderer = React Flow + ELK bridge), PagesGraph.ts, GraphCanvas.ts, displayer-desugar.ts TYPE_MAP (GRAPH → "graph", no entry for GraphCanvas)
-**Exploration:** quick (surfaced by reviewer, not previously debated)
-**Status:** captured — ESCALATED: product-level decision needed on whether GraphCanvas should be YAML-accessible
+- Independent — PagesGraph stays YAML-accessible, GraphCanvas stays programmatic-only. Simplest but leaves GraphCanvas without YAML integration despite being the more capable renderer.
+- Replacement — GraphCanvas replaces PagesGraph. Loses ECharts graph simplicity for cases where interactive editing is unnecessary.
+**Rationale:** GraphCanvas (React Flow + ELK) is the more capable graph component with interactive editing, containment layout, stencil registry, and rich node rendering. Making it YAML-accessible gives YAML authors access to the full graph editing experience. Both renderers serve different use cases — ECharts graph is simpler for dashboard network visualizations; GraphCanvas supports interactive diagram editing.
+**Trade-offs:** Adds a new component type to TYPE_MAP, a new props interface, and desugarer routing. Broadens #413 scope. GraphCanvasProps needs its own typed escape hatches (`reactFlow?`, `elk?`).
+**Sources:** ARC42STORIES.MD §5, PagesGraph.ts, GraphCanvas.ts, user decision to make GraphCanvas YAML-accessible
+**Exploration:** quick
+**Depends on:** D3 (GraphProps remains ECharts-scoped), D4 (typed escape hatches apply per component type)
+**Status:** captured
