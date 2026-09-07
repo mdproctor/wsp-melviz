@@ -2,39 +2,41 @@
 
 ## D1: SPI boundary for chart components
 
-**Choice:** Universal + likely-portable concepts only
+**Choice:** Universal + likely-portable concepts only, where "likely-portable" is defined by a two-library mapping test: each promoted property must show a shape-preserving mapping (single value → single value) to at least two charting libraries' APIs. Properties where the mapping requires structural transformation belong in D4's typed escape hatch until a clean common-denominator abstraction is designed.
 **Alternatives:**
 - Universal concepts only — too restrictive, misses dataZoom range and animation duration which most charting libraries support
 - Current backend surface (expose all stable ECharts options typed) — defeats the purpose of the SPI as an abstraction layer
 **Rationale:** The SPI must remain implementation-agnostic so alternative charting backends could be swapped without breaking YAML. Options that most mature charting libraries support (even if API shapes differ slightly) are worth promoting. ECharts-specific concepts (toolbox features, formatter template syntax) stay in the typed escape hatch (D4).
-**Trade-offs:** Minor adaptation cost if backend changes — promoted properties may need remapping to a new library's API.
+**Trade-offs:** Minor adaptation cost if backend changes — promoted properties may need remapping to a new library's API. The two-library mapping test adds rigour but also adds upfront audit cost per property.
 **Sources:** Issue #413 constraints ("SPI interfaces must remain implementation-agnostic where multiple backends exist"), ECharts 5.6 type audit
 **Exploration:** quick
-**Status:** captured
+**Status:** revised — R1: added two-library mapping criterion for portability classification (from R1-04)
 
-## D2: Extract VizCommon from ChartSettings
+## D2: Split ChartSettings along the Cartesian boundary
 
-**Choice:** Create a new `VizCommon` interface containing `resizable`, `zoom`, `maxWidth`, `maxHeight`, `extra`. ChartSettings extends VizCommon and adds chart-specific properties (legend, margin, xAxis, yAxis, grid). GraphProps and DensityHeatmapProps extend VizCommon directly.
+**Choice:** Split `ChartSettings` into `ChartSettingsBase` (resizable, zoom, legend, margin, extra) and `ChartSettings extends ChartSettingsBase` adding Cartesian-specific properties (xAxis, yAxis, grid). Non-Cartesian ECharts charts (Graph, Pie, Map, Meter, Treemap) extend `ChartSettingsBase` instead of `ChartSettings`. `DensityHeatmapProps` gets `extra` added directly — it does not extend any chart settings interface. Move `maxWidth`/`maxHeight` from `ChartSettings` to `DataComponentCommon` alongside `width`/`height`.
 **Alternatives:**
-- Keep ChartSettings, document ignored props — misleading interface where GraphProps inherits xAxis/yAxis/grid that are meaningless for graphs
+- VizCommon (original proposal) — cross-backend shared base containing resizable, zoom, maxWidth, maxHeight, extra. Rejected: these properties have divergent semantics across ECharts and @drdreo/heatmap — `zoom` means ECharts dataZoom but has no counterpart in @drdreo/heatmap. The abstraction leaks.
+- Keep ChartSettings, document ignored props — misleading interface where GraphProps inherits xAxis/yAxis/grid that are meaningless for graphs. Fixing only the `{ cartesianAxes: false }` flag stops silent application but leaves xAxis/yAxis/grid in the Zod schema, suggesting to YAML authors that they're valid properties for graphs.
 - Stop extending, duplicate shared props — simple but duplicated across interfaces; changes to shared properties require updating multiple interfaces
-**Rationale:** GraphProps extending ChartSettings causes xAxis/yAxis/grid to appear in graph schemas, confusing YAML authors and accepting invalid properties. DensityHeatmapProps not extending ChartSettings means it lacks the `extra` escape hatch. VizCommon cleanly separates universal visualization concerns from chart-specific ones.
-**Trade-offs:** Adds a new interface to the hierarchy. Downstream code that references ChartSettings directly may need updating if it only needs VizCommon properties.
-**Sources:** displayer-types.ts current hierarchy, React Flow + ELK audit (xAxis/yAxis meaningless for graphs), @drdreo/heatmap audit (no extra escape hatch)
+**Rationale:** The Cartesian split addresses the root cause: non-Cartesian charts inheriting axis properties. `ChartSettingsBase` is coherent because it targets a single backend family (ECharts) and contains only properties that every ECharts chart type supports (legend, margin, zoom, extra, resizable). `DensityHeatmapProps` stays independent because @drdreo/heatmap has different capabilities — forcing it through an ECharts-shaped base interface would create dead properties. `maxWidth`/`maxHeight` are CSS dimension constraints that apply to any renderable component, not just visualizations — they belong alongside `width`/`height` in `DataComponentCommon`.
+**Trade-offs:** Adds `ChartSettingsBase` to the hierarchy. Non-Cartesian charts change their extends from `ChartSettings` to `ChartSettingsBase`. Downstream code referencing `ChartSettings` that only uses base properties needs updating.
+**Sources:** displayer-types.ts current hierarchy, PagesGraph.ts wiring bug (missing `{ cartesianAxes: false }`), PagesDensityHeatmap.ts showing no ECharts dependency, R1-02 challenge, R1-08 challenge
 **Exploration:** quick
-**Status:** captured
+**Status:** revised — R1: replaced VizCommon with Cartesian/non-Cartesian split, moved maxWidth/maxHeight to DataComponentCommon, scoped DensityHeatmapProps extra independently (from R1-02, R1-03, R1-08)
 
-## D3: Graph layout property promotion
+## D3: Graph layout property promotion (scoped to ECharts graph)
 
-**Choice:** Promote abstract layout concepts (direction, spacing, algorithm) to GraphProps. Keep ELK-specific options behind a `layoutOptions?: Record<string, string>` passthrough.
+**Choice:** Promote ECharts graph-specific layout properties to `GraphProps`: force repulsion strength, edge label visibility, roam (pan/zoom), and symbol (node shape). Keep `layoutOptions?: Record<string, string>` as an ECharts graph passthrough for niche ECharts graph options. ELK layout concepts (direction, spacing, algorithm) are NOT promoted to GraphProps — they belong to the GraphCanvas rendering path (see D7).
 **Alternatives:**
-- Promote all internal ElkLayoutOptions — accepts coupling to ELK's model; a different layout engine would require SPI changes
-- Keep all layout behind passthrough — only the existing layout enum is typed; direction and spacing (which any layout engine supports) would require YAML authors to know ELK's string-key API
-**Rationale:** Direction (up/down/left/right), spacing (number), and algorithm selection are universal graph layout concepts. ELK-specific options like partitioning, inter-layer spacing, and wrapping are implementation details.
-**Trade-offs:** The `algorithm` enum values need mapping from abstract names to ELK's internal algorithm names. If a new layout engine is added, abstract values would need a mapping layer.
-**Sources:** graph-renderer ElkLayoutOptions audit, React Flow + ELK type audit
+- Promote ELK layout concepts (direction, spacing, algorithm) to GraphProps — WRONG: GraphProps controls PagesGraph (ECharts), not GraphCanvas (React Flow + ELK). These would be dead properties. ELK concepts belong in ElkLayoutOptions and are only accessible when/if GraphCanvas gets YAML integration (D7).
+- Promote all internal ECharts graph options — accepts coupling to ECharts' model
+- Keep all layout behind passthrough — only the existing layout enum is typed
+**Rationale:** The original D3 conflated two architecturally independent rendering paths. PagesGraph (pages-viz, ECharts) and GraphCanvas (graph-renderer, React Flow + ELK) share no code, no props interface, and no rendering pipeline. GraphProps controls PagesGraph. Promoting ELK concepts to GraphProps would create dead properties that PagesGraph never reads. Scoping to ECharts graph properties promotes the options that PagesGraph actually uses.
+**Trade-offs:** ELK layout properties are not SPI-accessible until D7 resolves GraphCanvas YAML integration. YAML authors wanting ELK features must use GraphCanvas programmatically.
+**Sources:** PagesGraph.ts (ECharts graph component extending PagesChartElement), GraphCanvas.ts (React Flow + ELK, registered as pages-graph-canvas, NOT in TYPE_MAP), ElkLayoutOptions interface (packages/graph-renderer/src/layout/elk-layout.ts), ARC42STORIES.MD §5 (pages-viz = ECharts wrappers, graph-renderer = React Flow + ELK bridge)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised — R1: scoped to ECharts graph only, removed ELK concepts from GraphProps scope (from R1-01)
 
 ## D4: Typed escape hatch pattern (complements SPI, does not replace it)
 
@@ -52,24 +54,40 @@
 
 ## D5: Wiring bug fixes in scope
 
-**Choice:** Fix existing property wiring bugs (e.g., `radius` declared in DensityHeatmapProps but not passed to @drdreo/heatmap config) within this branch.
+**Choice:** Fix existing property wiring bugs within this branch:
+1. `radius` declared in DensityHeatmapProps but not passed to @drdreo/heatmap config (PagesDensityHeatmap.ts createInstance method)
+2. PagesGraph calls `applyChartSettings(option, props)` without `{ cartesianAxes: false }` — every other non-Cartesian ECharts chart (Pie, Map, Meter, Treemap) correctly passes `{ cartesianAxes: false }` to skip xAxis/yAxis application
 **Alternatives:**
 - Separate bug issues — keeps #413 scope clean but adds overhead for one-line fixes in files we're already editing
-**Rationale:** Wiring bugs are in the same files we're modifying. Fixing them separately doubles the review and schema regeneration overhead for trivial changes.
+**Rationale:** Wiring bugs are in the same files we're modifying. The PagesGraph cartesianAxes bug is particularly relevant because D2 restructures the ChartSettings hierarchy — fixing the bug alongside the interface change ensures the runtime behavior matches the new type structure. Even after D2's Cartesian split removes xAxis/yAxis from GraphProps' schema, the `{ cartesianAxes: false }` flag is still needed as a runtime safety net (the function defaults to `true`).
 **Trade-offs:** Slightly broader branch scope than pure SPI broadening.
-**Sources:** @drdreo/heatmap audit (radius not wired at line 100-107)
+**Sources:** @drdreo/heatmap audit (radius not wired at createInstance), PagesGraph.ts applyChartSettings call (missing { cartesianAxes: false }), comparison with PagesPieChart.ts, PagesMap.ts, PagesMeter.ts, PagesTreemapChart.ts (all correctly opt out)
 **Exploration:** quick
-**Status:** captured
+**Status:** revised — R1: added PagesGraph cartesianAxes wiring bug (from R1-02)
 
 ## D6: Testing strategy
 
-**Choice:** Schema staleness tests (existing) plus renderer unit tests verifying each new property reaches the upstream library's option object.
+**Choice:** Schema staleness tests (existing) plus renderer unit tests verifying each new property reaches the upstream library's option object, plus YAML → desugarer → props round-trip tests verifying that each newly promoted property, when set in YAML, appears in the desugared component's props with the correct value.
 **Alternatives:**
 - Schema staleness + sample YAML only — confirms properties parse but not that they reach the library; wiring bugs like the radius issue would pass
 - Schema + visual snapshot tests — highest confidence but heavy infrastructure for a property-promotion change
-**Rationale:** The radius wiring bug proves that "property is in the interface" doesn't mean "property reaches the library." Renderer unit tests catch this class of bug. Schema staleness tests catch interface/schema drift.
-**Trade-offs:** More tests to write, but each test is small (verify one property appears in the option object passed to the library).
-**Sources:** @drdreo/heatmap audit (radius wiring bug as motivating example)
+- Schema staleness + renderer tests only (original proposal) — misses the desugarer boundary: a property could be declared in the interface and schema, but not correctly extracted by the desugarer's schema-aware passthrough if the property name collides with a `handledKeys` entry
+**Rationale:** The radius wiring bug proves that "property is in the interface" doesn't mean "property reaches the library." The desugarer's schema-aware passthrough (displayer-desugar.ts) passes properties that are in the Zod schema and NOT in `handledKeys` — but if a promoted property name collides with a `handledKeys` entry, it would be silently swallowed. Round-trip tests catch this entire class of bug: interface declaration → schema generation → YAML parsing → desugarer extraction → renderer wiring → library option object.
+**Trade-offs:** More tests to write, but each test is small. The round-trip tests catch a failure mode that neither schema tests nor renderer tests alone would catch.
+**Sources:** @drdreo/heatmap audit (radius wiring bug as motivating example), displayer-desugar.ts schema-aware passthrough and handledKeys set, R1-05 challenge
 **Exploration:** quick
 **Depends on:** D5 (wiring bugs motivate renderer-level testing)
-**Status:** captured
+**Status:** revised — R1: added desugarer round-trip tests (from R1-05)
+
+## D7: PagesGraph vs GraphCanvas: independent rendering paths
+
+**Choice:** PENDING — escalated for human decision
+**Alternatives:**
+- **Independent (recommended pending product input)** — PagesGraph stays as the ECharts graph visualization for YAML dashboards. GraphCanvas stays as the programmatic React Flow + ELK diagram editor. SPI broadening scopes to each independently: GraphProps gets ECharts graph properties (D3), GraphCanvas configuration stays in ElkLayoutOptions (programmatic API).
+- **New YAML type** — Add `GRAPH-CANVAS` (or `DIAGRAM`) to TYPE_MAP. GraphCanvas gets its own YAML props interface (`DiagramProps`?) separate from GraphProps. Both component types coexist, serving different use cases (visualization vs. editing).
+- **Replacement** — GraphCanvas replaces PagesGraph as the YAML graph renderer. GraphProps becomes the interface for GraphCanvas. ECharts graph rendering is deprecated.
+**Rationale:** PagesGraph and GraphCanvas are architecturally independent — different packages (pages-viz vs graph-renderer), different rendering engines (ECharts vs React Flow + ELK), different purposes (dashboard visualization vs interactive diagram editing), no shared code or props interface. The issue body's reference to "React Flow 12.4 + ELK 0.9" in the GraphProps context created an implicit assumption that these are the same component. They are not. This is the most consequential decision for the issue because it determines whether D3's ELK concept promotion, D4's `reactFlow?`/`elk?` escape hatches, and D2's graph interface scope target one component or two.
+**Trade-offs:** Independent is simplest but leaves GraphCanvas without YAML integration. New YAML type gives full coverage but adds a new component type. Replacement loses ECharts graph simplicity for cases where React Flow's full editing capability is unnecessary.
+**Sources:** ARC42STORIES.MD §5 (pages-viz = ECharts wrappers, graph-renderer = React Flow + ELK bridge), PagesGraph.ts, GraphCanvas.ts, displayer-desugar.ts TYPE_MAP (GRAPH → "graph", no entry for GraphCanvas)
+**Exploration:** quick (surfaced by reviewer, not previously debated)
+**Status:** captured — ESCALATED: product-level decision needed on whether GraphCanvas should be YAML-accessible
