@@ -13,3 +13,18 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#413 — Issue #413 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: Extract ChartSettingsBase
+    - [ ] Task 2: Widen PagesChartElement and refactor applyChartSettings
+  - [ ] Batch 2: SPI broadening
+    - [ ] Task 3: Add ChartSettingsBase shared properties
+    - [ ] Task 4: Add Cartesian promotions
+    - [ ] Task 5: Per-chart series promotions
+  - [ ] Batch 3: Component broadening
+    - [ ] Task 6: Map Graph DensityHeatmap promotions
+    - [ ] Task 7: Typed escape hatch extension types
+  - [ ] Batch 4: Schema validation
+    - [ ] Task 8: Regenerate schemas and validate pipeline
+  - [ ] Batch 5: GraphCanvas
+    - [ ] Task 9: GraphCanvasProps interface and registration
+    - [ ] Task 10: PagesGraphCanvas YAML bridge
