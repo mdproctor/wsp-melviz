@@ -7,7 +7,7 @@
 
 ## Overview
 
-Three deliverables that widen the typed SPI surface while preserving implementation-agnosticism:
+Four deliverables that widen the typed SPI surface while preserving implementation-agnosticism:
 
 1. **Interface hierarchy restructuring** — split ChartSettings along the Cartesian boundary so non-Cartesian charts stop inheriting meaningless xAxis/yAxis/grid
 2. **Property promotions** — add universal/likely-portable properties to SPI interfaces (two-library mapping test: each promoted property must map to at least two charting libraries' APIs)
@@ -36,21 +36,23 @@ DataComponentCommon
 
 ```
 DataComponentCommon                  ← + maxWidth?, maxHeight? (moved from ChartSettings)
-├── ChartSettingsBase                ← NEW: resizable, zoom, legend, margin, tooltip, animation, color, backgroundColor, extra
-│   ├── ChartSettings                ← xAxis, yAxis, grid (Cartesian only)
+├── ChartSettingsBase                ← NEW: resizable, legend, margin, tooltip, animation, color, backgroundColor, extra
+│   ├── ChartSettings                ← xAxis, yAxis, grid, zoom (Cartesian only)
 │   │   ├── BarChartProps
 │   │   ├── LineChartProps
 │   │   ├── AreaChartProps
 │   │   ├── ScatterChartProps
 │   │   ├── BubbleChartProps
 │   │   ├── TimeseriesProps
-│   │   └── HeatmapChartProps
+│   │   ├── HeatmapChartProps
+│   │   └── TimelineProps            ← Cartesian (xAxis: time, yAxis: category)
 │   ├── PieChartProps                ← extends ChartSettingsBase (non-Cartesian)
 │   ├── MapProps                     ← extends ChartSettingsBase (non-Cartesian)
 │   ├── MeterProps                   ← extends ChartSettingsBase (non-Cartesian)
 │   ├── TreemapChartProps            ← extends ChartSettingsBase (non-Cartesian)
 │   └── GraphProps                   ← extends ChartSettingsBase (non-Cartesian, ECharts graph)
 ├── DensityHeatmapProps              ← extends DataComponentCommon only, + extra directly
+├── EventTimelineProps               ← extends DataComponentCommon only (no ChartSettings)
 └── GraphCanvasProps                 ← NEW: extends DataComponentCommon (React Flow + ELK)
 ```
 
@@ -63,6 +65,39 @@ The original proposal was a cross-backend `VizCommon` base. Decision review reje
 ### maxWidth / maxHeight migration
 
 `maxWidth` and `maxHeight` are CSS dimension constraints that apply to any renderable component, not just visualizations. They move from `ChartSettings` to `DataComponentCommon`, alongside the existing `width` and `height`.
+
+### applyChartSettings refactoring
+
+The current function signature in `option-pipeline.ts`:
+
+```typescript
+function applyChartSettings(
+  option: Record<string, unknown>,
+  props: { title?: string } & ChartSettings,
+  settingsOptions?: ChartSettingsOptions,
+): Record<string, unknown>
+```
+
+After the hierarchy split, the signature widens to accept `ChartSettingsBase`:
+
+```typescript
+function applyChartSettings(
+  option: Record<string, unknown>,
+  props: { title?: string } & ChartSettingsBase,
+): Record<string, unknown>
+```
+
+Changes:
+
+1. **Widen type** — `ChartSettings` → `ChartSettingsBase` so non-Cartesian components compile without casting
+2. **Eliminate `cartesianAxes` flag** — remove the `ChartSettingsOptions` parameter entirely. Cartesian-specific properties (`xAxis`, `yAxis`, `grid`, `zoom`) are handled via structural access (`'xAxis' in props`). The type system does the work: non-Cartesian props don't carry these fields, so the structural check is false at runtime.
+3. **Centralise escape hatch merging** — the function applies the full merge pipeline in order:
+   1. SPI base properties (title, legend, margin, tooltip, animation, color, backgroundColor)
+   2. Cartesian SPI properties via structural access (xAxis, yAxis, grid, zoom)
+   3. `deepMerge(option, props.echarts)` — typed escape hatch
+   4. `deepMerge(option, props.extra)` — untyped last resort
+
+   Later stages override earlier ones. Each component's `buildOption()` simplifies to: build initial option → `applyChartSettings(option, props)` → return. The per-component `if (props.extra) { deepMerge(...) }` boilerplate is eliminated.
 
 ## 2. ChartSettingsBase — New Shared Properties
 
@@ -108,6 +143,10 @@ legend?: {
   selectedMode?: boolean | "single" | "multiple";   // NEW
 }
 ```
+
+Two-library mapping for `orient`: ECharts `legend.orient` ↔ Plotly `legend.orientation` ↔ Chart.js `legend.position` (vertical ↔ "left"/"right").
+
+Two-library mapping for `selectedMode`: ECharts `legend.selectedMode` ↔ Plotly `legend.itemclick` (`"toggle"` = multiple, `"toggleothers"` = single, `false` = disabled) ↔ Chart.js `onClick` handler (null = disabled, default = multiple, custom = single).
 
 ### Typed escape hatch
 
@@ -155,6 +194,8 @@ zoom?: boolean | {
 `zoom: true` remains a shorthand for `{ enabled: true }`. Two-library mapping: ECharts `dataZoom[].start/end` ↔ Plotly `xaxis.rangeslider`.
 
 ## 4. Per-Chart Series Promotions
+
+Per-chart properties promote domain-level chart concepts (stepped line, rose variant, zoom-on-click) to typed SPI fields. The two-library mapping test from §2-§3 is relaxed here: each promoted property must represent a concept with equivalents in at least two charting libraries, though the exact property names and semantics may differ. Properties that are raw library config knobs with no cross-library conceptual equivalent belong in the `echarts` typed escape hatch instead.
 
 ### BarChartProps
 
@@ -262,14 +303,14 @@ interface MapProps extends DataComponentCommon, ChartSettingsBase {  // NOTE: Ch
   mapName?: string;                  // existing
   roam?: boolean | "pan" | "zoom";   // NEW — pan/zoom interaction
   center?: [number, number];         // NEW — initial center [lng, lat]
-  mapZoom?: number;                  // NEW — initial zoom level
+  zoom?: number;                     // NEW — initial zoom level
   scaleLimit?: { min?: number; max?: number };  // NEW — zoom bounds
   showLabel?: boolean;               // NEW — region name labels
   selectedMode?: "single" | "multiple" | boolean;  // NEW — region selection
 }
 ```
 
-`mapZoom` instead of `zoom` to avoid shadowing the `zoom` (dataZoom) from `ChartSettingsBase`.
+`zoom` here is geographic zoom level (ECharts `geo.zoom`), distinct from `ChartSettings.zoom` which is dataZoom. No naming collision since `MapProps` extends `ChartSettingsBase` (which does not contain `zoom`), not `ChartSettings`.
 
 ## 6. GraphProps (ECharts Graph)
 
@@ -330,6 +371,20 @@ Three tiers of access per component:
 1. **SPI properties** — portable, always preferred
 2. **Typed escape hatch** (`echarts?`, `reactFlow?`, etc.) — backend-specific but schema-validated
 3. **`extra`** — untyped last resort for truly exotic options
+
+### Merge pipeline
+
+The merge pipeline defines how the three tiers combine at runtime. It is centralised in `applyChartSettings` (see §1 refactoring) and applied in this order:
+
+1. **Component `buildOption()`** — builds the initial ECharts option (series, axes, etc.)
+2. **SPI base properties** — title, legend, margin, tooltip, animation, color, backgroundColor
+3. **SPI Cartesian properties** (structural check) — xAxis, yAxis, grid, zoom
+4. **`deepMerge(option, props.echarts)`** — typed escape hatch overrides SPI decisions
+5. **`deepMerge(option, props.extra)`** — untyped last resort overrides everything
+
+Later stages override earlier ones on conflict. If a user sets `animation: false` (SPI) and `echarts: { animationDuration: 1000 }`, the escape hatch wins — the explicit override is intentional.
+
+**Array broadcast semantics:** `deepMerge` handles the case where an escape hatch property is an object and the existing option property is an array. The object is broadcast-merged into each array element. For example, `echarts: { series: { barCategoryGap: "1%" } }` merges `{ barCategoryGap: "1%" }` into every series item in the option, preserving the existing array structure. This is the intended usage for `CasehubEChartsExtension.series` — it is typed as `Record<string, unknown>` (not an array) to guide users toward the broadcast pattern rather than array replacement.
 
 ### CasehubEChartsExtension
 
@@ -404,17 +459,34 @@ The schema generator already handles interfaces in `pages-component/src/model/`.
 
 ### Registration
 
-Add to `ComponentTypeRegistry` in `type-guards.ts`:
+Five registration points:
+
+1. **`ComponentTypeRegistry`** in `type-guards.ts`:
 
 ```typescript
 "graph-canvas": GraphCanvasProps
 ```
 
-Add desugarer routing in `displayer-desugar.ts` TYPE_MAP:
+2. **`DATA_COMPONENT_TYPES`** in `component-desugar.ts` — add `"graph-canvas"` to the set so YAML with `type: graph-canvas` routes through `desugarDisplayer`:
 
 ```typescript
-GRAPH_CANVAS: "graph-canvas"
+"graph-canvas",
 ```
+
+3. **`TYPE_MAP`** in `displayer-desugar.ts` — both legacy and modern entries (following the established pattern):
+
+```typescript
+GRAPH_CANVAS: "graph-canvas",       // legacy underscore format
+"GRAPH-CANVAS": "graph-canvas",     // modern hyphenated format
+```
+
+4. **`componentSchemaRegistry`** in `schema-registry.ts` — hand-maintained Map entry:
+
+```typescript
+["graph-canvas", graphCanvasPropsSchema],
+```
+
+5. **`pages-schema/src/index.ts`** — add `graphCanvasPropsSchema` to the public exports from `component-schemas.generated.js`
 
 ### Interface
 
@@ -458,7 +530,7 @@ export interface GraphCanvasProps extends DataComponentCommon {
 
 GraphCanvas currently accepts a `model: GraphModel` property (programmatic). For YAML integration, the desugarer needs a bridge that constructs a `GraphModel` from dataset columns — the same pattern PagesGraph uses to build ECharts graph data from `sourceColumn`/`targetColumn`/etc.
 
-The bridge lives in the renderer component (a new `PagesGraphCanvas` Lit element in `pages-viz` or `pages-ui`) that:
+The bridge lives in `graph-renderer` as a new `PagesGraphCanvas` Lit element alongside the existing `GraphCanvas.ts` (which already wraps React Flow via `createRoot` and has `@xyflow/react` + `elkjs` dependencies). `pages-viz` wraps ECharts exclusively; `pages-ui` is the parser layer — neither is the right home. The `PagesGraphCanvas` element:
 1. Accepts `GraphCanvasProps` from the desugarer
 2. Subscribes to the dataset via `lookup`
 3. Builds a `GraphModel` from the dataset rows using the column mappings
@@ -478,9 +550,8 @@ The desugarer extracts `GraphCanvasProps` identically to `GraphProps` — the sc
 ### Bug 2: PagesGraph missing `{ cartesianAxes: false }`
 
 **File:** `PagesGraph.ts`, `applyChartSettings` call
-**Fix:** Add `{ cartesianAxes: false }` to match PagesPieChart, PagesMap, PagesMeter, PagesTreemapChart.
-
-Note: even after D2's Cartesian split removes xAxis/yAxis from GraphProps' schema, the `{ cartesianAxes: false }` flag is still needed as a runtime safety net (the `applyChartSettings` function defaults to `true`).
+**Current bug:** `PagesGraph` calls `applyChartSettings(option, props)` without `{ cartesianAxes: false }`, unlike PagesPieChart, PagesMap, PagesMeter, PagesTreemapChart.
+**Fix:** Absorbed by the §1 `applyChartSettings` refactoring. The `cartesianAxes` flag is eliminated entirely — the refactored function uses structural access (`'xAxis' in props`). Since `GraphProps` extends `ChartSettingsBase` (not `ChartSettings`), the structural check is false at runtime and Cartesian properties are naturally skipped. No code change needed in `PagesGraph.ts` beyond adopting the new call signature (which loses the options parameter).
 
 ## 11. Testing Strategy
 
@@ -523,16 +594,15 @@ test("barWidth reaches ECharts series option", () => {
 
 ## 12. Execution Order
 
-1. **Interface hierarchy** — extract `ChartSettingsBase`, move `maxWidth`/`maxHeight` to `DataComponentCommon`, re-parent non-Cartesian charts
+1. **Interface hierarchy + applyChartSettings refactoring** — extract `ChartSettingsBase`, move `maxWidth`/`maxHeight` to `DataComponentCommon`, re-parent non-Cartesian charts, widen `applyChartSettings` to `ChartSettingsBase`, eliminate `cartesianAxes` flag, centralise escape hatch merging
 2. **ChartSettingsBase + ChartSettings promotions** — add tooltip, animation, color, axis extensions, zoom evolution
 3. **Per-chart series promotions** — add bar, line, pie, scatter, heatmap-chart, treemap, meter, timeseries properties
 4. **MapProps + GraphProps promotions** — add roam, center, zoom, labels, etc.
 5. **DensityHeatmapProps** — add new properties, `extra`, fix `radius` wiring
 6. **Typed escape hatch types** — create curated extension interfaces
-7. **GraphCanvasProps + TYPE_MAP registration** — new interface, desugarer routing, data-to-model bridge
-8. **Fix PagesGraph cartesianAxes bug**
-9. **Schema regeneration** — run `yarn workspace @casehubio/pages-schema run generate`
-10. **Tests** — schema staleness, desugarer round-trips, renderer unit tests
+7. **GraphCanvasProps + registration** — new interface, all five registration points (ComponentTypeRegistry, DATA_COMPONENT_TYPES, TYPE_MAP, componentSchemaRegistry, exports), data-to-model bridge in `graph-renderer`
+8. **Schema regeneration** — run `yarn workspace @casehubio/pages-schema run generate`
+9. **Tests** — schema staleness, desugarer round-trips, renderer unit tests
 
 Each batch is independently testable and committable. Batches 1-6 can proceed without batch 7 (GraphCanvas is additive).
 
