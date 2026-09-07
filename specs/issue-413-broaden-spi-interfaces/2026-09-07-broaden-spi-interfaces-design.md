@@ -66,6 +66,26 @@ The original proposal was a cross-backend `VizCommon` base. Decision review reje
 
 `maxWidth` and `maxHeight` are CSS dimension constraints that apply to any renderable component, not just visualizations. They move from `ChartSettings` to `DataComponentCommon`, alongside the existing `width` and `height`.
 
+### PagesChartElement generic constraint
+
+The `PagesChartElement` base class in `pages-viz/src/base/PagesChartElement.ts` has the generic constraint:
+
+```typescript
+export abstract class PagesChartElement<
+  P extends VizComponentProps & ChartSettings,
+> extends PagesElement<P> {
+```
+
+After the split, non-Cartesian chart components (PagesPieChart, PagesMap, PagesMeter, PagesTreemapChart, PagesGraph) pass props extending `ChartSettingsBase`, not `ChartSettings`. The constraint widens to match:
+
+```typescript
+export abstract class PagesChartElement<
+  P extends VizComponentProps & ChartSettingsBase,
+> extends PagesElement<P> {
+```
+
+This is the same class of fix as `applyChartSettings` below — both are consequences of the hierarchy split.
+
 ### applyChartSettings refactoring
 
 The current function signature in `option-pipeline.ts`:
@@ -357,6 +377,16 @@ interface DensityHeatmapProps extends DataComponentCommon {
 }
 ```
 
+### Merge pipeline
+
+`PagesDensityHeatmap` extends `PagesElement` (not `PagesChartElement`) and does not use `applyChartSettings`. Its merge pipeline follows the same precedence principle, applied to the `@drdreo/heatmap` config:
+
+1. Component builds heatmap config from SPI properties (gradient, radius, aggregation, blur, maxOpacity, minOpacity, intensityExponent, valueMin, valueMax)
+2. `deepMerge(config, props.heatmapJs)` — typed escape hatch for `@drdreo/heatmap`-specific options
+3. `deepMerge(config, props.extra)` — untyped last resort
+
+This is implemented in the `createInstance` method alongside the existing SPI property extraction.
+
 ### Wiring bug fix
 
 `radius` is declared in `DensityHeatmapProps` but never passed to the `createHeatmap` config in `PagesDensityHeatmap.ts`. The `createInstance` method (around line 100-107) only passes `gradient` and `aggregationMode` — `radius` must be added to the config object.
@@ -374,7 +404,9 @@ Three tiers of access per component:
 
 ### Merge pipeline
 
-The merge pipeline defines how the three tiers combine at runtime. It is centralised in `applyChartSettings` (see §1 refactoring) and applied in this order:
+**Universal precedence principle:** Every component that has escape hatches applies them in the same order — SPI properties → typed escape hatch → `extra`. Later stages override earlier ones. This applies across all rendering backends (ECharts, @drdreo/heatmap, React Flow + ELK). Per-backend pipelines are specified in §7 (DensityHeatmap), §9 (GraphCanvas), and below (ECharts).
+
+**ECharts merge pipeline** — centralised in `applyChartSettings` (see §1 refactoring) and applied in this order:
 
 1. **Component `buildOption()`** — builds the initial ECharts option (series, axes, etc.)
 2. **SPI base properties** — title, legend, margin, tooltip, animation, color, backgroundColor
@@ -532,9 +564,43 @@ GraphCanvas currently accepts a `model: GraphModel` property (programmatic). For
 
 The bridge lives in `graph-renderer` as a new `PagesGraphCanvas` Lit element alongside the existing `GraphCanvas.ts` (which already wraps React Flow via `createRoot` and has `@xyflow/react` + `elkjs` dependencies). `pages-viz` wraps ECharts exclusively; `pages-ui` is the parser layer — neither is the right home. The `PagesGraphCanvas` element:
 1. Accepts `GraphCanvasProps` from the desugarer
-2. Subscribes to the dataset via `lookup`
+2. Subscribes to the dataset via `DataSourceController` (see below)
 3. Builds a `GraphModel` from the dataset rows using the column mappings
 4. Passes the model + layout options to the inner `<pages-graph-canvas>` element
+
+#### Dependency addition
+
+`graph-renderer/package.json` must add `@casehubio/pages-component` to its dependencies. This provides `DataSourceController` — the controller that manages dataset state (loading, data, error, sort, pagination).
+
+#### Data subscription via DataSourceController
+
+`PagesGraphCanvas` uses `DataSourceController` via **composition** (not by extending `PagesElement`). `PagesElement` is `pages-viz`'s base class — it couples data binding with ECharts-oriented rendering (loading skeletons, error states, chart sizing). `PagesGraphCanvas` doesn't need that rendering — it delegates to the existing `<pages-graph-canvas>` element.
+
+The composition pattern:
+
+```typescript
+@customElement('pages-graph-canvas-data')
+export class PagesGraphCanvas extends LitElement {
+  @property({ attribute: false }) props: GraphCanvasProps | undefined;
+
+  readonly controller = new DataSourceController({
+    onChange: () => this.requestUpdate(),
+    onRefresh: () => { this._dataRequested = false; this.requestDataIfNeeded(); },
+  });
+
+  // Same pages-data-request event dispatch protocol as PagesElement
+  private requestDataIfNeeded(): void { /* ... */ }
+}
+```
+
+This follows the same data subscription protocol (dispatching `pages-data-request` custom events) that `PagesElement` uses, without inheriting its rendering concerns. `DataSourceController` is the shared abstraction — it's already extracted into `pages-component` as a composition-friendly controller.
+
+#### Merge pipeline
+
+The GraphCanvas merge pipeline follows the same precedence principle as ECharts (SPI → typed escape hatch → extra), applied to two backend targets:
+
+1. **React Flow options:** SPI interaction properties (fitView, nodesDraggable, connectionsEnabled, minZoom, maxZoom, edgeType, edgeAnimated) → `deepMerge(reactFlowProps, props.reactFlow)` → `deepMerge(reactFlowProps, props.extra)` (`extra` targets React Flow as the primary rendering backend)
+2. **ELK options:** SPI layout properties (direction, spacing, algorithm, containerPadding) → `deepMerge(elkOptions, props.elk)` (ELK options are fully covered by `CasehubElkExtension.elkOptions` — no need for `extra`)
 
 ### Desugarer handling
 
