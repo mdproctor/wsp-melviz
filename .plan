@@ -13,8 +13,8 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#416 — Issue #416 ← active
-  - [ ] Batch 1: Callback plumbing
-    - [ ] Task 1: Step result accumulation and completion callback
-  - [ ] Batch 2: API surface
-    - [ ] Task 2: REST StartRequest callback parameters
-    - [ ] Task 3: GraphQL scenarioSubmit callback parameters
+  - [x] Batch 1: Callback plumbing
+    - [x] Task 1: Step result accumulation and completion callback
+  - [x] Batch 2: API surface
+    - [x] Task 2: REST StartRequest callback parameters
+    - [x] Task 3: GraphQL scenarioSubmit callback parameters
