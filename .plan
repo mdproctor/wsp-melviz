@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-416-scenario-callback
-state: active
+state: closing:review
 project-sha: 1ecd5f0f14c302d4d17950d181f85cbea7b57b4a
 date: 2026-09-10
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#416 — Issue #416 ← active
   - [x] Batch 1: Callback plumbing
