@@ -35,3 +35,15 @@
 **Sources:** `ScenarioOrchestrator.java:187-203` (onStepResult method), `ScenarioOrchestrator.java:123-146` (state/progress calculation)
 **Exploration:** quick
 **Status:** captured
+
+## D4: Wire on-error:stop in this issue
+
+**Choice:** When `on-error` is `stop` and a step fails (`ok=false`), abort all executors (broadcast `executor-control: stop`), fire the callback with `faulted=true` and `errorMessage` containing the failed step name and error. This reuses the existing `stop()` flow but adds the callback before clearing session state.
+**Alternatives:**
+- Defer on-error enforcement — only fire callback on natural completion; simpler but doesn't abort early, and the caller can't distinguish "all steps ran, one failed" from "aborted at first failure"
+**Rationale:** The callback needs a clear failure signal. `on-error:stop` is the only policy that produces an immediate abort — the callback fires once on the failing step, not after all remaining steps finish or are skipped. This is what workers-scenario needs: quick failure notification so the case engine can fault the step.
+**Trade-offs:** Adds `on-error` policy enforcement to an issue scoped as "add callback support." Acceptable — the enforcement is limited to `stop` (the simplest policy), and the callback is meaningless without it.
+**Sources:** Distributed executor protocol spec §4.10 (on-error policies), `WorkerCompletionPayload.faulted` field
+**Exploration:** quick
+**Depends on:** D2 (completion detection in orchestrator)
+**Status:** captured
