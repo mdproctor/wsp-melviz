@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-416-scenario-callback
-state: scaffolded
+state: active
 project-sha: 1ecd5f0f14c302d4d17950d181f85cbea7b57b4a
 date: 2026-09-10
 issue-repo: casehubio/casehub-pages
