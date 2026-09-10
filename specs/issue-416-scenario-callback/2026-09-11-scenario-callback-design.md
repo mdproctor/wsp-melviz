@@ -89,7 +89,8 @@ At the end of `onStepResult()`, after dispatching triggered steps:
 
 ```java
 if (completedSteps.size() == allSteps.size()) {
-    fireCallback(false, null);
+    boolean anyFailed = completedSteps.values().stream().anyMatch(ok -> !ok);
+    fireCallback(anyFailed, anyFailed ? "One or more steps failed" : null);
 }
 ```
 
