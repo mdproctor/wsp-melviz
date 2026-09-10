@@ -12,6 +12,18 @@
 **Exploration:** quick
 **Status:** captured
 
+## D3: Callback output contains all step results keyed by step name
+
+**Choice:** `output = {"stepName1": {result1}, "stepName2": {result2}, ...}` — the full execution trace, keyed by step name (or label if no name).
+**Alternatives:**
+- Last step result only — simple but loses intermediate results that the caller may need for correlation
+- Flat merged map — simple but keys could collide across steps (e.g. two steps both returning "ticketId")
+**Rationale:** Workers-scenario dispatches scenarios as case steps. The orchestrating case engine needs to see what each scenario step produced to route subsequent case steps. Keying by step name gives a predictable structure with no collision risk.
+**Trade-offs:** Payload grows linearly with step count. Acceptable — scenarios are typically 5-20 steps, each with a small result map.
+**Sources:** `PushRequest.StepResult` (stepName + result fields), `WorkerCompletionPayload.output` (Map<String,Object>)
+**Exploration:** quick
+**Status:** captured
+
 ## D2: Completion detection inside ScenarioOrchestrator
 
 **Choice:** Add completion check at the end of `onStepResult()`. When all steps are done (or `on-error:stop` triggers a failure), the orchestrator fires the callback directly via an injected HTTP client. No separate service or CDI event.
