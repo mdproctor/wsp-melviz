@@ -11,3 +11,15 @@
 **Sources:** `WorkerCallbackResource.java` (X-Casehub-Callback-Token header check), `PendingCompletion.java` (callbackToken field)
 **Exploration:** quick
 **Status:** captured
+
+## D2: Completion detection inside ScenarioOrchestrator
+
+**Choice:** Add completion check at the end of `onStepResult()`. When all steps are done (or `on-error:stop` triggers a failure), the orchestrator fires the callback directly via an injected HTTP client. No separate service or CDI event.
+**Alternatives:**
+- CDI event + separate CallbackService — more decoupled but adds a class for a single-consumer event; over-engineered for this use case
+- Push wire observer — listens on `scenario:state` for progress=1.0; fragile, races with session cleanup, and couples to broadcast timing
+**Rationale:** The orchestrator already owns session lifecycle (start, stop, step completion). Adding the callback here keeps the "when is a scenario done?" logic in one place. The HTTP POST is fire-and-forget — no complex flow to decouple.
+**Trade-offs:** ScenarioOrchestrator gains an HTTP client dependency. Acceptable — the class already coordinates all session concerns.
+**Sources:** `ScenarioOrchestrator.java:187-203` (onStepResult method), `ScenarioOrchestrator.java:123-146` (state/progress calculation)
+**Exploration:** quick
+**Status:** captured
