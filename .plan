@@ -10,9 +10,9 @@ date: 2026-09-11
 
 ## Queue
 - [ ] casehubio/casehub-pages#420 — feat(pages-lsp): ts-morph generation pipeline for domain Zod schemas ← active
-  - [ ] Batch 1: Generator+CaseDefinition
-    - [ ] Task 1: Generator infrastructure
-    - [ ] Task 2: CaseDefinition generation + discriminator
+  - [x] Batch 1: Generator+CaseDefinition
+    - [x] Task 1: Generator infrastructure
+    - [x] Task 2: CaseDefinition generation + discriminator
   - [ ] Batch 2: Remaining+Staleness
     - [ ] Task 3: Org generation
     - [ ] Task 4: HTN generation
