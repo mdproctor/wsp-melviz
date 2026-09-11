@@ -1,0 +1,22 @@
+# Work Plan — issue-420-lsp-schemas
+
+## State
+branch: issue-420-lsp-schemas
+state: active
+issue-repo: casehubio/casehub-pages
+covers: casehubio/casehub-pages#420
+Current: casehubio/casehub-pages#420 — feat(pages-lsp): ts-morph generation pipeline for domain Zod schemas
+date: 2026-09-11
+
+## Queue
+- [ ] casehubio/casehub-pages#420 — feat(pages-lsp): ts-morph generation pipeline for domain Zod schemas ← active
+  - [ ] Batch 1: Generator+CaseDefinition
+    - [ ] Task 1: Generator infrastructure
+    - [ ] Task 2: CaseDefinition generation + discriminator
+  - [ ] Batch 2: Remaining+Staleness
+    - [ ] Task 3: Org generation
+    - [ ] Task 4: HTN generation
+    - [ ] Task 5: SWF generation + staleness tests
+- [x] casehubio/casehub-pages#158 — feat: root-only pagination for tree tables
+- [x] casehubio/casehub-pages#159 — feat: pages-schema-form — JSON Schema driven form component
+- [x] casehubio/casehub-pages#160 — fix: move chart titles from ECharts canvas to type: title components
