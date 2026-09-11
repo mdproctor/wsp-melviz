@@ -1,0 +1,15 @@
+# Work Plan — issue-422-intellij-lsp-plugin
+
+## State
+branch: issue-422-intellij-lsp-plugin
+state: active
+issue-repo: casehubio/casehub-pages
+covers: casehubio/casehub-pages#422
+Current: casehubio/casehub-pages#422 — epic: IntelliJ LSP plugin for CaseHub YAML
+date: 2026-09-11
+
+## Queue
+- [x] casehubio/casehub-pages#422 — epic: IntelliJ LSP plugin for CaseHub YAML
+- [x] casehubio/casehub-pages#423 — feat(pages-lsp): bundle server-node as single-file esbuild output
+- [ ] casehubio/casehub-pages#424 — feat: IntelliJ LSP client plugin — Kotlin shell, file type registration, bundled server ← active
+- [ ] casehubio/casehub-pages#425 — feat: IntelliJ plugin packaging, distribution, and marketplace metadata
