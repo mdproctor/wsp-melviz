@@ -2,12 +2,13 @@
 
 ## State
 branch: issue-420-lsp-schemas
-state: active
+state: closing:promoted
 issue-repo: casehubio/casehub-pages
 covers: casehubio/casehub-pages#420
 Current: casehubio/casehub-pages#420 — feat(pages-lsp): ts-morph generation pipeline for domain Zod schemas
 date: 2026-09-11
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#420 — feat(pages-lsp): ts-morph generation pipeline for domain Zod schemas ← active
   - [x] Batch 1: Generator+CaseDefinition
