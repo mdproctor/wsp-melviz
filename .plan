@@ -1,0 +1,15 @@
+# Work Plan — issue-428-visual-yaml-builder
+
+## State
+branch: issue-428-visual-yaml-builder
+state: scaffolded
+project-sha: 569e91aea51f844b3ebb94b07f203a7550467847
+date: 2026-09-12
+issue-repo: casehubio/casehub-pages
+covers: 428
+design-repo: project
+design-section-hashes: 4d2cc5ab:##
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#428 — Issue #428 ← active
