@@ -13,3 +13,22 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#434 — Issue #434 ← active
+  - [ ] Batch 1: Facade Foundation
+    - [ ] Task 1: Transaction API
+    - [ ] Task 2: Positional insert + defaultContentSlot
+  - [ ] Batch 2: Facade Compound Ops
+    - [ ] Task 3: Container addChild
+    - [ ] Task 4: wrapIn + wrapInRow
+    - [ ] Task 5: replaceWith + moveToSlot
+  - [ ] Batch 3: Tree Structural UI
+    - [ ] Task 6: PaletteFilter + inline picker
+    - [ ] Task 7: Context menu component
+    - [ ] Task 8: Tree interaction wiring
+  - [ ] Batch 4: Tree DnD
+    - [ ] Task 9: Drag-and-drop with drop indicators
+  - [ ] Batch 5: Preview Data
+    - [ ] Task 10: Strategy registry + strategies
+    - [ ] Task 11: YAML transformation + integration
+  - [ ] Batch 6: Dock Workbench
+    - [ ] Task 12: pages-dock-workbench Lit component
+    - [ ] Task 13: Builder shell migration
