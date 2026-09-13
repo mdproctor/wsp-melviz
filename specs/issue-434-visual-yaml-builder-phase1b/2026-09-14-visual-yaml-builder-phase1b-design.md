@@ -205,6 +205,8 @@ interface DatasetSnapshot {
 
 The registry is a `Map<string, PreviewDataStrategy>`. Lookup: `registry.get(componentType)`. If absent, the component renders as-is (no data injection).
 
+Strategies import from `@casehubio/pages-schema` (for `componentSchemaRegistry` — column type metadata) and `@casehubio/pages-data` (for column type definitions). `pages-schema` is already in `pages-builder`'s dependency chain via `pages-document`.
+
 ### 2.2 Strategy Implementations
 
 Five strategy classes cover all data-consuming component types:
