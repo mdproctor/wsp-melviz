@@ -80,3 +80,23 @@
 **Trade-offs:** Requires the full runtime to be loaded in the builder. Strategy-generated data may not perfectly represent real data distributions. Rendering performance under rapid edits needs debouncing.
 **Depends on:** D5 (strategy registry provides the data for live rendering)
 **Exploration:** quick
+
+## D9: Facade Structural Operations API
+
+**Choice:** Extend existing node interfaces — `ComponentNode` gets `addChild()`, `wrapIn()`, `replaceWith()`; `PageNode`/`RowNode`/`ColumnNode` get `insertChildAt()`
+**Alternatives:**
+- StructuralEditor service — separate class that takes PageDocument and performs compound operations. Keeps nodes as data, centralises mutation logic. Easier to test in isolation but adds indirection
+**Rationale:** Operations feel natural on nodes — `node.wrapIn('tabs')`. Each node already knows its own structure via the descriptor registry. `moveToIndex()` and `duplicate()` already live on `ComponentNode`; the new operations are the same category of structural mutation.
+**Trade-offs:** Node interfaces grow. Compound operations (wrap = remove + create + insert) must be atomic for undo — facade must snapshot before the compound and treat it as one undo step.
+**Sources:** `packages/pages-document/src/page-document.ts` (existing node implementations), `packages/pages-document/src/container-descriptors.ts` (slot structure registry)
+**Exploration:** quick
+
+## D10: Preview Data Strategy Location
+
+**Choice:** In `pages-builder` package under `src/data/strategies/`
+**Alternatives:**
+- In pages-document — co-located with facade but conflates model with rendering concerns
+- New pages-preview package — clean separation but unnecessary package overhead for a small surface
+**Rationale:** Preview data is a builder concern — it serves the builder's preview mode. Strategies need to read component properties (from the facade) and produce data shapes (from pages-data types). Both are available as imports from pages-builder.
+**Trade-offs:** If preview data is ever needed outside the builder (e.g. showcase, documentation), it would need to be extracted later. Acceptable risk — no current consumer outside the builder.
+**Exploration:** quick
