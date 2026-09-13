@@ -1,0 +1,15 @@
+# Work Plan — issue-434-visual-yaml-builder-phase1b
+
+## State
+branch: issue-434-visual-yaml-builder-phase1b
+state: scaffolded
+project-sha: c987098b075f518b2b93633a178424cec36877a6
+date: 2026-09-14
+issue-repo: casehubio/casehub-pages
+covers: 434
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#434 — Issue #434 ← active
