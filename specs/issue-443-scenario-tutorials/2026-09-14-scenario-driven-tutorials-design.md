@@ -30,6 +30,7 @@ interface ScenarioEditableText {
   getCursor(): { line: number; col: number };
   getText(): string;
   getLineCount(): number;
+  setContent(text: string): void;
   highlight(from: {line: number; col: number},
             to: {line: number; col: number},
             style?: 'pulse' | 'underline' | 'glow'): void;
@@ -39,7 +40,7 @@ interface ScenarioEditableText {
 }
 ```
 
-**Discovery:** The executor checks for a well-known property on the resolved DOM element:
+**Discovery:** The executor checks for a well-known Symbol property on the resolved DOM element. Because ARIA tree walker resolution finds the deepest matching element (e.g. CodeMirror's `div.cm-content[role="textbox"]` inside a code editor's shadow DOM), the executor walks **up** through shadow DOM host boundaries to find the nearest ancestor bearing the SPI symbol:
 
 ```typescript
 const EDITABLE_TEXT = Symbol.for('scenario-editable-text');
@@ -47,21 +48,36 @@ const EDITABLE_TEXT = Symbol.for('scenario-editable-text');
 function isEditableText(el: Element): el is Element & { [EDITABLE_TEXT]: ScenarioEditableText } {
   return EDITABLE_TEXT in el;
 }
+
+function findEditableText(el: Element): ScenarioEditableText | null {
+  let current: Element | null = el;
+  while (current) {
+    if (isEditableText(current)) return current[EDITABLE_TEXT];
+    // Walk up: parent element in light DOM, then shadow host
+    const root = current.getRootNode();
+    if (root instanceof ShadowRoot) {
+      current = root.host;
+    } else {
+      current = current.parentElement;
+    }
+  }
+  return null;
+}
 ```
 
-**Registration pattern:** Each implementation sets the symbol property on its host element:
+**Registration pattern:** Each implementation sets the symbol property on its host element. The SPI is owned by the component that owns the editor instance — `pages-code-editor` owns the `EditorView`, so it owns the SPI:
 
 ```typescript
-// In pages-builder-shell.ts
+// In pages-code-editor.ts
 connectedCallback() {
   super.connectedCallback();
-  (this as any)[Symbol.for('scenario-editable-text')] = this._editorBridge;
+  (this as any)[Symbol.for('scenario-editable-text')] = new CodeEditorBridge(this);
 }
 ```
 
 ### 2.2 CodeMirror implementation
 
-`pages-builder-shell` implements `ScenarioEditableText` by bridging to its internal `EditorView`:
+`pages-code-editor` implements `ScenarioEditableText` by bridging to its internal `EditorView`. The bridge is a private class inside `pages-code-editor` — it accesses the `_editorView` directly (no `as any` casts, no cross-component private field access). No CodeMirror types are exported.
 
 | SPI method | CodeMirror implementation |
 |---|---|
@@ -72,25 +88,29 @@ connectedCallback() {
 | `getCursor()` | Read from `view.state.selection.main.head` |
 | `getText()` | `view.state.doc.toString()` |
 | `getLineCount()` | `view.state.doc.lines` |
+| `setContent(text)` | `view.dispatch({changes: {from: 0, to: doc.length, insert: text}})` |
 | `highlight(from, to, style)` | Create `Decoration.mark({class})` via `StateEffect` |
 | `clearHighlights()` | Clear the decoration set via `StateEffect` |
 | `triggerCompletion()` | `startCompletion(view)` from `@codemirror/autocomplete` |
 | `selectCompletion(label)` | Find completion in active tooltip, apply it |
 
-The bridge is a private class inside `pages-builder-shell` — it holds a reference to the `EditorView` and implements each method. No CodeMirror types are exported.
+This resolves the existing fragile access pattern where `builder-shell.ts` reaches into `pages-code-editor`'s private `_editorView` via `(editorEl as any)._editorView`. The SPI becomes the public API for editor manipulation — `builder-shell` can adopt it for its own needs over time.
 
 ### 2.3 New ARIA actions
 
-Six new actions added to the `aria` delivery channel. They follow the same YAML shorthand pattern as existing commands.
+Seven new actions added to the `aria` delivery channel. They follow the same YAML shorthand pattern as existing commands.
 
 | Action | Purpose | YAML shape |
 |---|---|---|
 | `editor-insert` | Insert text at cursor | `{role, name, value, typing?, line?, col?}` |
 | `editor-replace` | Replace a text range | `{role, name, from: {line, col}, to: {line, col}, value, typing?}` |
 | `editor-delete` | Delete a text range | `{role, name, from: {line, col}, to: {line, col}}` |
+| `editor-set-content` | Atomically replace entire editor content | `{role, name, value, typing?}` |
 | `editor-cursor` | Move cursor to position | `{role, name, line, col}` |
 | `editor-highlight` | Highlight a code region | `{role, name, from: {line, col}, to: {line, col}, style?}` |
 | `editor-completion` | Trigger and select autocomplete | `{role, name, label?}` |
+
+`editor-set-content` replaces the full editor buffer atomically via `setContent()` on the SPI. This is essential for non-incremental section transitions where the next section's YAML is unrelated to the previous section's content. With `typing: instant` (recommended for transitions), it acts as a clean reset. With `typing: progressive`, it types the new content from scratch after clearing.
 
 **`typing` field:** Controls text insertion animation.
 
@@ -107,15 +127,15 @@ Six new actions added to the `aria` delivery channel. They follow the same YAML 
 3. Call `selectCompletion(label)` — finds the item and applies it
 4. If LSP is not connected or completion doesn't appear within timeout, skip gracefully (log a warning, continue to next step)
 
-**Parser integration:** Add all six to the `ARIA_ACTIONS` set in `parser.ts`. The shorthand expander handles `from`/`to` nested objects and `typing`/`style`/`label` fields.
+**Parser integration:** Add all seven editor actions plus `spotlight` to the `ARIA_ACTIONS` set in `parser.ts`. The current set (`navigate`, `click`, `fill`, `select`, `expand`, `collapse`, `assert`, `wait`, `show-markdown`) is extended to include: `spotlight`, `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion`. The shorthand expander handles `from`/`to` nested objects and `typing`/`style`/`label` fields.
 
-**Executor integration:** Add a handler for each action in `command-executor.ts`:
+**Executor integration:** Add a handler for each action in `command-executor.ts`. The executor uses `findEditableText` (§2.1) to discover the SPI from the resolved target element, walking up through shadow DOM hosts:
 
 ```typescript
 async function editorInsert(target: AriaTarget, value: string, typing: string, line?: number, col?: number): Promise<void> {
   const el = resolveTarget(target);
-  if (!isEditableText(el)) throw new Error(`Target is not an editable text element`);
-  const editor = el[EDITABLE_TEXT];
+  const editor = findEditableText(el);
+  if (!editor) throw new Error(`Target is not an editable text element`);
   if (line !== undefined && col !== undefined) {
     editor.setCursor(line, col);
   }
@@ -127,7 +147,9 @@ async function editorInsert(target: AriaTarget, value: string, typing: string, l
 }
 ```
 
-`progressiveInsert` adapts the existing `progressiveFill` algorithm to work through the SPI's `insertText` method instead of `el.value`.
+**`progressiveInsert` adaptation:** The existing `progressiveFill` in `scenario-handler.ts` operates on `HTMLInputElement`/`HTMLTextAreaElement` by setting `el.value` to progressively longer substrings. `progressiveInsert` adapts this algorithm for the SPI: instead of `el.value = revealed`, it calls `editor.insertText(char)` for each character (or chunk) in the progressive phases. The phased acceleration (character → word chunks → larger chunks) and skip-detection (`isTypingSkipped` → `editor.setContent(fullValue)`) are preserved. The adapted function lives in `command-executor.ts` alongside the other editor action handlers.
+
+**Execution path unification:** The existing `sectioned-runner.ts` has an inline `executeAriaStep` function that only handles `click`, `fill`, and `select` via `document.querySelector` (which cannot cross shadow DOM boundaries). This function is replaced with delegation to `command-executor.ts`, which uses the full ARIA tree walker (`findAllByRole`) that correctly traverses shadow DOM. This unification ensures all ARIA actions — existing and new — are available to tutorials via `runSectionedScenario`.
 
 ### 2.4 Editor region callouts
 
@@ -155,7 +177,6 @@ meta:
   title: "CaseHub YAML Composition"
   description: "Watch the composition language build pages live"
   area: yaml-composition
-  contentType: hands-on
 
 sections:
   - title: "YAML Basics"
@@ -171,7 +192,7 @@ sections:
     steps:
       - editor-insert:
           role: textbox
-          name: "YAML editor"
+          name: "Page YAML source"
           value: |
             pages:
               - name: My First Page
@@ -185,15 +206,21 @@ sections:
           content: "The tree view shows your page structure"
 ```
 
-The existing tutorial content (15 narrative markdown files, YAML examples) is reused — the markdown files become slide section content, the YAML examples become `editor-insert` step values.
+The `contentType` field is NOT set in the YAML meta — it is a registration-time concern on `TutorialDescriptor` (in `tutorial/types.ts`), set when tutorials are registered in the catalog. `TutorialMeta` (the interface backing the YAML `meta` block) does not include `contentType`. The catalog registration sets `contentType: 'hands-on'` for the reworked tutorial.
+
+**Content data transformation:** The existing `yaml-editor` format sections carry `initialYaml`, `expectedKeys`, `expectedStructure`, `hint`, `solutionYaml`, and `buildOnPrevious` fields. In the `hands-on` rework, these are intentionally dropped — the YAML examples become `editor-insert`/`editor-set-content` step values, the narrative markdown is reused as section content, and the validation metadata (`expectedKeys`, `expectedStructure`) has no equivalent in the demonstration-mode tutorial. The validation infrastructure (`validateYamlStep`, `deepSubsetMatch` in `yaml-editor-runner.ts`) is preserved for the deferred user-practice mode.
+
+The existing tutorial content (15 narrative markdown files, YAML examples) is reused — the markdown files become slide section content, the YAML examples become `editor-insert` step values. Non-incremental section transitions use `editor-set-content` with `typing: instant` to atomically replace the editor buffer.
 
 ### 2.6 Tutorial host changes
 
-Minimal. The tutorial host already handles `hands-on` content type correctly via `runSectionedScenario`. The `yaml-editor` code path in the tutorial host remains for future user-practice mode but is not used by the reworked tutorials.
+The tutorial host requires two changes:
 
-The only change: the tutorial host needs to render `<pages-builder-shell>` as the target application (instead of a form or other app). This is a tutorial-level concern — the YAML file specifies a section that loads the builder shell, and the scenario steps target it by ARIA role/name.
+**1. Execution path unification.** The existing `_renderTutorial()` method starts `runSectionedScenario`, which uses an inline `executeAriaStep` function limited to `click`/`fill`/`select` via `document.querySelector`. This is replaced with delegation to `command-executor.ts` (see §2.3), making all ARIA actions available to tutorials through the standard tree walker.
 
-**Builder shell as tutorial target:** The tutorial's HTML host page (or a dedicated tutorial app component) must render `<pages-builder-shell>` somewhere in the DOM so the executor can find it. This is the same pattern as the form-automation tutorial rendering a form for the executor to target.
+**2. Builder-shell rendering.** The existing `_renderTutorial()` renders `pages-scenario-narrative` and `pages-scenario-controller` but does NOT render `<pages-builder-shell>` — only `_renderYamlEditorTutorial()` does. A dedicated tutorial app component (§3 task 5) renders builder-shell as the tutorial's target application alongside the scenario narrative and controller. This is structurally similar to how `_renderYamlEditorTutorial` renders builder-shell today, but integrated into the `hands-on` path rather than the `yaml-editor` path.
+
+The `yaml-editor` code path in the tutorial host remains for the deferred user-practice mode but is not used by the reworked tutorials.
 
 ---
 
@@ -201,22 +228,29 @@ The only change: the tutorial host needs to render `<pages-builder-shell>` as th
 
 | Order | Issue | Depends on | Scale |
 |---|---|---|---|
-| 1 | ScenarioEditableText SPI — interface definition, Symbol-based discovery, type exports | — | S |
-| 2 | CodeMirror SPI implementation in pages-builder-shell — bridge class, highlight decorations | 1 | M |
-| 3 | New ARIA actions — parser expansion, executor handlers, progressive insert adapter | 1 | M |
-| 4 | Tutorial content rework — convert 15-step content from yaml-editor sections to hands-on scenarios with editor commands | 2, 3 | L |
-| 5 | Tutorial host app — dedicated page/component that renders builder-shell as the tutorial target application | 2 | S |
-| 6 | Follow-up: LSP wiring for workbench editor — connect pages-lsp to the CodeMirror editor in builder-shell | — | M |
-| 7 | Follow-up: User practice mode — validation-gated editing using existing yaml-editor infrastructure | 4 | M |
+| 1 | ScenarioEditableText SPI — interface definition, Symbol-based discovery, `findEditableText` ancestor walk, type exports | — | S |
+| 2 | CodeMirror SPI implementation in pages-code-editor — bridge class, highlight decorations, SPI registration | 1 | M |
+| 3 | Execution path unification — replace `executeAriaStep` in `sectioned-runner.ts` with delegation to `command-executor.ts` | — | S |
+| 4 | New ARIA actions — parser expansion (`spotlight` + 7 editor actions), executor handlers, `progressiveInsert` adapter | 1, 3 | M |
+| 5 | Tutorial content rework — convert 15-step content from yaml-editor sections to hands-on scenarios with editor commands | 2, 4 | L |
+| 6 | Tutorial host app — dedicated page/component that renders builder-shell as the tutorial target application with scenario narrative and controller | 2 | S |
+| 7 | Follow-up (TBD-1): LSP wiring for workbench editor — connect pages-lsp to the CodeMirror editor in builder-shell | — | M |
+| 8 | Follow-up (TBD-2): User practice mode — validation-gated editing using existing yaml-editor infrastructure | 5 | M |
+| 9 | Follow-up (TBD-3): New tutorial content beyond yaml-composition | 5 | M |
+| 10 | Follow-up (TBD-4): Scenario server-side changes — add editor actions to `scenario-handler.ts` if needed | 4 | S |
+
+`TBD-N` placeholders are replaced with GitHub issue numbers during implementation (filed against `casehubio/casehub-pages`).
 
 ---
 
 ## 4. Out of scope
 
-- **LSP integration in workbench editor** — designed for but not implemented; `editor-completion` skips gracefully when LSP is absent
-- **User practice mode** — deferred per D7; existing yaml-editor validation infrastructure preserved
-- **New tutorial content beyond yaml-composition** — this issue reworks the existing 15 steps; additional tutorials are separate issues
-- **Scenario server-side changes** — the new commands work through the in-process `runSectionedScenario` path; server-side `scenario-handler.ts` updates are a follow-up if needed
+Each deferred item is tracked as a GitHub issue (filed during implementation):
+
+- **LSP integration in workbench editor** (TBD-1) — designed for but not implemented; `editor-completion` skips gracefully when LSP is absent
+- **User practice mode** (TBD-2) — deferred per D7; existing yaml-editor validation infrastructure (`validateYamlStep`, `deepSubsetMatch`) is preserved
+- **New tutorial content beyond yaml-composition** (TBD-3) — this issue reworks the existing 15 steps; additional tutorials are separate issues
+- **Scenario server-side changes** (TBD-4) — the new commands work through the in-process `runSectionedScenario` path; server-side `scenario-handler.ts` updates are a follow-up if needed
 
 ---
 
@@ -224,14 +258,15 @@ The only change: the tutorial host needs to render `<pages-builder-shell>` as th
 
 - `packages/pages-aria/src/scenario/parser.ts` — ARIA_ACTIONS set, shorthand expansion
 - `packages/pages-aria/src/executor/command-executor.ts` — ARIA command execution
-- `packages/pages-aria/src/executor/visual-feedback.ts` — typeText, progressiveFill, highlightElement
+- `packages/pages-aria/src/executor/visual-feedback.ts` — typeText, highlightElement, isTypingSkipped, resetTypingSkip
+- `packages/pages-aria/src/server/scenario-handler.ts` — progressiveFill (source for progressiveInsert adaptation)
 - `packages/pages-aria/src/executor/spotlight.ts` — showSpotlight, SpotlightConfig
 - `packages/pages-aria/src/scenario/sectioned-runner.ts` — TutorialRunner, step progression
 - `packages/pages-aria/src/tutorial/tutorial-host.ts` — tutorial catalog and rendering
 - `packages/pages-aria/src/controller/scenario-controller.ts` — outline, transport controls
 - `packages/pages-aria/src/controller/scenario-narrative.ts` — markdown rendering
-- `packages/pages-builder/src/shell/builder-shell.ts` — CodeMirror wrapper, builder-change event
-- `packages/pages-code-editor/src/pages-code-editor.ts` — CodeMirror 6 component
+- `packages/pages-builder/src/shell/builder-shell.ts` — builder-change event, tutorial target host
+- `packages/pages-code-editor/src/pages-code-editor.ts` — CodeMirror 6 component, SPI host (owns EditorView)
 - GE-20260905-3e4256 — drawSelection() required for cursor in shadow DOM
 - GE-20260907-6fdc04 — tooltip override cascade in shadow DOM
 - GE-20260905-5986c1 — Compartment pattern for dynamic CM6 properties in Lit
