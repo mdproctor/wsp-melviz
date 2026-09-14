@@ -33,3 +33,15 @@
 **Exploration:** quick
 **Depends on:** D2 (Lit component needs LayoutStore interface)
 **Status:** captured
+
+## D4: Runtime ↔ Lit component integration for content rendering
+
+**Choice:** Render callback injection — Lit component accepts optional `renderContent: (container: HTMLElement, panelConfig: DockPanelConfig) => void`
+**Alternatives:**
+- Event-based protocol — Lit component dispatches `pages-panel-render-request`, runtime listens and renders into the container. More decoupled but adds async coordination and a new event type to the contract.
+**Rationale:** Direct function call is synchronous, no new event type, same pattern as activation callbacks and content factories (floating-workspace). Lit component doesn't import from pages-runtime — it calls whatever function it's given. For standalone use, no callback needed.
+**Trade-offs:** Tighter coupling at the call site (runtime must set the property before the component renders). Acceptable — the activation callback already runs at element creation time, which is the natural place to set this.
+**Sources:** packages/pages-runtime/src/activation.ts:563-587 (deferred activation pattern), content-agnostic-workbench protocol (content factory pattern)
+**Exploration:** quick
+**Depends on:** D1 (light DOM — rendered content is queryable), D3 (DockPanelConfig type available in pages-primitives)
+**Status:** captured
