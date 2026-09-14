@@ -1,0 +1,15 @@
+# Work Plan — issue-442-completion-indentation
+
+## State
+branch: issue-442-completion-indentation
+state: scaffolded
+project-sha: 822109ae39cb856088d108a6f086860118290ae8
+date: 2026-09-14
+issue-repo: casehubio/casehub-pages
+covers: 442
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#442 — Issue #442 ← active
