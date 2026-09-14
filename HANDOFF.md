@@ -1,39 +1,43 @@
 # Session Handover
 
-**Branch:** `main` (issue-437-lsp4ij-completions closed)
-**Issue:** #437 — fix(intellij): LSP4IJ not delivering completions
+**Branch:** `issue-445-domain-lsp-formats`
+**Issue:** #445 — sync .casehub-packages with current pages-data exports
+**Queue:** #445, #446, #447
 **Date:** 2026-09-14
 
 ## What happened
 
-Debugged and fixed LSP4IJ completion delivery for the IntelliJ plugin. Root cause was a dual-plugin conflict: `io.casehub.pages` (CaseHub Pages, from pages repo) and `io.casehub.yaml` (CaseHub YAML, from blocks-ui repo) were both installed, both registering LSP servers for the same YAML file patterns. LSP4IJ couldn't route documents with two competing servers.
+Branch scaffolded with a 3-issue queue to restore domain format LSP completions (SWF, Case, HTN, Org). Currently only Page completions work because the blocks-ui plugin's `.casehub-packages` is stale and no domain schemas are registered.
 
-Secondary issues fixed: stale bundle cache (extractServer never re-extracted), TextDocumentSync bare number form (LSP4IJ needs object form with `openClose: true`), missing Node.js macOS fallback paths in blocks-ui plugin, CompletionWeigher for YAML `{}` item deprioritization.
+No implementation work done yet — this is a setup-only handover for the next session.
 
-Verified end-to-end: file-based logging at `/tmp/casehub-lsp.log` confirms initialize → didOpen → completion handshake completes. Page completions appear in IntelliJ.
+## Queue
+
+1. **#445** — Sync `.casehub-packages` in blocks-ui with current pages-data exports (S / Med). Gate for everything else. Missing `lookupSchema` and `externalDataSetDefSchema` prevents lsp-schemas bundle from building.
+2. **#446** — Port LSP fixes from pages plugin to blocks-ui plugin (S / Low). TextDocumentSync object form, serverInfo, CompletionWeigher. Some fixes already landed (Node.js fallback, stale cache).
+3. **#447** — Register domain schema formats — SWF, Case, HTN, Org (M / Med). Create `FormatRegistration` objects with Zod schemas and type detection for each domain.
+
+## Garden entries (all relevant)
+
+- **GE-20260914-e4788a** — Schema composition: use `z.intersection()` for language layers, not format extensions
+- **GE-20260914-fab341** — `z.intersection()` required when `documentSchema` is widened `ZodType` (`.merge()` fails)
+- **GE-20260803-17fc03** — casehub-packages directory names don't match npm package names — check `name` field in package.json
+- **GE-20260813-674be0** — YAML desugarer drops unknown component props silently (3-place update required)
 
 ## Decisions / gotchas
 
-- **Two plugins must never coexist.** CaseHub Pages (`io.casehub.pages`) and CaseHub YAML (`io.casehub.yaml`) have different plugin IDs but claim the same files. IntelliJ treats them as independent plugins. The rename from `io.casehub.yaml` → `io.casehub.pages` left the old installation behind.
-- CaseHub YAML is the superset plugin (all 5 formats) but its bundle build fails — `.casehub-packages` in blocks-ui is stale (missing `lookupSchema`, `externalDataSetDefSchema` from pages-data).
-- Currently CaseHub YAML is installed (without CaseHub Pages). It uses a pages-lsp bundle with Page schemas only — SWF/Case/HTN/Org return empty completions.
-- Indentation bug: completion selection inserts text at column 0, losing YAML context indentation.
-- File-based diagnostic logging (`/tmp/casehub-lsp.log`) is committed to pages main — remove after debugging is complete.
-
-## Follow-up (3 items for next session)
-
-1. **Sync `.casehub-packages` in blocks-ui** — rebuild from current pages source so lsp-schemas bundle builds. Then rebuild + reinstall CaseHub YAML with domain schemas.
-2. **Fix indentation bug** — completion insertText doesn't preserve YAML indent context.
-3. **Apply pages fixes to blocks-ui plugin** — TextDocumentSync object form, serverInfo, CompletionWeigher, stale cache removal. The blocks-ui `CaseHubLspServerDescriptor.kt` already has Node.js fallback paths and stale cache fix from this session.
+- All three issues on a single branch (`issue-445-domain-lsp-formats`), advancing via `work next`
+- blocks-ui is physically present in slot 190 at `/Users/mdproctor/claude/casehub/slots/190/blocks-ui` but it's a worktree clone — `main` can't be checked out (held by parent). It's on a stale branch `slot-190-intellij-plugin` with a branch-closed stamp.
+- The `.slot` file lists only `pages (primary)`. blocks-ui changes should be committed directly to the blocks-ui worktree clone.
 
 ## References
 
 | Artifact | Path |
 |----------|------|
-| Diary | `blog/2026-09-14-mdp01-lsp4ij-silent-server.md` |
-| Garden: CompletionWeigher | `GE-20260914-54f581` |
-| Garden: TextDocumentSync | `GE-20260914-330473` |
-| Build integration issue | #438 |
-| Diagnostic log | `/tmp/casehub-lsp.log` |
-| blocks-ui plugin | `blocks-ui/plugins/intellij-casehub/` |
-| pages plugin | `pages/plugins/intellij/` |
+| LSP IDE plugins spec | `docs/specs/issue-407-lsp-ide-plugins/2026-09-10-lsp-ide-plugins-design.md` |
+| YAML schema completion spec | `docs/specs/issue-408-yaml-schema-completion/2026-09-05-yaml-schema-completion-design.md` |
+| LSP domain schema generation spec | `docs/specs/issue-420-lsp-schemas/` |
+| pages-lsp completion.ts | `packages/pages-lsp/src/completion.ts` |
+| Schema registry | `packages/pages-lsp/src/schema-registry.ts` |
+| Page format registration | `packages/pages-lsp/src/formats/page.ts` |
+| blocks-ui plugin | `/Users/mdproctor/claude/casehub/slots/190/blocks-ui/plugins/intellij-casehub/` |
