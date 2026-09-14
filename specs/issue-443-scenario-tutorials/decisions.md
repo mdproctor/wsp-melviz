@@ -2,7 +2,7 @@
 
 ## D1: Editor SPI for scenario automation
 
-**Choice:** Define a `ScenarioEditableText` interface that any text editing surface can implement. The scenario executor targets elements by ARIA role/name, then calls through the SPI. `pages-builder-shell` is one implementation backed by CodeMirror 6.
+**Choice:** Define a `ScenarioEditableText` interface that any text editing surface can implement. The scenario executor targets elements by ARIA role/name, then calls through the SPI. `pages-code-editor` is the first implementation, backed by CodeMirror 6. The SPI is registered on the component that owns the editor instance — `pages-code-editor` owns the `EditorView`, so it owns the SPI. Discovery uses an ancestor walk (`findEditableText`) that traverses shadow DOM host boundaries from the resolved ARIA element upward.
 **Alternatives:**
 - ARIA-only keyboard simulation — pure but fragile; CM6 uses its own input pipeline and may not respond to synthetic `KeyboardEvent`s reliably
 - Direct CodeMirror API from executor — works but couples the executor to one editor implementation
@@ -14,11 +14,11 @@
 
 ## D2: New ARIA actions for editor automation
 
-**Choice:** Add `editor-insert`, `editor-replace`, `editor-delete`, `editor-cursor`, `editor-highlight`, `editor-completion` to the existing `aria` delivery channel. Same YAML shorthand pattern as `fill`/`click`/`select`.
+**Choice:** Add `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion` to the existing `aria` delivery channel, plus `spotlight` to the parser's `ARIA_ACTIONS` set. Same YAML shorthand pattern as `fill`/`click`/`select`, with a catch-all body passthrough in the parser (replaces the old three-field extraction). `spotlight` gets a special-case handler like `navigate` and `show-markdown` because its YAML body uses nested `target` rather than flat `role`/`name`.
 **Alternatives:**
 - New delivery channel `editor` alongside `aria`/`graphql`/`simulated` — cleaner separation but fragments the command namespace; ARIA targeting is still the discovery mechanism
 - Extend `fill` to detect editor elements — overloads one command with two very different behaviors
-**Rationale:** Editor commands use the same ARIA targeting (`role` + `name` to find the element) and the same dispatch flow. They're actions within the `aria` channel, not a separate channel. The parser's `ARIA_ACTIONS` set grows naturally.
+**Rationale:** Editor commands use the same ARIA targeting (`role` + `name` to find the element) and the same dispatch flow. They're actions within the `aria` channel, not a separate channel. The parser's `ARIA_ACTIONS` set grows naturally. A central `executeStep` dispatch function in `command-executor.ts` routes all actions — existing and new — to their handlers.
 **Trade-offs:** The `aria` action set grows. If many more non-standard actions accumulate, a sub-namespace may be needed later.
 **Sources:** `packages/pages-aria/src/scenario/parser.ts` (ARIA_ACTIONS set), `packages/pages-aria/src/executor/command-executor.ts`
 **Exploration:** quick

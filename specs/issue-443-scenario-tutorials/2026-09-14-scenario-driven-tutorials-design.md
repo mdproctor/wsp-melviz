@@ -127,9 +127,53 @@ Seven new actions added to the `aria` delivery channel. They follow the same YAM
 3. Call `selectCompletion(label)` — finds the item and applies it
 4. If LSP is not connected or completion doesn't appear within timeout, skip gracefully (log a warning, continue to next step)
 
-**Parser integration:** Add all seven editor actions plus `spotlight` to the `ARIA_ACTIONS` set in `parser.ts`. The current set (`navigate`, `click`, `fill`, `select`, `expand`, `collapse`, `assert`, `wait`, `show-markdown`) is extended to include: `spotlight`, `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion`. The shorthand expander handles `from`/`to` nested objects and `typing`/`style`/`label` fields.
+**Parser integration:** Add all seven editor actions plus `spotlight` to the `ARIA_ACTIONS` set in `parser.ts`. The current set (`navigate`, `click`, `fill`, `select`, `expand`, `collapse`, `assert`, `wait`, `show-markdown`) is extended to include: `spotlight`, `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion`.
 
-**Executor integration:** Add a handler for each action in `command-executor.ts`. The executor uses `findEditableText` (§2.1) to discover the SPI from the resolved target element, walking up through shadow DOM hosts:
+**Shorthand expander changes:** The existing `expandAriaShorthand` only passes through `value`, `state`, and `timeout` from the YAML body — all other fields (`typing`, `from`, `to`, `line`, `col`, `style`, `label`) are silently dropped. Two changes fix this:
+
+1. **Catch-all passthrough for generic actions.** After extracting `role`/`name`/`index`/`within` for the target, ALL remaining body properties are spread onto the step:
+
+```typescript
+const targetKeys = new Set(['role', 'name', 'index', 'within']);
+const step: ScenarioStep = { delivery: 'aria', name: autoName, action, target };
+for (const [key, val] of Object.entries(body)) {
+  if (!targetKeys.has(key) && val != null) {
+    (step as Record<string, unknown>)[key] = val;
+  }
+}
+```
+
+This replaces the three explicit `value`/`state`/`timeout` lines, naturally passing through `typing`, `from`, `to`, `line`, `col`, `style`, `label`, and any future fields without parser changes.
+
+2. **Special-case handler for `spotlight`.** Like `navigate` and `show-markdown`, `spotlight` has a non-standard YAML shape — its target is nested as `body.target` (not flat `body.role`/`body.name`), and it carries unique fields (`content`, `position`, `duration`, `also`). The generic path would produce `{role: 'unknown', name: 'unknown'}`. A dedicated handler extracts the nested target and passes through all properties:
+
+```typescript
+if (action === 'spotlight') {
+  const body = raw[action] as Record<string, unknown>;
+  const tgt = body.target as Record<string, unknown> | undefined;
+  const target: AriaTarget | undefined = tgt
+    ? { role: tgt.role as string, name: tgt.name as string,
+        ...(tgt.index != null ? { index: tgt.index as string } : {}),
+        ...(tgt.within != null ? { within: tgt.within as AriaTarget } : {}) }
+    : undefined;
+  const step: ScenarioStep = {
+    delivery: 'aria',
+    name: `spotlight-${target?.role ?? 'unknown'}-${target?.name ?? 'unknown'}`,
+    action: 'spotlight',
+    ...(target ? { target } : {}),
+  };
+  for (const [key, val] of Object.entries(body)) {
+    if (key !== 'target' && val != null) {
+      (step as Record<string, unknown>)[key] = val;
+    }
+  }
+  return step;
+}
+```
+
+This preserves `content`, `position`, `duration`, and `also` on the step object for the executor to consume.
+
+**Executor integration:** Add a handler for each new action in `command-executor.ts`, plus a central dispatch function. The executor uses `findEditableText` (§2.1) to discover the SPI from the resolved target element, walking up through shadow DOM hosts:
 
 ```typescript
 async function editorInsert(target: AriaTarget, value: string, typing: string, line?: number, col?: number): Promise<void> {
@@ -142,14 +186,54 @@ async function editorInsert(target: AriaTarget, value: string, typing: string, l
   if (typing === 'instant') {
     editor.insertText(value);
   } else {
-    await progressiveInsert(editor, value, typing);
+    await progressiveInsert(editor, value, typing, (remaining) => editor.insertText(remaining));
   }
 }
 ```
 
-**`progressiveInsert` adaptation:** The existing `progressiveFill` in `scenario-handler.ts` operates on `HTMLInputElement`/`HTMLTextAreaElement` by setting `el.value` to progressively longer substrings. `progressiveInsert` adapts this algorithm for the SPI: instead of `el.value = revealed`, it calls `editor.insertText(char)` for each character (or chunk) in the progressive phases. The phased acceleration (character → word chunks → larger chunks) and skip-detection (`isTypingSkipped` → `editor.setContent(fullValue)`) are preserved. The adapted function lives in `command-executor.ts` alongside the other editor action handlers.
+**`progressiveInsert` adaptation:** The existing `progressiveFill` in `scenario-handler.ts` operates on `HTMLInputElement`/`HTMLTextAreaElement` by setting `el.value` to progressively longer substrings. `progressiveInsert` adapts this algorithm for the SPI: instead of `el.value = revealed`, it calls `editor.insertText(char)` for each character (or chunk) in the progressive phases. The phased acceleration (character → word chunks → larger chunks) is preserved. The adapted function lives in `command-executor.ts` alongside the other editor action handlers.
 
-**Execution path unification:** The existing `sectioned-runner.ts` has an inline `executeAriaStep` function that only handles `click`, `fill`, and `select` via `document.querySelector` (which cannot cross shadow DOM boundaries). This function is replaced with delegation to `command-executor.ts`, which uses the full ARIA tree walker (`findAllByRole`) that correctly traverses shadow DOM. This unification ensures all ARIA actions — existing and new — are available to tutorials via `runSectionedScenario`.
+**Action-aware skip mechanism:** The skip shortcut must use the correct SPI method for each action, since `setContent(fullValue)` would destroy existing content during an `editor-insert`. `progressiveInsert` takes a `finishFn` callback that completes the operation when typing is skipped:
+
+| Action | `finishFn` (called on skip) | Rationale |
+|---|---|---|
+| `editor-insert` | `editor.insertText(remainingText)` | Inserts only what hasn't been typed yet — preserves existing content |
+| `editor-set-content` | `editor.setContent(fullValue)` | Replaces entire buffer — matches the action's intent |
+| `editor-replace` | `editor.replaceRange(from, to, fullValue)` | Completes the replacement in the original range |
+
+**Dispatch function:** `command-executor.ts` gains an `executeStep` function that dispatches by action name. This is the single entry point used by `sectioned-runner.ts`:
+
+```typescript
+export async function executeStep(step: ScenarioStep, eventTarget?: EventTarget): Promise<void> {
+  const s = step as Record<string, unknown>;
+  switch (step.action) {
+    case 'click': return click(step.target!);
+    case 'fill': return fill(step.target!, s.value as string);
+    case 'select': return select(step.target!, s.value as string);
+    case 'expand': return expand(step.target!);
+    case 'collapse': return collapse(step.target!);
+    case 'assert': return assertState(step.target!, s.state as Partial<AriaState>);
+    case 'wait': return waitFor(step.target!, s.state as Partial<AriaState>, s.timeout as number ?? 5000);
+    case 'navigate': window.location.href = s.value as string; return;
+    case 'show-markdown': return showMarkdownStep(s, eventTarget);
+    case 'spotlight': return spotlightStep(s);
+    case 'editor-insert': return editorInsert(step.target!, s.value as string, s.typing as string ?? 'progressive', s.line as number, s.col as number);
+    case 'editor-set-content': return editorSetContent(step.target!, s.value as string, s.typing as string ?? 'progressive');
+    case 'editor-replace': return editorReplace(step.target!, s.from as any, s.to as any, s.value as string, s.typing as string ?? 'progressive');
+    case 'editor-delete': return editorDelete(step.target!, s.from as any, s.to as any);
+    case 'editor-cursor': return editorCursor(step.target!, s.line as number, s.col as number);
+    case 'editor-highlight': return editorHighlight(step.target!, s.from as any, s.to as any, s.style as string);
+    case 'editor-completion': return editorCompletion(step.target!, s.label as string);
+    default: throw new Error(`Unknown action: ${step.action}`);
+  }
+}
+```
+
+**`show-markdown` in the sectioned runner context:** The push-wire path (`scenario-handler.ts`) dispatches a `scenario-narrative` event to a narrative target. In the sectioned runner, narrative content is managed via `fireState` events. `showMarkdownStep` dispatches the same `scenario-narrative` custom event on the provided `eventTarget`, which `pages-scenario-narrative` already listens for. The sectioned runner passes its `eventTarget` through to `executeStep`.
+
+**`spotlight` in the executor:** `spotlightStep` delegates to the existing `showSpotlight()` from `executor/spotlight.ts`, constructing a `SpotlightConfig` from the step's `target`, `content`, `position`, `duration`, and `also` fields. The resolved ARIA target is converted to a DOM element via `resolveTarget`.
+
+**Execution path unification:** The existing `sectioned-runner.ts` has an inline `executeAriaStep` function that only handles `click`, `fill`, and `select` via `document.querySelector` (which cannot cross shadow DOM boundaries). This function is replaced with a call to `executeStep(step, eventTarget)`, which uses the full ARIA tree walker (`findAllByRole`) that correctly traverses shadow DOM. This unification ensures all ARIA actions — existing and new — are available to tutorials via `runSectionedScenario`.
 
 ### 2.4 Editor region callouts
 
@@ -218,7 +302,7 @@ The tutorial host requires two changes:
 
 **1. Execution path unification.** The existing `_renderTutorial()` method starts `runSectionedScenario`, which uses an inline `executeAriaStep` function limited to `click`/`fill`/`select` via `document.querySelector`. This is replaced with delegation to `command-executor.ts` (see §2.3), making all ARIA actions available to tutorials through the standard tree walker.
 
-**2. Builder-shell rendering.** The existing `_renderTutorial()` renders `pages-scenario-narrative` and `pages-scenario-controller` but does NOT render `<pages-builder-shell>` — only `_renderYamlEditorTutorial()` does. A dedicated tutorial app component (§3 task 5) renders builder-shell as the tutorial's target application alongside the scenario narrative and controller. This is structurally similar to how `_renderYamlEditorTutorial` renders builder-shell today, but integrated into the `hands-on` path rather than the `yaml-editor` path.
+**2. Builder-shell rendering.** The existing `_renderTutorial()` renders `pages-scenario-narrative` and `pages-scenario-controller` but does NOT render `<pages-builder-shell>` — only `_renderYamlEditorTutorial()` does. A dedicated tutorial app component (§3 task 6) renders builder-shell as the tutorial's target application alongside the scenario narrative and controller. This is structurally similar to how `_renderYamlEditorTutorial` renders builder-shell today, but integrated into the `hands-on` path rather than the `yaml-editor` path.
 
 The `yaml-editor` code path in the tutorial host remains for the deferred user-practice mode but is not used by the reworked tutorials.
 
