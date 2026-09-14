@@ -7,7 +7,9 @@
 
 - **Commit:** `d1b7de59` on main — `fix: re-export onPagesEvent from pages-component barrel`
 - **Reason:** pages-component/src/index.ts was missing `export * from './events.js'`, so `@casehubio/pages-component` consumers (drafthouse) couldn't import `onPagesEvent`. Added `events.ts` re-export file and barrel entry.
-- **Triggered by:** drafthouse issue-117 build failure
+- **Commit:** `af197265` on main — `fix: build order — pages-component must precede pages-primitives`
+- **Reason:** dock-workbench rework (616ef95e) added pages-component dependency to pages-primitives, but build:packages had primitives before component. TypeScript compilation failed in CI.
+- **Triggered by:** drafthouse issue-117 CI failure
 
 ## Previous session
 
