@@ -80,7 +80,7 @@ class PagesDockWorkbench extends LitElement {
 
 **Standalone mode** — `pages-builder` and other Lit consumers:
 1. Consumer sets `leftPanels`, `rightPanels`, `bottomPanels` with `DockBarItem[]` arrays.
-2. Consumer provides content as child elements or via `renderContent` callback.
+2. Consumer provides a `renderContent` callback to render panel content into zone containers when panels open. The Lit component calls `renderContent(container, panelConfig)` on first open — same mechanism as config mode, just a different provider.
 3. `persistKey` enables simple `localStorage` persistence (no `LayoutStore` needed).
 
 When `config` is set, it takes precedence — `leftPanels`/`rightPanels`/`bottomPanels` are ignored.
