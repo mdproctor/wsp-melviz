@@ -1,0 +1,17 @@
+# Work Plan — issue-445-domain-lsp-formats
+
+## State
+branch: issue-445-domain-lsp-formats
+state: scaffolded
+project-sha: 2c3a2db3f2372bc145c05f695df506703ae9b13e
+date: 2026-09-14
+issue-repo: casehubio/casehub-pages
+covers: 445,446,447
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#445 — Issue #445 ← active
+- [ ] casehubio/casehub-pages#446 — port LSP fixes to blocks-ui plugin
+- [ ] casehubio/casehub-pages#447 — register domain schema formats
