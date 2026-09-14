@@ -22,23 +22,25 @@ Issue #435 landed the yaml-core engine (variables, forEach, modules, conditional
 A DOM-level interface that any text editing surface can implement. The scenario executor discovers elements by ARIA role/name, then calls through this interface for all text manipulation.
 
 ```typescript
+interface Position { line: number; col: number; }
+
 interface ScenarioEditableText {
   insertText(text: string): void;
-  replaceRange(from: number, to: number, text: string): void;
-  deleteRange(from: number, to: number): void;
+  replaceRange(from: Position, to: Position, text: string): void;
+  deleteRange(from: Position, to: Position): void;
   setCursor(line: number, col: number): void;
-  getCursor(): { line: number; col: number };
+  getCursor(): Position;
   getText(): string;
   getLineCount(): number;
   setContent(text: string): void;
-  highlight(from: {line: number; col: number},
-            to: {line: number; col: number},
-            style?: 'pulse' | 'underline' | 'glow'): void;
+  highlight(from: Position, to: Position, style?: 'pulse' | 'underline' | 'glow'): void;
   clearHighlights(): void;
   triggerCompletion?(): void;
   selectCompletion?(label: string): boolean;
 }
 ```
+
+All range-based methods use `Position` (`{line, col}`) consistently — matching the YAML authoring format, `setCursor`/`getCursor`, and `highlight`. The CodeMirror implementation converts internally via `view.state.doc.line(pos.line).from + pos.col`.
 
 **Discovery:** The executor checks for a well-known Symbol property on the resolved DOM element. Because ARIA tree walker resolution finds the deepest matching element (e.g. CodeMirror's `div.cm-content[role="textbox"]` inside a code editor's shadow DOM), the executor walks **up** through shadow DOM host boundaries to find the nearest ancestor bearing the SPI symbol:
 
@@ -82,17 +84,19 @@ connectedCallback() {
 | SPI method | CodeMirror implementation |
 |---|---|
 | `insertText(text)` | `view.dispatch({changes: {from: cursor, insert: text}})` |
-| `replaceRange(from, to, text)` | `view.dispatch({changes: {from, to, insert: text}})` |
-| `deleteRange(from, to)` | `view.dispatch({changes: {from, to}})` |
-| `setCursor(line, col)` | `view.dispatch({selection: {anchor: lineOffset + col}})` |
-| `getCursor()` | Read from `view.state.selection.main.head` |
+| `replaceRange(from, to, text)` | Convert positions via `toOffset(pos)` → `view.dispatch({changes: {from: offset1, to: offset2, insert: text}})` |
+| `deleteRange(from, to)` | Convert positions via `toOffset(pos)` → `view.dispatch({changes: {from: offset1, to: offset2}})` |
+| `setCursor(line, col)` | `view.dispatch({selection: {anchor: toOffset({line, col})}})` |
+| `getCursor()` | Convert `view.state.selection.main.head` back to `{line, col}` via `doc.lineAt(offset)` |
 | `getText()` | `view.state.doc.toString()` |
 | `getLineCount()` | `view.state.doc.lines` |
 | `setContent(text)` | `view.dispatch({changes: {from: 0, to: doc.length, insert: text}})` |
-| `highlight(from, to, style)` | Create `Decoration.mark({class})` via `StateEffect` |
+| `highlight(from, to, style)` | Convert positions → offsets → `Decoration.mark({class})` via `StateEffect` |
 | `clearHighlights()` | Clear the decoration set via `StateEffect` |
 | `triggerCompletion()` | `startCompletion(view)` from `@codemirror/autocomplete` |
 | `selectCompletion(label)` | Find completion in active tooltip, apply it |
+
+`toOffset(pos: Position)` is a private helper: `view.state.doc.line(pos.line).from + pos.col`. The offset-based CodeMirror API is an implementation detail — the SPI's public surface is consistently `{line, col}`.
 
 This resolves the existing fragile access pattern where `builder-shell.ts` reaches into `pages-code-editor`'s private `_editorView` via `(editorEl as any)._editorView`. The SPI becomes the public API for editor manipulation — `builder-shell` can adopt it for its own needs over time.
 
@@ -176,7 +180,7 @@ This preserves `content`, `position`, `duration`, and `also` on the step object 
 **Executor integration:** Add a handler for each new action in `command-executor.ts`, plus a central dispatch function. The executor uses `findEditableText` (§2.1) to discover the SPI from the resolved target element, walking up through shadow DOM hosts:
 
 ```typescript
-async function editorInsert(target: AriaTarget, value: string, typing: string, line?: number, col?: number): Promise<void> {
+async function editorInsert(target: AriaTarget, value: string, typing: string, speed: number, line?: number, col?: number): Promise<void> {
   const el = resolveTarget(target);
   const editor = findEditableText(el);
   if (!editor) throw new Error(`Target is not an editable text element`);
@@ -186,12 +190,20 @@ async function editorInsert(target: AriaTarget, value: string, typing: string, l
   if (typing === 'instant') {
     editor.insertText(value);
   } else {
-    await progressiveInsert(editor, value, typing, (remaining) => editor.insertText(remaining));
+    await progressiveInsert(editor, value, speed, (remaining) => editor.insertText(remaining));
   }
 }
 ```
 
-**`progressiveInsert` adaptation:** The existing `progressiveFill` in `scenario-handler.ts` operates on `HTMLInputElement`/`HTMLTextAreaElement` by setting `el.value` to progressively longer substrings. `progressiveInsert` adapts this algorithm for the SPI: instead of `el.value = revealed`, it calls `editor.insertText(char)` for each character (or chunk) in the progressive phases. The phased acceleration (character → word chunks → larger chunks) is preserved. The adapted function lives in `command-executor.ts` alongside the other editor action handlers.
+**`progressiveInsert` adaptation:** The existing `progressiveFill` in `scenario-handler.ts` takes `speed: number` and computes delays from it (`charDelay = Math.max(10, 40 / speed)`, `wordDelay = Math.max(20, 60 / speed)`). `progressiveInsert` preserves this: it takes `speed` and uses the same delay formulas. Instead of `el.value = revealed`, it calls `editor.insertText(char)` for each character (or chunk) in the progressive phases. The phased acceleration (character → word chunks → larger chunks) is preserved. The adapted function lives in `command-executor.ts` alongside the other editor action handlers.
+
+**`editor-replace` strategy:** `editor-replace` uses a delete-then-insert approach: first `deleteRange(from, to)` removes the original content (leaving the cursor at `from`), then progressive insert types the replacement text. This means all three progressive-typing actions share the same insertion codepath — they differ only in their pre-operation:
+
+| Action | Pre-operation | Progressive phase |
+|---|---|---|
+| `editor-insert` | Optional `setCursor(line, col)` | `progressiveInsert` at cursor |
+| `editor-replace` | `deleteRange(from, to)` | `progressiveInsert` at cursor (now at `from`) |
+| `editor-set-content` | `setContent('')` (clear buffer) | `progressiveInsert` at cursor (now at 0,0) |
 
 **Action-aware skip mechanism:** The skip shortcut must use the correct SPI method for each action, since `setContent(fullValue)` would destroy existing content during an `editor-insert`. `progressiveInsert` takes a `finishFn` callback that completes the operation when typing is skipped:
 
@@ -199,12 +211,12 @@ async function editorInsert(target: AriaTarget, value: string, typing: string, l
 |---|---|---|
 | `editor-insert` | `editor.insertText(remainingText)` | Inserts only what hasn't been typed yet — preserves existing content |
 | `editor-set-content` | `editor.setContent(fullValue)` | Replaces entire buffer — matches the action's intent |
-| `editor-replace` | `editor.replaceRange(from, to, fullValue)` | Completes the replacement in the original range |
+| `editor-replace` | `editor.insertText(remainingText)` | Range already deleted in pre-operation; insert the remainder at cursor |
 
-**Dispatch function:** `command-executor.ts` gains an `executeStep` function that dispatches by action name. This is the single entry point used by `sectioned-runner.ts`:
+**Dispatch function:** `command-executor.ts` gains an `executeStep` function that dispatches by action name. This is the single entry point used by `sectioned-runner.ts`. It takes `speed` so that intra-step timing (progressive typing delays, spotlight duration) respects the transport control:
 
 ```typescript
-export async function executeStep(step: ScenarioStep, eventTarget?: EventTarget): Promise<void> {
+export async function executeStep(step: ScenarioStep, eventTarget?: EventTarget, speed = 1.0): Promise<void> {
   const s = step as Record<string, unknown>;
   switch (step.action) {
     case 'click': return click(step.target!);
@@ -216,24 +228,32 @@ export async function executeStep(step: ScenarioStep, eventTarget?: EventTarget)
     case 'wait': return waitFor(step.target!, s.state as Partial<AriaState>, s.timeout as number ?? 5000);
     case 'navigate': window.location.href = s.value as string; return;
     case 'show-markdown': return showMarkdownStep(s, eventTarget);
-    case 'spotlight': return spotlightStep(s);
-    case 'editor-insert': return editorInsert(step.target!, s.value as string, s.typing as string ?? 'progressive', s.line as number, s.col as number);
-    case 'editor-set-content': return editorSetContent(step.target!, s.value as string, s.typing as string ?? 'progressive');
-    case 'editor-replace': return editorReplace(step.target!, s.from as any, s.to as any, s.value as string, s.typing as string ?? 'progressive');
-    case 'editor-delete': return editorDelete(step.target!, s.from as any, s.to as any);
+    case 'spotlight': return spotlightStep(s, speed);
+    case 'editor-insert': return editorInsert(step.target!, s.value as string, s.typing as string ?? 'progressive', speed, s.line as number, s.col as number);
+    case 'editor-set-content': return editorSetContent(step.target!, s.value as string, s.typing as string ?? 'progressive', speed);
+    case 'editor-replace': return editorReplace(step.target!, s.from as Position, s.to as Position, s.value as string, s.typing as string ?? 'progressive', speed);
+    case 'editor-delete': return editorDelete(step.target!, s.from as Position, s.to as Position);
     case 'editor-cursor': return editorCursor(step.target!, s.line as number, s.col as number);
-    case 'editor-highlight': return editorHighlight(step.target!, s.from as any, s.to as any, s.style as string);
+    case 'editor-highlight': return editorHighlight(step.target!, s.from as Position, s.to as Position, s.style as string);
     case 'editor-completion': return editorCompletion(step.target!, s.label as string);
     default: throw new Error(`Unknown action: ${step.action}`);
   }
 }
 ```
 
+The sectioned runner passes `rs.speed` to `executeStep(step, eventTarget, rs.speed)`.
+
+**Speed propagation:** `speed` flows from the transport control through to intra-step timing:
+- `progressiveInsert(editor, value, speed, finishFn)` — computes `charDelay = Math.max(10, 40 / speed)` and `wordDelay = Math.max(20, 60 / speed)`, matching `progressiveFill`'s formula
+- `spotlightStep(step, speed)` — computes `duration = Math.max(2000, wordCount * 250 / speed)`, matching `scenario-handler.ts` line 690
+
+At speed 0.5×, typing is slow and spotlights linger. At speed 10×, typing is near-instant and spotlights flash. Both intra-step and inter-step timing scale together.
+
 **`show-markdown` in the sectioned runner context:** The push-wire path (`scenario-handler.ts`) dispatches a `scenario-narrative` event to a narrative target. In the sectioned runner, narrative content is managed via `fireState` events. `showMarkdownStep` dispatches the same `scenario-narrative` custom event on the provided `eventTarget`, which `pages-scenario-narrative` already listens for. The sectioned runner passes its `eventTarget` through to `executeStep`.
 
-**`spotlight` in the executor:** `spotlightStep` delegates to the existing `showSpotlight()` from `executor/spotlight.ts`, constructing a `SpotlightConfig` from the step's `target`, `content`, `position`, `duration`, and `also` fields. The resolved ARIA target is converted to a DOM element via `resolveTarget`.
+**`spotlight` in the executor:** `spotlightStep` delegates to the existing `showSpotlight()` from `executor/spotlight.ts`, constructing a `SpotlightConfig` from the step's `target`, `content`, `position`, `duration`, and `also` fields. Duration is computed from `speed` when not explicitly specified. The resolved ARIA target is converted to a DOM element via `resolveTarget`.
 
-**Execution path unification:** The existing `sectioned-runner.ts` has an inline `executeAriaStep` function that only handles `click`, `fill`, and `select` via `document.querySelector` (which cannot cross shadow DOM boundaries). This function is replaced with a call to `executeStep(step, eventTarget)`, which uses the full ARIA tree walker (`findAllByRole`) that correctly traverses shadow DOM. This unification ensures all ARIA actions — existing and new — are available to tutorials via `runSectionedScenario`.
+**Execution path unification:** The existing `sectioned-runner.ts` has an inline `executeAriaStep` function that only handles `click`, `fill`, and `select` via `document.querySelector` (which cannot cross shadow DOM boundaries). This function is replaced with a call to `executeStep(step, eventTarget, rs.speed)`, which uses the full ARIA tree walker (`findAllByRole`) that correctly traverses shadow DOM. This unification ensures all ARIA actions — existing and new — are available to tutorials via `runSectionedScenario`.
 
 ### 2.4 Editor region callouts
 
