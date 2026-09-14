@@ -1,0 +1,15 @@
+# Work Plan — issue-436-rework-dock-lit-wrap
+
+## State
+branch: issue-436-rework-dock-lit-wrap
+state: scaffolded
+project-sha: 8ab00d5ba8a3eefef999a458fdfbdff12999564d
+date: 2026-09-14
+issue-repo: casehubio/casehub-pages
+covers: 436
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#436 — Issue #436 ← active
