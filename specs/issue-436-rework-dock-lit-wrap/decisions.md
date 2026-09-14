@@ -45,3 +45,15 @@
 **Exploration:** quick
 **Depends on:** D1 (light DOM — rendered content is queryable), D3 (DockPanelConfig type available in pages-primitives)
 **Status:** captured
+
+## D5: Dock-toggle handling ownership
+
+**Choice:** Lit component owns all dock-toggle handling — exclusive zone logic, cascade collapse/expand, deferred render trigger, button state sync
+**Alternatives:**
+- Lit component delegates toggle to runtime — fires `pages-dock-toggle` upward, runtime's existing handler does all work. Breaks standalone use (no handler, nothing happens).
+**Rationale:** The Lit component encapsulates the behavior it renders. site.ts gets simpler (~100 lines of dock-specific code removed). Standalone use works without runtime. The component re-dispatches `pages-dock-toggle` with `composed: true` after handling so external listeners (URL sync, analytics) still observe the event.
+**Trade-offs:** Duplicates cascade collapse/expand logic from site.ts into the Lit component during transition — but since site.ts's version is being removed, this is a move not a duplication. The Lit component becomes the single source of truth.
+**Sources:** packages/pages-runtime/src/site.ts:917-1015 (dock-toggle handler being absorbed), packages/pages-runtime/src/site.ts:1289-1326 (initDockZoneGroup being absorbed)
+**Exploration:** quick
+**Depends on:** D1 (light DOM — cascade collapse walks DOM normally), D4 (render callback — deferred render trigger invokes callback)
+**Status:** captured
