@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-434-visual-yaml-builder-phase1b
-state: active
+state: closing:promoted
 project-sha: c987098b075f518b2b93633a178424cec36877a6
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#434 — Issue #434 ← active
   - [x] Batch 1: Facade Foundation
