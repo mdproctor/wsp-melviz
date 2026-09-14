@@ -13,3 +13,12 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#443 — Issue #443 ← active
+  - [ ] Batch 1: SPI-Foundation
+    - [ ] Task 1: SPI-interface-discovery
+    - [ ] Task 2: CodeMirror-bridge
+  - [ ] Batch 2: Executor-Integration
+    - [ ] Task 3: ExecuteStep-dispatch
+    - [ ] Task 4: Editor-ARIA-actions
+  - [ ] Batch 3: Tutorial-Delivery
+    - [ ] Task 5: Content-rework
+    - [ ] Task 6: Host-app
