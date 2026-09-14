@@ -3,7 +3,7 @@
 ## State
 branch: issue-436-rework-dock-lit-wrap
 state: active
-project-sha: bc62c61114634f0e02fbac03ff993a3d34f6c53e
+project-sha: 7e0c7fed8e494292fe43ed33fe89a5dbeba83f61
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
 covers: 436
@@ -20,7 +20,7 @@ flyway-next-v: none
     - [x] Task 3: Rewrite PagesDockWorkbench with light DOM
     - [x] Task 4: Toggle handling and cascade
     - [x] Task 5: State initialization and persistence
-  - [ ] Batch 3: Runtime wiring
+  - [x] Batch 3: Runtime wiring
     - [x] Task 6: Builder return type change
     - [x] Task 7: Activation callback and site.ts changes
-    - [ ] Task 8: builder-shell migration
+    - [x] Task 8: builder-shell migration
