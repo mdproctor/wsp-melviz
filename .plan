@@ -13,3 +13,14 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#436 — Issue #436 ← active
+  - [ ] Batch 1: Type foundation
+    - [ ] Task 1: Move config types to pages-component
+    - [ ] Task 2: Converge DockBarItem/DockItem types
+  - [ ] Batch 2: Lit component
+    - [ ] Task 3: Rewrite PagesDockWorkbench with light DOM
+    - [ ] Task 4: Toggle handling and cascade
+    - [ ] Task 5: State initialization and persistence
+  - [ ] Batch 3: Runtime wiring
+    - [ ] Task 6: Builder return type change
+    - [ ] Task 7: Activation callback and site.ts changes
+    - [ ] Task 8: builder-shell migration
