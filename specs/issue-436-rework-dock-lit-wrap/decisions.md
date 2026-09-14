@@ -8,3 +8,16 @@
 **Sources:** packages/pages-primitives/src/dock/pages-dock-workbench.ts, packages/pages-runtime/src/site.ts:917-1015 (dock-toggle handler queries), packages/pages-builder/src/shell/builder-shell.ts:778-823 (consumer wraps in shadow root)
 **Exploration:** quick
 **Status:** captured
+
+## D2: Persistence ownership
+
+**Choice:** Lit component accepts optional `LayoutStore`, falls back to direct `localStorage`
+**Alternatives:**
+- Always delegate to runtime via events — fires `pages-dock-state-change`, runtime captures and persists. Breaks standalone use (no listener).
+- Runtime remains sole persistence owner — Lit component is stateless layout, runtime pushes state down. Doesn't match Lit's reactive model.
+**Rationale:** The Lit component is always the state owner for dock layout. Runtime provides a LayoutStore; standalone consumers don't. No dual state tracking — site.ts removes its dock-specific dockState Map for panels inside a `<pages-dock-workbench>`.
+**Trade-offs:** The Lit component must understand LayoutStore's interface (save/load), creating a dependency on that type. Mitigated: LayoutStore is a simple interface in pages-component, not a runtime concern.
+**Sources:** packages/pages-runtime/src/site.ts:1153-1188 (scheduleLayoutSave, captureLayout), packages/pages-primitives/src/dock/pages-dock-workbench.ts:34-62 (current localStorage persistence)
+**Exploration:** quick
+**Depends on:** D1 (light DOM — runtime can read dock state from DOM if needed)
+**Status:** captured
