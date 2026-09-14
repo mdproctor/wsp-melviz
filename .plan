@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-443-scenario-tutorials
-state: active
+state: closing:promoted
 project-sha: 2d75d238ca0c125820ec0e46e4606a04e6b74a51
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: project
 design-section-hashes: 
 flyway-next-v: unknown
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#443 — Issue #443 ← active
   - [x] Batch 1: SPI-Foundation
