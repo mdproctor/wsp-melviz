@@ -1,29 +1,39 @@
 # Session Handover
 
-**Branch:** `issue-434-visual-yaml-builder-phase1b`
-**Issue:** #434 (Epic: Visual YAML Builder Phase 1b)
+**Branch:** `main` (issue-437-lsp4ij-completions closed)
+**Issue:** #437 — fix(intellij): LSP4IJ not delivering completions
 **Date:** 2026-09-14
 
 ## What happened
 
-Implemented all 13 tasks across 6 batches for Phase 1b of the visual YAML builder. Three workstreams completed: structural editing (#433 — facade transaction API, compound operations, tree UI with context menu/DnD/keyboard shortcuts), preview data (#432 — strategy registry, YAML transformation), and dock-workbench extraction (#429 — Lit component, shell migration).
+Debugged and fixed LSP4IJ completion delivery for the IntelliJ plugin. Root cause was a dual-plugin conflict: `io.casehub.pages` (CaseHub Pages, from pages repo) and `io.casehub.yaml` (CaseHub YAML, from blocks-ui repo) were both installed, both registering LSP servers for the same YAML file patterns. LSP4IJ couldn't route documents with two competing servers.
+
+Secondary issues fixed: stale bundle cache (extractServer never re-extracted), TextDocumentSync bare number form (LSP4IJ needs object form with `openClose: true`), missing Node.js macOS fallback paths in blocks-ui plugin, CompletionWeigher for YAML `{}` item deprioritization.
+
+Verified end-to-end: file-based logging at `/tmp/casehub-lsp.log` confirms initialize → didOpen → completion handshake completes. Page completions appear in IntelliJ.
 
 ## Decisions / gotchas
 
-- Dock-workbench Lit component was built from scratch instead of wrapping existing runtime infrastructure (`ZoneLayoutEngine`, `renderDockBar`, `DockBarProps`). Filed #436 to rework as proper extraction. Current implementation works but creates dual architecture.
-- YAML editor must always be in DOM (toggle via CSS `display:none`) — conditional rendering destroys CodeMirror state and loses content on mode switch.
-- `yaml` library's `Map.get()` returns YAML nodes for nested values, not plain JS — strategies need `.toJSON()` guard. Garden entries captured.
+- **Two plugins must never coexist.** CaseHub Pages (`io.casehub.pages`) and CaseHub YAML (`io.casehub.yaml`) have different plugin IDs but claim the same files. IntelliJ treats them as independent plugins. The rename from `io.casehub.yaml` → `io.casehub.pages` left the old installation behind.
+- CaseHub YAML is the superset plugin (all 5 formats) but its bundle build fails — `.casehub-packages` in blocks-ui is stale (missing `lookupSchema`, `externalDataSetDefSchema` from pages-data).
+- Currently CaseHub YAML is installed (without CaseHub Pages). It uses a pages-lsp bundle with Page schemas only — SWF/Case/HTN/Org return empty completions.
+- Indentation bug: completion selection inserts text at column 0, losing YAML context indentation.
+- File-based diagnostic logging (`/tmp/casehub-lsp.log`) is committed to pages main — remove after debugging is complete.
 
-## Next action
+## Follow-up (3 items for next session)
 
-Close #434 via `work-end`, then start #436 (dock-workbench rework to wrap existing runtime dock infrastructure).
+1. **Sync `.casehub-packages` in blocks-ui** — rebuild from current pages source so lsp-schemas bundle builds. Then rebuild + reinstall CaseHub YAML with domain schemas.
+2. **Fix indentation bug** — completion insertText doesn't preserve YAML indent context.
+3. **Apply pages fixes to blocks-ui plugin** — TextDocumentSync object form, serverInfo, CompletionWeigher, stale cache removal. The blocks-ui `CaseHubLspServerDescriptor.kt` already has Node.js fallback paths and stale cache fix from this session.
 
 ## References
 
 | Artifact | Path |
 |----------|------|
-| Design spec | `specs/issue-434-visual-yaml-builder-phase1b/2026-09-14-visual-yaml-builder-phase1b-design.md` |
-| Decisions | `specs/issue-434-visual-yaml-builder-phase1b/decisions.md` |
-| Plan | `plans/2026-09-14-visual-yaml-builder-phase1b.md` |
-| Journal | `JOURNAL.md` |
-| Demo | `packages/pages-builder/demo/` (run: `yarn --cwd packages/pages-builder dev`) |
+| Diary | `blog/2026-09-14-mdp01-lsp4ij-silent-server.md` |
+| Garden: CompletionWeigher | `GE-20260914-54f581` |
+| Garden: TextDocumentSync | `GE-20260914-330473` |
+| Build integration issue | #438 |
+| Diagnostic log | `/tmp/casehub-lsp.log` |
+| blocks-ui plugin | `blocks-ui/plugins/intellij-casehub/` |
+| pages plugin | `pages/plugins/intellij/` |
