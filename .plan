@@ -13,3 +13,6 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#442 — Issue #442 ← active
+  - [ ] Batch 1: textEdit pipeline
+    - [ ] Task 1: Add textEdit to CompletionItem and handleCompletion
+    - [ ] Task 2: Map textEdit in server transports
