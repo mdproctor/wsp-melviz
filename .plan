@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-436-rework-dock-lit-wrap
-state: closing:review
+state: closing:promoted
 project-sha: 8b9c22726cfbb5646f1f57f6370121ba19110d75
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
