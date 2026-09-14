@@ -14,3 +14,4 @@
 | [2026-09-11-mdp01-the-generator-that-already-existed.md](2026-09-11-mdp01-the-generator-that-already-existed.md) | 2026-09-11 | ts-morph domain schema generator — intersection types, getNonNullableType on unknown, lazy reference accumulator for recursive Zod |
 | [2026-09-11-mdp02-from-server-to-plugin.md](2026-09-11-mdp02-from-server-to-plugin.md) | 2026-09-11 | IntelliJ LSP plugin: esbuild bundling, LSP4IJ pivot from built-in API, Community Edition gotcha, plugin verification |
 | [2026-09-14-mdp01-lsp4ij-silent-server.md](2026-09-14-mdp01-lsp4ij-silent-server.md) | 2026-09-14 | Debugging LSP4IJ silent server — stale bundle cache, TextDocumentSync object form, CompletionWeigher for safe filtering |
+| [2026-09-14-mdp02-lsp-completions-column-zero.md](2026-09-14-mdp02-lsp-completions-column-zero.md) | 2026-09-14 | LSP4IJ inserts completions at column 0 when textEdit is absent — fixed server-side with explicit ranges |
