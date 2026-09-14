@@ -21,3 +21,15 @@
 **Exploration:** quick
 **Depends on:** D1 (light DOM — runtime can read dock state from DOM if needed)
 **Status:** captured
+
+## D3: Package placement and type dependencies
+
+**Choice:** Move pure types down to pages-component, keep Lit component in pages-primitives
+**Alternatives:**
+- Move Lit component up to pages-runtime — no type moves needed, but runtime becomes a grab-bag of orchestration and UI components, violating the current separation
+**Rationale:** `LayoutStore` is a pure interface over `LayoutState` (already in pages-component) — it belongs there, not in pages-runtime. `DockBarItem` is a pure data type. Moving them down keeps package boundaries clean. pages-primitives adds dependencies on pages-component (types) and pages-ui (DockWorkbenchConfig type).
+**Trade-offs:** Two type relocations create import churn in pages-runtime (LayoutStore) and dock-bar-renderer.ts (DockBarItem). One-time cost, mechanical change.
+**Sources:** packages/pages-component/src/model/types.ts:54 (LayoutState already here), packages/pages-runtime/src/layout-store.ts:3 (LayoutStore — pure interface), packages/pages-runtime/src/dock-bar-renderer.ts:4-9 (DockBarItem — pure data type), packages/pages-primitives/package.json (currently depends on pages-tsconfig only)
+**Exploration:** quick
+**Depends on:** D2 (Lit component needs LayoutStore interface)
+**Status:** captured
