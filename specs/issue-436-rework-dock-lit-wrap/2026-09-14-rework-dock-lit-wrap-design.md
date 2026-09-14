@@ -27,41 +27,49 @@ The Lit component is a **layout engine**, not a content renderer. It renders doc
 |---|----------|--------|
 | D1 | DOM mode | Light DOM (`createRenderRoot() { return this; }`) — no shadow boundary |
 | D2 | Persistence | Lit component owns state; accepts optional `LayoutStore`, falls back to `localStorage` |
-| D3 | Package placement | Stays in `pages-primitives`; move pure types (`LayoutStore`, `DockBarItem`) down to `pages-component` |
-| D4 | Content rendering | Render callback injection: `renderContent(container, panelConfig)` |
+| D3 | Package placement | Stays in `pages-primitives`; move pure types (`LayoutStore`, `DockItem`, config interfaces) down to `pages-component` |
+| D4 | Content rendering | Render callback injection: `renderContent(container, panelId)` for panels, `renderCentre(container)` for centre |
 | D5 | Toggle handling | Lit component owns all dock-toggle logic; `site.ts` removes its handler |
+| D6 | Config/standalone separation | Lit component has standalone API only; `activation.ts` converts `DockWorkbenchConfig` to standalone inputs |
+| D7 | Builder return type | `dockWorkbench()` returns opaque `{type: "dock-workbench"}` component (matching `floatingWorkspace()` pattern) |
+| D8 | CSS delivery | Component injects `<style>` element in `connectedCallback` (light DOM has no `static styles` support) |
 
 Full rationale in `decisions.md`.
 
 ## Component API
 
+The Lit component has a single mode: it receives panel descriptors and render callbacks. There is no `config` property — the runtime's activation layer (D6) converts `DockWorkbenchConfig` into these standalone inputs before creating the element.
+
 ```typescript
 class PagesDockWorkbench extends LitElement {
   createRenderRoot() { return this; }
 
-  // --- Config mode (runtime YAML path) ---
-  @property({ attribute: false }) config?: DockWorkbenchConfig;
-
-  // --- Standalone mode (pages-builder) ---
-  @property({ attribute: false }) leftPanels?: DockBarItem[];
-  @property({ attribute: false }) rightPanels?: DockBarItem[];
-  @property({ attribute: false }) bottomPanels?: DockBarItem[];
+  // --- Panel descriptors ---
+  @property({ attribute: false }) leftPanels?: DockItem[];
+  @property({ attribute: false }) rightPanels?: DockItem[];
+  @property({ attribute: false }) bottomPanels?: DockItem[];
 
   // --- Persistence ---
   @property({ attribute: false }) layoutStore?: LayoutStore;
   @property({ attribute: 'persist-key' }) persistKey?: string;
 
-  // --- Content rendering callback ---
+  // --- Content rendering callbacks ---
   @property({ attribute: false })
-  renderContent?: (container: HTMLElement, panel: DockPanelConfig) => void;
+  renderContent?: (container: HTMLElement, panelId: string) => void;
 
-  // --- Zone engine ---
-  @property({ attribute: false }) zoneEngine?: ZoneLayoutEngine;
+  @property({ attribute: false })
+  renderCentre?: (container: HTMLElement) => void;
+
+  // --- Zone map (set by activation layer for persistence) ---
+  @property({ attribute: false }) zoneMap?: ReadonlyMap<string, DockZone>;
 
   // --- Reactive internal state ---
-  @state() private _dockState = new Map<string, boolean>();
-  @state() private _splitRatios = new Map<string, number[]>();
+  @state() private _dockState: Record<string, boolean> = {};
+  @state() private _splitSizes: Record<string, number> = {};
   @state() private _resizing: string | null = null;
+
+  // --- Public read-only getters ---
+  get dockState(): Readonly<Record<string, boolean>>;
 
   // --- Public methods ---
   togglePanel(panelId: string): void;
@@ -70,53 +78,84 @@ class PagesDockWorkbench extends LitElement {
 }
 ```
 
-### Two usage modes
+All types (`DockItem`, `DockZone`, `LayoutStore`, `LayoutState`) are imported from `@casehubio/pages-component`. No dependency on `pages-ui` or `pages-runtime`.
 
-**Config mode** — runtime YAML path:
-1. Runtime's activation callback creates `<pages-dock-workbench>`, sets `config`, `renderContent`, `layoutStore`, and `persistKey`.
-2. Lit component creates `ZoneLayoutEngine` internally from config, builds the tree, renders dock bars and zone containers.
-3. On first panel open, calls `renderContent(container, panelConfig)` for deferred content rendering.
-4. Runtime queries (`querySelector`) work unchanged — light DOM means all rendered content is in the same DOM tree.
+### Usage
 
-**Standalone mode** — `pages-builder` and other Lit consumers:
-1. Consumer sets `leftPanels`, `rightPanels`, `bottomPanels` with `DockBarItem[]` arrays.
-2. Consumer provides a `renderContent` callback to render panel content into zone containers when panels open. The Lit component calls `renderContent(container, panelConfig)` on first open — same mechanism as config mode, just a different provider.
+**Runtime YAML path:**
+1. `activation.ts` intercepts `component.type === "dock-workbench"`, extracts `DockWorkbenchConfig`, creates `ZoneLayoutEngine`, converts config panels to `DockItem[]` arrays, and creates `<pages-dock-workbench>`.
+2. `activation.ts` sets `leftPanels`, `rightPanels`, `bottomPanels`, `renderContent`, `renderCentre`, `layoutStore`, `persistKey`, and `zoneMap`.
+3. On first panel open, the Lit component calls `renderContent(container, panelId)`. The activation layer's callback resolves the `panelId` to a `DockPanelConfig.content` and calls `renderComponent()`.
+4. `renderCentre(container)` is called during initial layout to populate the centre zone.
+5. Runtime queries (`querySelector`) work unchanged — light DOM means all rendered content is in the same DOM tree.
+
+**Standalone (pages-builder and other Lit consumers):**
+1. Consumer sets `leftPanels`, `rightPanels`, `bottomPanels` with `DockItem[]` arrays.
+2. Consumer provides `renderContent` and `renderCentre` callbacks. `renderContent(container, panelId)` is called on first panel open. `renderCentre(container)` is called during initial layout.
 3. `persistKey` enables simple `localStorage` persistence (no `LayoutStore` needed).
 
-When `config` is set, it takes precedence — `leftPanels`/`rightPanels`/`bottomPanels` are ignored.
+The component's API is identical in both paths — the activation layer is a thin adapter.
 
 ## Rendering
 
 The Lit component renders the **layout chrome** only:
 
-- **Dock bars** — vertical for left/right sides, horizontal for bottom. Buttons rendered from `DockBarItem[]` (extracted from config or provided directly). Each button has `data-dock-panel-id` and `data-dock-zone` attributes matching the runtime contract.
+- **Dock bars** — vertical for left/right sides, horizontal for bottom. Buttons rendered from `DockItem[]` (provided directly via properties). Each button has `data-dock-panel-id` and `data-dock-zone` attributes matching the runtime contract. Buttons are grouped by `DockItem.zone` within each dock bar — exclusivity is enforced per zone group (see §Dock-toggle handling).
 - **Resize handles** — between zone containers and the centre area. Pointer-event-based resize (carried forward from the existing Lit component — simpler and self-contained vs. the runtime's `split`-based resize).
-- **Zone containers** — empty `<div>` elements with `data-dock-zone` attributes, one per zone. Content is rendered into these by the `renderContent` callback or by the consumer.
-- **Centre container** — always visible, holds the centre content.
+- **Zone containers** — empty `<div>` elements with `data-dock-zone` attributes, one per zone. Content is rendered into these by the `renderContent` callback.
+- **Centre container** — always visible; populated via `renderCentre` callback during initial layout.
 
 The Lit component does **not** render panel content. Content ownership follows the content-agnostic-workbench protocol.
+
+### CSS delivery (D8)
+
+Light DOM does not support Lit's `static styles`. The component injects a `<style data-pages-dock>` element into the document (or the containing shadow root, if the component is inside one — e.g., builder-shell) during `connectedCallback`. If a `[data-pages-dock]` style element already exists in the same root, the component skips injection to avoid duplicates.
+
+The injected stylesheet covers: dock bar layout (flexbox, gap, padding), resize handle appearance and cursor, zone container sizing, centre container flex, and button states (`[data-active]` highlight). This replaces the ad-hoc `<style data-pages-dock>` injection currently in `site.ts:1275-1285`.
 
 ### Generated DOM structure
 
 ```
-<pages-dock-workbench>          ← light DOM root
+<pages-dock-workbench>                                    ← light DOM root
+  <style data-pages-dock>...</style>                      ← injected CSS (if not already present in root)
   <div class="dock-layout">
     <div class="dock-main">
-      <div class="dock-bar dock-bar-left">     ← left dock bar buttons
-      <div class="resize-handle resize-left">
-      <div class="dock-zone dock-zone-left">   ← left zone container (content injected here)
+      <div class="dock-bar dock-bar-left"                 ← left dock bar buttons
+           role="toolbar" aria-label="Left dock bar"
+           aria-orientation="vertical">
+        <div data-dock-zone="top">                        ← zone group (exclusivity scoped here)
+          <button data-dock-panel-id="inbox"
+                  data-dock-zone="top"
+                  aria-label="Inbox" aria-pressed="false">
+        </div>
+      </div>
+      <div class="resize-handle resize-left"
+           role="separator" aria-orientation="vertical"
+           aria-valuenow="260">
+      <div class="dock-zone dock-zone-left"               ← left zone container
+           role="region" aria-label="Left panel">
         <div data-component-id="inbox" data-deferred="pending">
         <div data-component-id="cases" data-deferred="pending">
       </div>
-      <div class="resize-handle resize-centre-right">
-      <div class="dock-zone dock-zone-centre"> ← centre content
-      <div class="resize-handle resize-right">
-      <div class="dock-zone dock-zone-right">  ← right zone container
-      <div class="dock-bar dock-bar-right">    ← right dock bar buttons
+      <div class="dock-zone dock-zone-centre"             ← centre content (populated via renderCentre)
+           role="main">
+      <div class="resize-handle resize-right"
+           role="separator" aria-orientation="vertical"
+           aria-valuenow="320">
+      <div class="dock-zone dock-zone-right"              ← right zone container
+           role="region" aria-label="Right panel">
+      <div class="dock-bar dock-bar-right"                ← right dock bar buttons
+           role="toolbar" aria-label="Right dock bar"
+           aria-orientation="vertical">
     </div>
-    <div class="resize-handle resize-bottom">
-    <div class="dock-zone dock-zone-bottom">   ← bottom zone container
-    <div class="dock-bar dock-bar-bottom">     ← bottom dock bar buttons
+    <div class="resize-handle resize-bottom"
+         role="separator" aria-orientation="horizontal"
+         aria-valuenow="200">
+    <div class="dock-zone dock-zone-bottom"               ← bottom zone container
+         role="region" aria-label="Bottom panel">
+    <div class="dock-bar dock-bar-bottom"                 ← bottom dock bar buttons
+         role="toolbar" aria-label="Bottom dock bar"
+         aria-orientation="horizontal">
   </div>
 </pages-dock-workbench>
 ```
@@ -127,55 +166,59 @@ Zone containers that have no configured panels are omitted entirely (same zone-o
 
 The Lit component owns all dock-toggle behavior (D5). When a dock bar button is clicked:
 
-1. **Exclusive enforcement:** If the button's dock bar is exclusive (default for dock-workbench zones), find the currently active panel in the same zone. If one exists and it's different from the clicked panel, hide it — set `display: none`, remove `data-active` from its button, update `_dockState`.
+1. **Zone-scoped exclusive enforcement:** Exclusivity is enforced per zone group within a dock bar, not per bar. The component finds the clicked button's `data-dock-zone` attribute and scopes the exclusive check to buttons sharing that zone. This allows panels in different zones of the same bar to be open simultaneously (e.g., builder-shell's Properties in "top" zone and Components in "bottom" zone of the right dock bar). This matches the existing runtime behavior in `site.ts:930-945`.
 
 2. **Toggle logic:** If the clicked panel is already visible, hide it (and cascade collapse). If hidden, show it (and cascade expand).
 
 3. **Deferred render:** If the panel container has `data-deferred="pending"`:
-   - Call `renderContent(container, panelConfig)` if a callback is available.
+   - Call `renderContent(container, panelId)` if a callback is available.
    - Otherwise dispatch `pages-deferred-render` on the container.
    - Remove `data-deferred` attribute after rendering.
 
-4. **Show/hide:** Set `display` on the panel container. Update the button's `data-active` attribute.
+4. **Show/hide:** Set `display` on the panel container. Update the button's `data-active` and `aria-pressed` attributes.
 
 5. **Cascade collapse/expand** (moved from `site.ts:917-1015`):
-   - **On hide:** Walk up from the panel element through ancestor containers. If all sibling `[data-component-id]` children in a container are hidden, collapse the container. Continue up through parent containers. Hide adjacent split drag handles.
-   - **On show:** Walk up from the panel element. If any ancestor container is hidden, show it (bottom-up). Show adjacent split drag handles.
+   - **On hide:** Walk up from the panel element through ancestor containers. If all sibling `[data-component-id]` children in a container are hidden, collapse the container. Continue up through parent containers. Hide adjacent resize handles.
+   - **On show:** Walk up from the panel element. If any ancestor container is hidden, show it (bottom-up). Show adjacent resize handles.
 
-6. **State update:** Update `_dockState` map. Schedule persistence save.
+6. **State update:** Update `_dockState` record via object spread (creates new reference, triggers Lit re-render). Schedule persistence save.
 
-7. **Event re-dispatch:** After internal handling, dispatch `pages-dock-toggle` with `{ panelId, visible }` detail, `bubbles: true`, `composed: true`. External listeners (URL sync, analytics) observe the event. The internal handler does **not** re-process this event (guard via a flag or by dispatching on `this` rather than a child).
+7. **Event notification (outbound only):** After internal state is updated, dispatch `pages-dock-toggle` with `{ panelId, visible }` detail, `bubbles: true`, `composed: true`. This event is **outbound notification only** — the component does not listen for `pages-dock-toggle` events. External listeners (URL sync, analytics) observe it. No guard mechanism is needed because the event flow is one-directional: component → external listeners.
 
 ### Public methods
 
-`togglePanel(panelId)`, `showPanel(panelId)`, `hidePanel(panelId)` — programmatic API for the same toggle logic. The runtime uses these for URL-hash-driven panel activation and keyboard shortcuts.
+`togglePanel(panelId)`, `showPanel(panelId)`, `hidePanel(panelId)` — programmatic API executing the same toggle logic as button clicks. The runtime uses these for programmatic panel activation:
+
+- `activateDockPanel()` in site.ts calls `dockEl.showPanel(key)` directly (replacing the current event-dispatch approach)
+- URL-hash-driven activation calls `dockEl.showPanel(key)`
+- External callers always use methods, never events — events are for observation, not command
 
 ## State initialization
 
 On `firstUpdated` (after the initial render creates zone containers):
 
-1. **Load persisted state:**
+1. **Render centre content:** Call `renderCentre(centreContainer)` if the callback is set.
+
+2. **Load persisted state:**
    - If `layoutStore` and `persistKey` are set: `await layoutStore.load(persistKey)` → `LayoutState`.
    - Else if `persistKey` is set: read from `localStorage` (sync, same as current behavior).
-   - Extract `docks` (panel visibility), `splits` (ratios), and `zones` (panel-to-zone mapping) from the loaded state.
-
-2. **Apply zone mapping:** If saved zone positions exist and `config` is set, pass them to `createZoneLayoutEngine(config, savedZones)`. The engine incorporates saved positions, respecting `allowedZones` constraints.
+   - Extract `docks` (panel visibility) and `splits` (sizes) from the loaded state.
 
 3. **Determine active panel per zone group:** For each dock bar zone group:
    - If persisted state has a panel marked `true` → use it (saved state wins).
    - Else if a panel has `defaultOpen: true` → use it.
-   - If multiple panels are `true` in a zone → use only the first (enforce exclusivity, prevent broken-on-load).
+   - If multiple panels are `true` in a zone → use only the first (enforce zone-scoped exclusivity, prevent broken-on-load).
 
 4. **Activate panels:** For each active panel, run the toggle-show path (cascade expand, deferred render, button state sync).
 
-5. **Seed inactive state:** For each non-active panel, set `_dockState.set(panelId, false)`.
+5. **Seed inactive state:** For each non-active panel, set `_dockState = { ...this._dockState, [panelId]: false }`.
 
 ## Resize handling
 
 Carried forward from the existing Lit component with minor adjustments:
 
 - Pointer-event-based resize on drag handles (`pointerdown` → capture, `pointermove` → update size, `pointerup` → release + persist).
-- Zone sizes stored as pixel values (`leftWidth`, `rightWidth`, `bottomHeight`) in `_splitRatios` or dedicated `@state()` properties.
+- Zone sizes stored as pixel values (`left`, `right`, `bottom`) in `_splitSizes`.
 - Min/max constraints via configurable properties (default: `minPanelSize = 120`, `maxPanelSize = 600`).
 - On resize end, schedule persistence save.
 
@@ -192,9 +235,9 @@ private _scheduleSave(): void {
   clearTimeout(this._saveTimer);
   this._saveTimer = setTimeout(() => {
     const state: Partial<LayoutState> = {
-      docks: Object.fromEntries(this._dockState),
-      splits: Object.fromEntries(this._splitRatios),
-      ...(this.zoneEngine ? { zones: Object.fromEntries(this.zoneEngine.zoneMap) } : {}),
+      docks: this._dockState,
+      splits: { left: this._splitSizes.left ?? 260, right: this._splitSizes.right ?? 320, bottom: this._splitSizes.bottom ?? 200 },
+      ...(this.zoneMap ? { zones: Object.fromEntries(this.zoneMap) } : {}),
     };
     if (this.layoutStore && this.persistKey) {
       this.layoutStore.save(this.persistKey, state as LayoutState);
@@ -218,15 +261,15 @@ function captureLayout(): LayoutState {
   const dockEl = target.querySelector<PagesDockWorkbench>("pages-dock-workbench");
   return Object.freeze({
     splits: Object.freeze(Object.fromEntries(splitRatios)),
-    docks: dockEl ? Object.freeze(Object.fromEntries(dockEl.dockState)) : {},
+    docks: dockEl ? Object.freeze(dockEl.dockState) : {},
     panels: captureHostPanels(),
-    ...(dockEl?.zoneEngine ? { zones: Object.freeze(Object.fromEntries(dockEl.zoneEngine.zoneMap)) } : {}),
+    ...(dockEl?.zoneMap ? { zones: Object.freeze(Object.fromEntries(dockEl.zoneMap)) } : {}),
     ...(capturedState ? { containerState: capturedState } : {}),
   });
 }
 ```
 
-The Lit component exposes `dockState` (read-only `Map<string, boolean>`) and `zoneEngine` as public properties for this purpose.
+The Lit component exposes `dockState` (read-only `Record<string, boolean>`) and `zoneMap` (read-only `Map<string, DockZone>`) as public properties for this purpose.
 
 ## Runtime integration — site.ts changes
 
@@ -236,23 +279,67 @@ The Lit component exposes `dockState` (read-only `Map<string, boolean>`) and `zo
 |------|-------|--------|
 | `pages-dock-toggle` event listener | 917–1015 | Absorbed by Lit component (D5) |
 | `initDockZoneGroup` + post-render dock init | 1289–1326 | Absorbed by Lit component state initialization |
-| `findDockConfig` + zone engine auto-creation | 1219–1251 | Lit component creates its own engine from `config` |
+| `findDockConfig` + zone engine auto-creation | 1219–1251 | Activation callback creates engine and Lit component from `dock-workbench` type (D6, D7) |
 | Dock state restoration in `pages-dock-rearrange` handler | 1076–1111 | Lit component handles re-render via reactive properties |
 | `dockState` Map management for dock panels | scattered | Lit component owns dock state |
 
+### Builder change (D7)
+
+`dockWorkbench()` in `pages-ui/src/dsl/builders.ts` changes to return an opaque typed component, matching the `floatingWorkspace()` pattern:
+
+```typescript
+export function dockWorkbench(config: DockWorkbenchConfig): TypedComponent<"dock-workbench"> {
+  return Object.freeze({ type: "dock-workbench" as const, props: { __dockConfig: config } });
+}
+```
+
+The tree-building functions (`normalizeConfig`, `buildInitialZoneMap`, `buildTreeFromZones`) remain exported — they are used by `ZoneLayoutEngine.buildTree()` and by activation.ts for panel extraction.
+
 ### Added to activation.ts
 
-When the activation callback encounters a `dock-workbench` component type:
+When the activation callback encounters a `dock-workbench` component type (D6):
 
 ```typescript
 if (component.type === "dock-workbench" && component.props) {
   const config = component.props.__dockConfig as DockWorkbenchConfig;
+
+  // Create zone engine from config + saved zone positions
+  const savedZones = seedLayout?.zones;
+  const zoneEngine = createZoneLayoutEngine(config, savedZones);
+
+  // Extract panels per side, converting DockPanelConfig → DockItem
+  const panelMap = new Map<string, DockPanelConfig>();
+  function extractPanels(side: readonly DockPanelConfig[] | DockSideConfig | undefined): DockItem[] | undefined {
+    if (!side) return undefined;
+    const panels = "panels" in side ? side.panels : side;
+    return panels.map(p => {
+      panelMap.set(p.key, p);
+      return { icon: p.icon, label: p.label, panelId: p.key, defaultOpen: p.defaultOpen, zone: p.zone, allowedZones: p.allowedZones, fixed: p.fixed };
+    });
+  }
+
   const dockEl = document.createElement("pages-dock-workbench") as PagesDockWorkbench;
-  dockEl.config = config;
+  dockEl.leftPanels = extractPanels(config.left);
+  dockEl.rightPanels = extractPanels(config.right);
+  dockEl.bottomPanels = extractPanels(config.bottom);
   dockEl.layoutStore = options?.layoutStore;
   dockEl.persistKey = options?.layoutKey;
-  dockEl.renderContent = (container, panel) => {
-    renderComponent(container, panel.content, {
+  dockEl.zoneMap = zoneEngine.zoneMap;
+  dockEl.renderContent = (container, panelId) => {
+    const panel = panelMap.get(panelId);
+    if (panel) {
+      renderComponent(container, panel.content, {
+        permissions: options?.permissions ?? ALLOW_ALL,
+        onNode: callback,
+      });
+    }
+  };
+  dockEl.renderCentre = (container) => {
+    const centreComponents = Array.isArray(config.centre) ? config.centre : [config.centre];
+    const centreRoot = centreComponents.length === 1
+      ? centreComponents[0]!
+      : { type: "rows" as const, slots: { default: [...centreComponents] } };
+    renderComponent(container, centreRoot, {
       permissions: options?.permissions ?? ALLOW_ALL,
       onNode: callback,
     });
@@ -262,7 +349,11 @@ if (component.type === "dock-workbench" && component.props) {
 }
 ```
 
-The existing `dockWorkbench()` builder in `pages-ui` continues to produce a `Component` with `__dockConfig`. The activation callback now creates a `<pages-dock-workbench>` element instead of letting `renderComponent` expand the tree of primitives. The builder's tree output becomes unused for the runtime path but remains available for `ZoneLayoutEngine.buildTree()` inside the Lit component.
+The activation layer stores the `zoneEngine` reference locally for future drag-and-drop support (out of scope). The `zoneMap` property on the element is sufficient for persistence via `captureLayout()`.
+
+### Changed in site.ts
+
+- `activateDockPanel()` — changes from dispatching `pages-dock-toggle` event to calling `dockEl.showPanel(key)` directly. Requires a reference to the `<pages-dock-workbench>` element (query via `target.querySelector`).
 
 ### Unchanged in site.ts
 
@@ -273,57 +364,64 @@ The existing `dockWorkbench()` builder in `pages-ui` continues to produce a `Com
 
 ## pages-builder migration
 
-### Current usage (Shadow DOM, slot-based)
+### Current usage (manual dock rendering)
 
-```html
-<pages-dock-workbench
-  left-width="260"
-  right-width="${this._dockWidth}"
-  persist-key="pages-builder"
-  .leftCollapsed="${!this._treeOpen}"
-  .rightCollapsed="${!this._anyDockOpen}"
-  .bottomEnabled="${false}"
->
-  <div slot="left">...</div>
-  <div slot="centre">...</div>
-  <div slot="right">...</div>
-  <div slot="toggle-bar-right">...</div>
-</pages-dock-workbench>
-```
+`builder-shell.ts` renders its own dock panels manually (`_renderDockPanels()`) with independent toggle state (`_propsOpen`, `_compsOpen`). Properties and Components can be open simultaneously in the right dock, stacked vertically.
 
-### New usage (light DOM, config-driven)
+### New usage (light DOM, callback-driven)
 
 ```html
 <pages-dock-workbench
   persist-key="pages-builder"
   .leftPanels="${[{ icon: '☰', label: 'Tree', panelId: 'tree', defaultOpen: true }]}"
   .rightPanels="${[
-    { icon: '☰', label: 'Props', panelId: 'properties' },
-    { icon: '◫', label: 'Comps', panelId: 'components' },
+    { icon: '☰', label: 'Props', panelId: 'properties', zone: 'top', defaultOpen: true },
+    { icon: '◫', label: 'Comps', panelId: 'components', zone: 'bottom' },
   ]}"
-  .bottomEnabled="${false}"
+  .renderContent="${this._renderDockContent}"
+  .renderCentre="${this._renderEditor}"
 >
 </pages-dock-workbench>
 ```
 
-`builder-shell.ts` provides a `renderContent` callback to render its own panel content into the zone containers. Since `builder-shell` uses Shadow DOM, the dock-workbench's light DOM renders into the builder-shell's shadow root — no style leakage to the page.
+Key migration details:
+- **Multi-panel right dock:** Properties and Components are placed in separate zones (`top` and `bottom`) within the right dock bar. Zone-scoped exclusivity means they toggle independently — matching current behavior. Each zone only has one panel, so exclusivity within each zone is a no-op.
+- **Centre content:** `renderCentre` callback renders the editor content into the centre zone container.
+- **Panel content:** `renderContent(container, panelId)` renders Properties or Components based on `panelId`.
+- **No `bottomEnabled`:** If no bottom panels are configured (`bottomPanels` is undefined), the bottom dock bar and zone are omitted entirely.
+
+`builder-shell.ts` provides `renderContent` and `renderCentre` callbacks. Since `builder-shell` uses Shadow DOM, the dock-workbench's light DOM renders into the builder-shell's shadow root — the component's CSS injection targets the containing shadow root, not the document.
 
 The builder's existing toggle state management (`_treeOpen`, `_propsOpen`, `_compsOpen`, `_anyDockOpen`) is replaced by the Lit component's internal `_dockState`. The builder listens for `pages-dock-toggle` events to stay in sync if it needs to react to panel changes.
 
 ## Type relocations
 
-| Type | From | To |
-|------|------|----|
-| `LayoutStore` interface | `pages-runtime/src/layout-store.ts` | `pages-component/src/model/types.ts` |
-| `createLocalLayoutStore()` | stays in `pages-runtime/src/layout-store.ts` | imports interface from `pages-component` |
-| `DockBarItem` interface | `pages-runtime/src/dock-bar-renderer.ts` | `pages-component/src/model/types.ts` |
-| `DockBarProps` interface | `pages-runtime/src/dock-bar-renderer.ts` | `pages-component/src/model/types.ts` |
+| Type | From | To | Notes |
+|------|------|----|-------|
+| `LayoutStore` interface | `pages-runtime/src/layout-store.ts` | `pages-component/src/model/types.ts` | `createLocalLayoutStore()` stays in pages-runtime, imports interface |
+| `DockWorkbenchConfig` | `pages-ui/src/dsl/builders.ts` | `pages-component/src/model/types.ts` | Depends only on `Component` and `DockZone`, both already in pages-component. Follows `FloatingWorkspaceConfig` precedent (already in pages-component) |
+| `DockPanelConfig` | `pages-ui/src/dsl/builders.ts` | `pages-component/src/model/types.ts` | Depends only on `Component` and `DockZone` |
+| `DockSideConfig` | `pages-ui/src/dsl/builders.ts` | `pages-component/src/model/types.ts` | Depends only on `DockPanelConfig` and `DockZone` |
+| `NormalizedSide`, `NormalizedConfig` | `pages-ui/src/dsl/builders.ts` | `pages-component/src/model/types.ts` | Used by `ZoneLayoutEngine` and tree builders |
 
-`pages-runtime` re-exports the moved types from `pages-component` for backward compatibility (one release cycle, then remove re-exports).
+### Type convergence
 
-`pages-primitives` gains dependencies:
-- `@casehubio/pages-component` — `LayoutStore`, `LayoutState`, `DockBarItem`, `DockBarProps`, `DockZone` types
-- `@casehubio/pages-ui` — `DockWorkbenchConfig`, `DockPanelConfig` types
+`DockBarItem` in `pages-runtime/src/dock-bar-renderer.ts` is a looser duplicate of `DockItem` in `pages-component/src/model/component-props.ts`. Similarly, `DockBarProps` exists in both packages with slightly different strictness.
+
+Resolution:
+- **Delete** `DockBarItem` and `DockBarProps` from `dock-bar-renderer.ts`
+- **Use** `DockItem` and `DockBarProps` from `pages-component` everywhere
+- `dock-bar-renderer.ts` imports from `pages-component` instead of defining its own types
+- The Lit component uses `DockItem` (the pages-component name) consistently
+
+No re-exports. Import paths break — callers update. This is a monorepo with no external consumers; the migration is mechanical.
+
+### pages-primitives dependency
+
+`pages-primitives` gains one dependency:
+- `@casehubio/pages-component` — for `DockItem`, `DockBarProps`, `DockZone`, `LayoutStore`, `LayoutState` types
+
+No dependency on `@casehubio/pages-ui`. The config-to-standalone conversion lives in `activation.ts` (pages-runtime), not in the Lit component.
 
 ## Testing strategy
 
@@ -331,8 +429,7 @@ The builder's existing toggle state management (`_treeOpen`, `_propsOpen`, `_com
 
 Rewrite existing tests for light DOM (no `shadowRoot` queries — query the element directly):
 
-- **Config mode:** Set `config`, verify dock bars rendered with correct buttons, zone containers created with `data-dock-zone` attributes.
-- **Standalone mode:** Set `leftPanels`/`rightPanels`, verify dock bars and containers.
+- **Panel configuration:** Set `leftPanels`/`rightPanels`/`bottomPanels`, verify dock bars rendered with correct buttons, zone containers created with `data-dock-zone` attributes.
 - **Toggle:** Click dock bar button → panel shown, button gets `data-active`; click again → panel hidden, attribute removed.
 - **Exclusive:** Click button B while A is active → A hidden, B shown. Only one panel visible per zone.
 - **Deferred render:** `renderContent` callback called on first open only. Subsequent show/hide toggles `display` without re-calling.
@@ -353,19 +450,26 @@ Rewrite existing tests for light DOM (no `shadowRoot` queries — query the elem
 
 ### In scope
 
-- Rewrite `<pages-dock-workbench>` to use light DOM and wrap runtime infrastructure
-- Move `LayoutStore`, `DockBarItem`, `DockBarProps` types to `pages-component`
-- Update `activation.ts` to create Lit component for `dock-workbench` component type
+- Create `<pages-dock-workbench>` Lit component in pages-primitives using light DOM
+- Change `dockWorkbench()` builder to return opaque `{type: "dock-workbench"}` component (D7)
+- Move `LayoutStore`, `DockWorkbenchConfig`, `DockPanelConfig`, `DockSideConfig` to `pages-component`
+- Converge `DockBarItem`/`DockItem` and `DockBarProps` types — delete runtime duplicates
+- Add activation callback in `activation.ts` for `dock-workbench` component type (D6)
 - Remove dock-specific code from `site.ts` (~170 lines)
 - Update `builder-shell.ts` to use the new API
-- Rewrite tests for light DOM and new API
+- Write tests for light DOM and new API
+- `renderDockBar()` becomes unused for the dock-workbench path — the Lit component IS the dock bar renderer. `renderDockBar()` is retained only if non-dock-workbench dock bars exist (currently they don't — all dock bars are produced by `dockWorkbench()` desugaring)
 
 ### Out of scope (separate issues)
 
 - Drag-and-drop panel rearrangement (#75) — `ZoneLayoutEngine` is wired but drag UI is not part of this rework
-- Keyboard shortcuts (Alt+1, Alt+2) — future enhancement
-- Animation (slide in/out) — future polish
-- `renderDockBar()` function removal — may still be useful for non-Lit contexts; evaluate after this lands
+- Keyboard shortcuts (Alt+1, Alt+2) — file issue during implementation
+- Animation (slide in/out) — file issue during implementation
+- `renderDockBar()` removal — file issue during implementation to evaluate and remove if confirmed unused
+
+### Protocol evolution
+
+The workbench-integration-pattern protocol (PP-20260810-72779a) says complex interactive components extend pages-ui, pages-component, and pages-runtime — "No new packages." This spec places the Lit component in pages-primitives, which predates the protocol. The protocol was written before Lit components existed in this architecture; putting a LitElement in pages-runtime (pure TypeScript, no Lit dependency) doesn't make sense. This spec should be accompanied by a protocol amendment that acknowledges pages-primitives as the Lit component layer, extending the three-package pattern to four.
 
 ## References
 
