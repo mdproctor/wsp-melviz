@@ -13,3 +13,4 @@
 | [2026-09-06-mdp01-schemaform-palette-embed.md](2026-09-06-mdp01-schemaform-palette-embed.md) | 2026-09-06 | PagesSchemaForm migrated to embed pages-property-palette — decision review caught rendering bug and factual rationale error |
 | [2026-09-11-mdp01-the-generator-that-already-existed.md](2026-09-11-mdp01-the-generator-that-already-existed.md) | 2026-09-11 | ts-morph domain schema generator — intersection types, getNonNullableType on unknown, lazy reference accumulator for recursive Zod |
 | [2026-09-11-mdp02-from-server-to-plugin.md](2026-09-11-mdp02-from-server-to-plugin.md) | 2026-09-11 | IntelliJ LSP plugin: esbuild bundling, LSP4IJ pivot from built-in API, Community Edition gotcha, plugin verification |
+| [2026-09-14-mdp01-lsp4ij-silent-server.md](2026-09-14-mdp01-lsp4ij-silent-server.md) | 2026-09-14 | Debugging LSP4IJ silent server — stale bundle cache, TextDocumentSync object form, CompletionWeigher for safe filtering |
