@@ -1,29 +1,28 @@
 # Session Handover
 
-**Branch:** `issue-434-visual-yaml-builder-phase1b`
-**Issue:** #434 (Epic: Visual YAML Builder Phase 1b)
+**Branch:** `issue-436-rework-dock-lit-wrap`
+**Issue:** #436 (Rework dock-workbench Lit component to wrap runtime dock infrastructure)
 **Date:** 2026-09-14
 
 ## What happened
 
-Implemented all 13 tasks across 6 batches for Phase 1b of the visual YAML builder. Three workstreams completed: structural editing (#433 — facade transaction API, compound operations, tree UI with context menu/DnD/keyboard shortcuts), preview data (#432 — strategy registry, YAML transformation), and dock-workbench extraction (#429 — Lit component, shell migration).
+Designed and partially implemented a unified `<pages-dock-workbench>` Lit component (light DOM) that replaces the dual architecture — both the runtime YAML path and standalone consumers (pages-builder) use the same component. Completed Batches 1-2 (type foundation + Lit component core with 21 passing tests). Batch 3 (runtime wiring) remains — 3 tasks.
 
 ## Decisions / gotchas
 
-- Dock-workbench Lit component was built from scratch instead of wrapping existing runtime infrastructure (`ZoneLayoutEngine`, `renderDockBar`, `DockBarProps`). Filed #436 to rework as proper extraction. Current implementation works but creates dual architecture.
-- YAML editor must always be in DOM (toggle via CSS `display:none`) — conditional rendering destroys CodeMirror state and loses content on mode switch.
-- `yaml` library's `Map.get()` returns YAML nodes for nested values, not plain JS — strategies need `.toJSON()` guard. Garden entries captured.
+- 8 design decisions (D1-D8). Key insight: light DOM (`createRenderRoot() { return this; }`) eliminates the Shadow DOM querySelector barrier. The runtime can target the Lit component directly. No `config` property on the component — activation.ts converts DockWorkbenchConfig to standalone inputs (D6).
+- Design review found 3 gaps: (1) guard dock-toggle handler for standalone dock-bars, don't remove it; (2) `deriveDockState()` must read from Lit element for URL sync; (3) drag rearrange handler stays in site.ts, updates Lit properties reactively.
+- IntelliJ MCP `ide_replace_text_in_file` modifies IDE buffer, not disk. Verify disk state with Read tool after IntelliJ edits. IntelliJ also switched branches mid-session, requiring manual recovery.
 
 ## Next action
 
-Close #434 via `work-end`, then start #436 (dock-workbench rework to wrap existing runtime dock infrastructure).
+Resume at Batch 3, Task 6 (builder return type change). Reconnect IntelliJ MCP first (`/mcp`).
 
 ## References
 
 | Artifact | Path |
 |----------|------|
-| Design spec | `specs/issue-434-visual-yaml-builder-phase1b/2026-09-14-visual-yaml-builder-phase1b-design.md` |
-| Decisions | `specs/issue-434-visual-yaml-builder-phase1b/decisions.md` |
-| Plan | `plans/2026-09-14-visual-yaml-builder-phase1b.md` |
+| Design spec | `specs/issue-436-rework-dock-lit-wrap/2026-09-14-rework-dock-lit-wrap-design.md` |
+| Decisions | `specs/issue-436-rework-dock-lit-wrap/decisions.md` |
+| Plan | `plans/2026-09-14-rework-dock-lit-wrap.md` |
 | Journal | `JOURNAL.md` |
-| Demo | `packages/pages-builder/demo/` (run: `yarn --cwd packages/pages-builder dev`) |
