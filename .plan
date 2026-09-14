@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-443-scenario-tutorials
-state: scaffolded
+state: active
 project-sha: 2d75d238ca0c125820ec0e46e4606a04e6b74a51
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -19,6 +19,6 @@ flyway-next-v: unknown
   - [x] Batch 2: Executor-Integration
     - [x] Task 3: ExecuteStep-dispatch
     - [x] Task 4: Editor-ARIA-actions
-  - [ ] Batch 3: Tutorial-Delivery
-    - [ ] Task 5: Content-rework
-    - [ ] Task 6: Host-app
+  - [x] Batch 3: Tutorial-Delivery
+    - [x] Task 5: Content-rework
+    - [x] Task 6: Host-app
