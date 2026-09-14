@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-434-visual-yaml-builder-phase1b
-state: scaffolded
+state: active
 project-sha: c987098b075f518b2b93633a178424cec36877a6
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -13,22 +13,22 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#434 — Issue #434 ← active
-  - [ ] Batch 1: Facade Foundation
-    - [ ] Task 1: Transaction API
-    - [ ] Task 2: Positional insert + defaultContentSlot
-  - [ ] Batch 2: Facade Compound Ops
-    - [ ] Task 3: Container addChild
-    - [ ] Task 4: wrapIn + wrapInRow
-    - [ ] Task 5: replaceWith + moveToSlot
-  - [ ] Batch 3: Tree Structural UI
-    - [ ] Task 6: PaletteFilter + inline picker
-    - [ ] Task 7: Context menu component
-    - [ ] Task 8: Tree interaction wiring
-  - [ ] Batch 4: Tree DnD
-    - [ ] Task 9: Drag-and-drop with drop indicators
-  - [ ] Batch 5: Preview Data
-    - [ ] Task 10: Strategy registry + strategies
-    - [ ] Task 11: YAML transformation + integration
-  - [ ] Batch 6: Dock Workbench
-    - [ ] Task 12: pages-dock-workbench Lit component
-    - [ ] Task 13: Builder shell migration
+  - [x] Batch 1: Facade Foundation
+    - [x] Task 1: Transaction API
+    - [x] Task 2: Positional insert + defaultContentSlot
+  - [x] Batch 2: Facade Compound Ops
+    - [x] Task 3: Container addChild
+    - [x] Task 4: wrapIn + wrapInRow
+    - [x] Task 5: replaceWith + moveToSlot
+  - [x] Batch 3: Tree Structural UI
+    - [x] Task 6: PaletteFilter + inline picker
+    - [x] Task 7: Context menu component
+    - [x] Task 8: Tree interaction wiring
+  - [x] Batch 4: Tree DnD
+    - [x] Task 9: Drag-and-drop with drop indicators
+  - [x] Batch 5: Preview Data
+    - [x] Task 10: Strategy registry + strategies
+    - [x] Task 11: YAML transformation + integration
+  - [x] Batch 6: Dock Workbench
+    - [x] Task 12: pages-dock-workbench Lit component
+    - [x] Task 13: Builder shell migration
