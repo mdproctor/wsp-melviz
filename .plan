@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-442-completion-indentation
-state: active
+state: closing:promoted
 project-sha: 822109ae39cb856088d108a6f086860118290ae8
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#442 — Issue #442 ← active
   - [x] Batch 1: textEdit pipeline
