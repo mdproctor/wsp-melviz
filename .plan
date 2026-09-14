@@ -3,7 +3,7 @@
 ## State
 branch: issue-436-rework-dock-lit-wrap
 state: active
-project-sha: 8ab00d5ba8a3eefef999a458fdfbdff12999564d
+project-sha: 83e71884b6a9996d7396ff358d656e5529142c91
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
 covers: 436
@@ -21,6 +21,6 @@ flyway-next-v: none
     - [x] Task 4: Toggle handling and cascade
     - [x] Task 5: State initialization and persistence
   - [ ] Batch 3: Runtime wiring
-    - [ ] Task 6: Builder return type change
+    - [x] Task 6: Builder return type change
     - [ ] Task 7: Activation callback and site.ts changes
     - [ ] Task 8: builder-shell migration
