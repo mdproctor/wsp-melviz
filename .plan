@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-436-rework-dock-lit-wrap
-state: scaffolded
+state: active
 project-sha: 8ab00d5ba8a3eefef999a458fdfbdff12999564d
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -13,13 +13,13 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#436 — Issue #436 ← active
-  - [ ] Batch 1: Type foundation
-    - [ ] Task 1: Move config types to pages-component
-    - [ ] Task 2: Converge DockBarItem/DockItem types
-  - [ ] Batch 2: Lit component
-    - [ ] Task 3: Rewrite PagesDockWorkbench with light DOM
-    - [ ] Task 4: Toggle handling and cascade
-    - [ ] Task 5: State initialization and persistence
+  - [x] Batch 1: Type foundation
+    - [x] Task 1: Move config types to pages-component
+    - [x] Task 2: Converge DockBarItem/DockItem types
+  - [x] Batch 2: Lit component
+    - [x] Task 3: Rewrite PagesDockWorkbench with light DOM
+    - [x] Task 4: Toggle handling and cascade
+    - [x] Task 5: State initialization and persistence
   - [ ] Batch 3: Runtime wiring
     - [ ] Task 6: Builder return type change
     - [ ] Task 7: Activation callback and site.ts changes
