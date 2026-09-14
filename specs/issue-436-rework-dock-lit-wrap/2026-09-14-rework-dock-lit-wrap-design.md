@@ -277,11 +277,40 @@ The Lit component exposes `dockState` (read-only `Record<string, boolean>`) and 
 
 | Code | Lines | Reason |
 |------|-------|--------|
-| `pages-dock-toggle` event listener | 917–1015 | Absorbed by Lit component (D5) |
 | `initDockZoneGroup` + post-render dock init | 1289–1326 | Absorbed by Lit component state initialization |
 | `findDockConfig` + zone engine auto-creation | 1219–1251 | Activation callback creates engine and Lit component from `dock-workbench` type (D6, D7) |
-| Dock state restoration in `pages-dock-rearrange` handler | 1076–1111 | Lit component handles re-render via reactive properties |
 | `dockState` Map management for dock panels | scattered | Lit component owns dock state |
+
+### Guarded in site.ts (not removed)
+
+| Code | Lines | Change |
+|------|-------|--------|
+| `pages-dock-toggle` event listener | 917–1015 | **Guard:** `if (e.target.closest('pages-dock-workbench')) return;` — standalone dock-bar components outside a `<pages-dock-workbench>` (e.g., `Split and Dock.page.yaml`) still rely on this handler. The Lit component handles its own events internally; the guard prevents double-handling. |
+| `pages-dock-rearrange` handler | 1076–1111 | **Adapted:** handler stays, but instead of clearing the DOM and re-rendering the full tree, it calls `zoneEngine.movePanel()`, then updates the Lit component's `leftPanels`/`rightPanels`/`bottomPanels` and `zoneMap` properties. Lit re-renders reactively. See §Drag rearrange flow below. |
+
+### URL sync fix
+
+`syncUrl("replaceState")` calls `deriveDockState()`, which reads from site.ts's internal `dockState` Map. After this rework, the Map is stale for dock-workbench panels (the Lit component owns their state). Fix: `deriveDockState()` reads from the `<pages-dock-workbench>` element's `dockState` getter — same pattern as `captureLayout()`:
+
+```typescript
+function deriveDockState(): Record<string, boolean> {
+  const dockEl = target.querySelector<PagesDockWorkbench>("pages-dock-workbench");
+  if (dockEl) return { ...dockEl.dockState };
+  return Object.fromEntries(dockState); // fallback for standalone dock-bars
+}
+```
+
+### Drag rearrange flow
+
+When a panel is dragged to a new zone (`pages-dock-rearrange` event):
+
+1. `site.ts` handler receives the event with `{ panelKey, targetZone, insertIndex }`.
+2. Handler calls `zoneEngine.movePanel(panelKey, targetZone, insertIndex)` — updates the zone engine's internal map.
+3. Handler re-extracts panel lists per side from the engine's updated zone map (same `extractPanels` logic as activation.ts).
+4. Handler sets `dockEl.leftPanels`, `dockEl.rightPanels`, `dockEl.bottomPanels`, and `dockEl.zoneMap` on the Lit component.
+5. Lit component re-renders reactively — dock bars update, panel containers move to new zone containers.
+6. Handler calls `dockEl.showPanel(panelKey)` to ensure the moved panel is visible.
+7. `scheduleLayoutSave()` persists the new zone positions.
 
 ### Builder change (D7)
 
