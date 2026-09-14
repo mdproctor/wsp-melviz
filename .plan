@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-445-domain-lsp-formats
-state: drained
+state: closing:promoted
 project-sha: 2c3a2db3f2372bc145c05f695df506703ae9b13e
 date: 2026-09-14
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [x] casehubio/casehub-pages#445 — Issue #445
 - [x] casehubio/casehub-pages#446 — port LSP fixes to blocks-ui plugin
