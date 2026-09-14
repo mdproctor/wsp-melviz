@@ -1,15 +1,17 @@
 {
   "repo": "pages",
-  "repo_path": "/Users/mdproctor/claude/casehub/pages",
+  "repo_path": "/Users/mdproctor/claude/casehub/slots/190/pages",
   "base_branch": "main",
-  "branch": "panel-activation-hash-binding",
+  "branch": "issue-437-lsp4ij-completions",
   "commits": [
-    {
-      "sha": "63ec61d5",
-      "message": "refactor: centralize dock-toggle exclusivity in site.ts handler",
-      "action": "keep"
-    }
+    { "sha": "67658905", "message": "fix(intellij): stale bundle cache, missing dash.yaml pattern, add LSP logging", "action": "squash" },
+    { "sha": "61f67ff8", "message": "fix(pages-lsp): update bundle test for sibling-filtered completions", "action": "squash" },
+    { "sha": "be87dd97", "message": "fix(pages-lsp): use TextDocumentSyncOptions object form for LSP4IJ compat", "action": "squash" },
+    { "sha": "5bf6d6ca", "message": "test(pages-lsp): add LSP4IJ compatibility test for initialize response", "action": "squash" },
+    { "sha": "133e0591", "message": "chore(intellij): bump LSP4IJ dependency to 0.21.0", "action": "squash" },
+    { "sha": "740108a3", "message": "feat(intellij): CompletionWeigher deprioritizes YAML structural items", "action": "squash" },
+    { "sha": "fde294c3", "message": "docs(work-end): project-promote artifacts from workspace", "action": "squash" }
   ],
   "verified": true,
-  "squash_message": "feat: dock-toggle exclusivity, panel deep linking, and activateDockPanel\n\nCentralize dock-toggle exclusivity in site.ts handler. Add\nactivateDockPanel to LiveSite interface. Fix restoreFromUrl to dispatch\ndock-toggle events on popstate. Wire panel= hash param for dock panel\ndeep linking.\n\nCloses #382, closes #383, closes #384, closes #385\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "fix(intellij): LSP4IJ completion delivery — stale cache, TextDocumentSync, CompletionWeigher\n\nRoot causes: extractServer() cached the server bundle with no version\ncheck (stale bundles persisted across plugin updates), textDocumentSync\nused the bare number form which LSP4IJ may not parse (no didOpen sent),\nand the fileNamePatternMapping missed *.dash.yaml transition support.\n\nAdditional fixes: CompletionWeigher deprioritizes YAML {} items without\nbreaking LSP4IJ's async channel, stderr logging for debugging, serverInfo\nin initialize response, LSP4IJ dependency bumped to 0.21.0.\n\nCloses #437\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }
