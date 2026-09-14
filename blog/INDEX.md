@@ -16,3 +16,4 @@
 | [2026-09-14-mdp01-lsp4ij-silent-server.md](2026-09-14-mdp01-lsp4ij-silent-server.md) | 2026-09-14 | Debugging LSP4IJ silent server — stale bundle cache, TextDocumentSync object form, CompletionWeigher for safe filtering |
 | [2026-09-14-mdp02-lsp-completions-column-zero.md](2026-09-14-mdp02-lsp-completions-column-zero.md) | 2026-09-14 | LSP4IJ inserts completions at column 0 when textEdit is absent — fixed server-side with explicit ranges |
 | [2026-09-14-mdp03-package-sync-that-wasnt.md](2026-09-14-mdp03-package-sync-that-wasnt.md) | 2026-09-14 | Three LSP issues resolved — .casehub-packages are symlinks not copies, ported plugin fixes, domain formats already done |
+| [2026-09-14-mdp04-teaching-by-typing.md](2026-09-14-mdp04-teaching-by-typing.md) | 2026-09-14 | Pivoted tutorial delivery from custom yaml-editor to scenario-driven: ScenarioEditableText SPI, CodeMirror bridge, 7 new ARIA editor actions |
