@@ -1,43 +1,33 @@
-# Session Handover
+# Handover — issue-443-scenario-tutorials
 
-**Branch:** `issue-445-domain-lsp-formats`
-**Issue:** #445 — sync .casehub-packages with current pages-data exports
-**Queue:** #445, #446, #447
-**Date:** 2026-09-14
+**Branch:** `issue-443-scenario-tutorials` (pages + workspace)
+**Issue:** casehubio/casehub-pages#443
+**State:** Batches 1-2 complete (4 of 6 tasks). Batch 3 (content rework + host app) remains.
 
 ## What happened
 
-Branch scaffolded with a 3-issue queue to restore domain format LSP completions (SWF, Case, HTN, Org). Currently only Page completions work because the blocks-ui plugin's `.casehub-packages` is stale and no domain schemas are registered.
+Pivoted tutorial delivery from the custom `yaml-editor` content type (#435) to scenario-driven `hands-on` tutorials that use the existing scenario executor infrastructure. Built the editor automation layer:
 
-No implementation work done yet — this is a setup-only handover for the next session.
+1. `ScenarioEditableText` SPI — DOM-level interface for text editor manipulation, Symbol-based discovery with shadow DOM ancestor walk.
+2. `CodeEditorBridge` — CM6 implementation in `pages-code-editor`, Position-to-offset conversion, highlight decorations via StateField.
+3. Execution path unification — replaced inline `executeAriaStep` in `sectioned-runner.ts` with delegation to `executeStep` in `command-executor.ts` (full ARIA tree walker).
+4. Seven new ARIA actions in parser + executor: `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion`. Plus `spotlight` added to parser. Progressive typing reuses `progressiveFill` algorithm through SPI.
 
-## Queue
+## Next action
 
-1. **#445** — Sync `.casehub-packages` in blocks-ui with current pages-data exports (S / Med). Gate for everything else. Missing `lookupSchema` and `externalDataSetDefSchema` prevents lsp-schemas bundle from building.
-2. **#446** — Port LSP fixes from pages plugin to blocks-ui plugin (S / Low). TextDocumentSync object form, serverInfo, CompletionWeigher. Some fixes already landed (Node.js fallback, stale cache).
-3. **#447** — Register domain schema formats — SWF, Case, HTN, Org (M / Med). Create `FormatRegistration` objects with Zod schemas and type detection for each domain.
-
-## Garden entries (all relevant)
-
-- **GE-20260914-e4788a** — Schema composition: use `z.intersection()` for language layers, not format extensions
-- **GE-20260914-fab341** — `z.intersection()` required when `documentSchema` is widened `ZodType` (`.merge()` fails)
-- **GE-20260803-17fc03** — casehub-packages directory names don't match npm package names — check `name` field in package.json
-- **GE-20260813-674be0** — YAML desugarer drops unknown component props silently (3-place update required)
-
-## Decisions / gotchas
-
-- All three issues on a single branch (`issue-445-domain-lsp-formats`), advancing via `work next`
-- blocks-ui is physically present in slot 190 at `/Users/mdproctor/claude/casehub/slots/190/blocks-ui` but it's a worktree clone — `main` can't be checked out (held by parent). It's on a stale branch `slot-190-intellij-plugin` with a branch-closed stamp.
-- The `.slot` file lists only `pages (primary)`. blocks-ui changes should be committed directly to the blocks-ui worktree clone.
+Execute Batch 3 — Task 5 (rewrite 15-step tutorial from yaml-editor sections to hands-on ARIA steps) and Task 6 (tutorial host app layout with builder-shell as scenario target).
 
 ## References
 
 | Artifact | Path |
 |----------|------|
-| LSP IDE plugins spec | `docs/specs/issue-407-lsp-ide-plugins/2026-09-10-lsp-ide-plugins-design.md` |
-| YAML schema completion spec | `docs/specs/issue-408-yaml-schema-completion/2026-09-05-yaml-schema-completion-design.md` |
-| LSP domain schema generation spec | `docs/specs/issue-420-lsp-schemas/` |
-| pages-lsp completion.ts | `packages/pages-lsp/src/completion.ts` |
-| Schema registry | `packages/pages-lsp/src/schema-registry.ts` |
-| Page format registration | `packages/pages-lsp/src/formats/page.ts` |
-| blocks-ui plugin | `/Users/mdproctor/claude/casehub/slots/190/blocks-ui/plugins/intellij-casehub/` |
+| Design spec | `specs/issue-443-scenario-tutorials/2026-09-14-scenario-driven-tutorials-design.md` |
+| Decisions | `specs/issue-443-scenario-tutorials/decisions.md` |
+| Implementation plan | `plans/2026-09-14-scenario-driven-tutorials.md` |
+| Diary | `blog/2026-09-14-mdp04-teaching-by-typing.md` |
+| SPI interface | `packages/pages-aria/src/executor/editable-text.ts` |
+| CM6 bridge | `packages/pages-code-editor/src/code-editor-bridge.ts` |
+| Executor dispatch | `packages/pages-aria/src/executor/command-executor.ts` |
+| Parser | `packages/pages-aria/src/scenario/parser.ts` |
+| Sectioned runner | `packages/pages-aria/src/scenario/sectioned-runner.ts` |
+| Tutorial content (to rework) | `tutorials/yaml-composition/tutorial.yaml` |
