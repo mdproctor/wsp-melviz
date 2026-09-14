@@ -1,0 +1,15 @@
+# Work Plan — issue-437-lsp4ij-completions
+
+## State
+branch: issue-437-lsp4ij-completions
+state: scaffolded
+project-sha: f1cc533fca118550328f117fa521fefda1fb381a
+date: 2026-09-14
+issue-repo: casehubio/casehub-pages
+covers: 437
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#437 — Issue #437 ← active
