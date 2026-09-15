@@ -1,0 +1,15 @@
+# Work Plan — issue-449-verify-schema-completions
+
+## State
+branch: issue-449-verify-schema-completions
+state: scaffolded
+project-sha: 43f07e81b11e67920a898aaf24bb2575fb2db7da
+date: 2026-09-15
+issue-repo: casehubio/casehub-pages
+covers: 449
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#449 — Issue #449 ← active
