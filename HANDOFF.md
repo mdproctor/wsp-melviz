@@ -1,33 +1,33 @@
-# Handover — issue-443-scenario-tutorials
+# Handover — issue-449-verify-schema-completions
 
-**Branch:** `issue-443-scenario-tutorials` (pages + workspace)
-**Issue:** casehubio/casehub-pages#443
-**State:** Batches 1-2 complete (4 of 6 tasks). Batch 3 (content rework + host app) remains.
+## This Session
 
-## What happened
+Wired schema-driven completions into the workbench text editor, added auto-indent
+and smart backspace for YAML editing, fixed the tree view `+` button (was dispatching
+`tree-add` into the void), and designed + reviewed the normalized edit pipeline spec.
+Began implementation — Batch 1 (coordinated mode for PageDocument) is complete.
 
-Pivoted tutorial delivery from the custom `yaml-editor` content type (#435) to scenario-driven `hands-on` tutorials that use the existing scenario executor infrastructure. Built the editor automation layer:
+Key discovery: CodeMirror extensions silently fail when imported cross-package in a
+monorepo due to duplicate `@codemirror/state` instances breaking `instanceof` checks.
+Also: Vite serves workspace packages from `dist/` not `src/`, so `pages-code-editor`
+changes need `yarn build` before the dev server picks them up.
 
-1. `ScenarioEditableText` SPI — DOM-level interface for text editor manipulation, Symbol-based discovery with shadow DOM ancestor walk.
-2. `CodeEditorBridge` — CM6 implementation in `pages-code-editor`, Position-to-offset conversion, highlight decorations via StateField.
-3. Execution path unification — replaced inline `executeAriaStep` in `sectioned-runner.ts` with delegation to `executeStep` in `command-executor.ts` (full ARIA tree walker).
-4. Seven new ARIA actions in parser + executor: `editor-insert`, `editor-replace`, `editor-delete`, `editor-set-content`, `editor-cursor`, `editor-highlight`, `editor-completion`. Plus `spotlight` added to parser. Progressive typing reuses `progressiveFill` algorithm through SPI.
+## Resume Point
 
-## Next action
+**Batch 2 of the edit pipeline plan** — Task 2 (`_applyEdit` coordinator + `_syncViews`).
+Plan: `plans/2026-09-16-edit-pipeline.md`. Spec (reviewed, 0 unresolved):
+`specs/issue-449-verify-schema-completions/2026-09-16-edit-pipeline-design.md`.
 
-Execute Batch 3 — Task 5 (rewrite 15-step tutorial from yaml-editor sections to hands-on ARIA steps) and Task 6 (tutorial host app layout with builder-shell as scenario target).
+3 tree-add inline picker tests are RED (written but not implemented — deferred
+in favour of the pipeline redesign that will provide the proper infrastructure).
 
 ## References
 
 | Artifact | Path |
 |----------|------|
-| Design spec | `specs/issue-443-scenario-tutorials/2026-09-14-scenario-driven-tutorials-design.md` |
-| Decisions | `specs/issue-443-scenario-tutorials/decisions.md` |
-| Implementation plan | `plans/2026-09-14-scenario-driven-tutorials.md` |
-| Diary | `blog/2026-09-14-mdp04-teaching-by-typing.md` |
-| SPI interface | `packages/pages-aria/src/executor/editable-text.ts` |
-| CM6 bridge | `packages/pages-code-editor/src/code-editor-bridge.ts` |
-| Executor dispatch | `packages/pages-aria/src/executor/command-executor.ts` |
-| Parser | `packages/pages-aria/src/scenario/parser.ts` |
-| Sectioned runner | `packages/pages-aria/src/scenario/sectioned-runner.ts` |
-| Tutorial content (to rework) | `tutorials/yaml-composition/tutorial.yaml` |
+| Design spec | `specs/issue-449-verify-schema-completions/2026-09-16-edit-pipeline-design.md` |
+| Implementation plan | `plans/2026-09-16-edit-pipeline.md` |
+| Review workspaces | `~/reviews/casehub-slots/edit-pipeline-{coherence,structure,robustness,crosscutting}-*` |
+| Garden entries | `GE-20260916-b8eab4` (CodeMirror instanceof), `GE-20260916-e52ecf` (Vite dist/) |
+| Protocols | `PP-20260916-b6f3e8`, `PP-20260916-c2d406`, `PP-20260916-187ec0` |
+| Test page | `test-completions/` (scratch — can be deleted) |
