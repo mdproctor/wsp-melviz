@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-449-verify-schema-completions
-state: scaffolded
+state: active
 project-sha: 43f07e81b11e67920a898aaf24bb2575fb2db7da
 date: 2026-09-15
 issue-repo: casehubio/casehub-pages
@@ -16,13 +16,13 @@ flyway-next-v: none
   - [x] Batch 1: Foundation
     - [x] Task 1: Coordinated mode PageDocument
   - [ ] Batch 2: Coordinator
-    - [ ] Task 2: _applyEdit + _syncViews
+    - [x] Task 2: _applyEdit + _syncViews
     - [ ] Task 3: computeMinimalChanges + _diffPatchEditor
   - [ ] Batch 3: Cleanup
     - [ ] Task 4: Remove YamlSync + inline editor handler
   - [ ] Batch 4: TreeActions
     - [ ] Task 5: Wire tree-action + tree-drop
   - [ ] Batch 5: Undo
-    - [ ] Task 6: Shell-managed undo/redo
+    - [x] Task 6: Shell-managed undo/redo (included in Task 2)
   - [ ] Batch 6: PropertySource
     - [ ] Task 7: Lazy resolve closures
