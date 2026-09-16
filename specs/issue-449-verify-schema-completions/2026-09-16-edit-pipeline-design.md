@@ -66,8 +66,21 @@ operations like `replaceWith()`, `moveToSlot()`, and `wrapIn()` still use
 `beginTransaction/abortTransaction` for rollback on error. The only change
 is that notification and undo recording are deferred to the coordinator.
 
-The shell sets `_coordinated = true` on every PageDocument instance it creates
-or receives (initial parse, editor flush, undo/redo restore).
+The shell uses `PageDocument.parseCoordinated(yaml)` — a factory method that
+returns a new instance with `_coordinated = true` already set. This ensures
+coordination is never forgotten at a call site:
+
+```typescript
+static parseCoordinated(yaml: string): PageDocument {
+  const doc = PageDocument.parse(yaml);
+  doc._coordinated = true;
+  return doc;
+}
+```
+
+Tests and standalone consumers continue to use `PageDocument.parse()` (which
+returns `_coordinated = false` by default). The factory is the only API that
+sets the flag — no public setter needed.
 
 **Consequence:** `_subscribeToDocument()` in the shell is removed entirely.
 The shell no longer registers an `onChange` listener on PageDocument — all
@@ -167,6 +180,18 @@ persisting changes and `pages-aria/tutorial-host.ts` for tutorial validation).
 `requestUpdate()` triggers Lit's re-render cycle for reactive properties that
 depend on document state (e.g. undo/redo button enablement).
 
+### _parseDocument (coordinated PageDocument factory)
+
+Shell-level helper that delegates to `PageDocument.parseCoordinated()` (see
+§Coordinated Mode). All shell code paths use this helper — never
+`PageDocument.parse()` directly.
+
+```typescript
+private _parseDocument(yaml: string): PageDocument {
+  return PageDocument.parseCoordinated(yaml);
+}
+```
+
 ### _syncViews
 
 Fan-out to all views, skipping the origin.
@@ -233,7 +258,7 @@ private _handleEditorInput(): void {
   this._pendingEditorSync = window.setTimeout(() => {
     this._pendingEditorSync = undefined;
     const text = this._getEditorText();
-    const newDoc = PageDocument.parse(text);
+    const newDoc = this._parseDocument(text);
     if (newDoc.diagnostics.some(d => d.severity === 'error')) {
       // Invalid YAML — keep editor dirty, model stays at last valid state.
       // _editorDirty stays true so the next valid parse will flush.
@@ -252,9 +277,9 @@ private _flushEditorSync(): void {
   if (!this._editorDirty) return;
 
   const text = this._getEditorText();
-  const newDoc = PageDocument.parse(text);
-  // PageDocument.parse() never throws — it always returns a document,
-  // recording parse failures as diagnostics. Check for errors explicitly.
+  const newDoc = this._parseDocument(text);
+  // PageDocument.parseCoordinated() never throws — it always returns a
+  // document, recording parse failures as diagnostics. Check for errors.
   if (newDoc.diagnostics.some(d => d.severity === 'error')) {
     // Invalid YAML — model stays at last valid state.
     // _editorDirty stays true intentionally: when the user fixes the YAML
@@ -297,7 +322,7 @@ the Lit `willUpdate` lifecycle handles it outside the edit pipeline:
 ```typescript
 override willUpdate(changed: Map<PropertyKey, unknown>): void {
   if (changed.has('yaml') && changed.get('yaml') !== undefined) {
-    this._document = PageDocument.parse(this.yaml);
+    this._document = this._parseDocument(this.yaml);
     // External property change = new document baseline.
     // Clear undo stacks — the previous document's history is irrelevant.
     this._undoStack.length = 0;
@@ -331,7 +356,7 @@ private _undo(): void {
   if (this._undoStack.length === 0) return;
   this._redoStack.push(this._document.toString());
   const prev = this._undoStack.pop()!;
-  this._document = PageDocument.parse(prev);
+  this._document = this._parseDocument(prev);
   this._syncViews('toolbar');
 }
 
@@ -339,7 +364,7 @@ private _redo(): void {
   if (this._redoStack.length === 0) return;
   this._undoStack.push(this._document.toString());
   const next = this._redoStack.pop()!;
-  this._document = PageDocument.parse(next);
+  this._document = this._parseDocument(next);
   this._syncViews('toolbar');
 }
 ```
@@ -642,7 +667,8 @@ is undo.
 - `_handleEditorInput()` / `_flushEditorSync()` — debounced editor→model
 - `_handleTreeAction(e)` — context menu handler (wires all 11 tree actions)
 - `_handleTreeDrop(e)` — drag-drop handler (wires `tree-drop` events)
-- `PageDocument.setCoordinated(value)` — flag to suppress internal undo/notify
+- `PageDocument.parseCoordinated(yaml)` — factory returning a coordinated instance
+- `_parseDocument(yaml)` — private shell helper, delegates to `PageDocument.parseCoordinated()`
 - Shell-managed undo/redo stacks
 
 ## Migration Path
@@ -659,17 +685,19 @@ Incremental, not big bang. Each step is independently testable.
 
 2. **Add `_syncViews` with origin** — replace individual sync calls with
    single fan-out. Move `_emitChange()` and `requestUpdate()` into `_syncViews`.
-   Tests: each origin skips its own view.
+   Tests: editor is skipped when origin is `'editor'`; tree, properties,
+   and preview always sync regardless of origin.
 
 3. **Replace `_pushYamlToEditor` with `_diffPatchEditor`** — cursor
    preservation. Tests: cursor stays after property change.
 
-4. **Add coordinated mode to PageDocument** — add `_coordinated` flag,
-   `setCoordinated(value)` method. When set: `_pushUndo`/`_pushUndoInternal`
-   and `_notify`/`_notifyInternal` become no-ops; `beginTransaction` skips
-   undo push; `commitTransaction` skips notification. Shell sets the flag on
-   every document it creates. Tests: no internal undo entries, no mid-pipeline
-   notifications when coordinated.
+4. **Add coordinated mode to PageDocument** — add `_coordinated` flag and
+   `parseCoordinated(yaml)` factory method. When coordinated:
+   `_pushUndo`/`_pushUndoInternal` and `_notify`/`_notifyInternal` become
+   no-ops; `beginTransaction` skips undo push; `commitTransaction` skips
+   notification. Shell uses `parseCoordinated()` for every document it
+   creates. Tests: no internal undo entries, no mid-pipeline notifications
+   when coordinated.
 
 5. **Remove `_subscribeToDocument`** — the coordinated mode flag makes the
    onChange listener inert. Remove the method, the `_docUnsub` field, and all
