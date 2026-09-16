@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-439-dock-workbench-polish
-state: active
+state: closing:review
 project-sha: 574104ebe6fc8ef2695417ff23ba5e8c5814e105
 date: 2026-09-16
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [x] casehubio/casehub-pages#439 — Issue #439
 - [x] casehubio/casehub-pages#440 — Add slide animation for dock panel transitions
