@@ -60,6 +60,10 @@ When the shell takes over coordination, these internal mechanisms conflict:
 - `beginTransaction()` skips its undo push (but still sets `_inTransaction`
   for rollback via `abortTransaction()`)
 - `commitTransaction()` skips notification (but still clears `_inTransaction`)
+- `abortTransaction()` skips `_undoStack.pop()` and `_redoStack` clear —
+  since `beginTransaction()` didn't push, there's nothing to pop. Document
+  restore from `_transactionSnapshot` and `_inTransaction` reset still
+  apply. The rollback mechanism is unaffected.
 
 The transaction API remains functional for **atomicity** — complex multi-step
 operations like `replaceWith()`, `moveToSlot()`, and `wrapIn()` still use
@@ -622,12 +626,19 @@ is undo.
   `?disabled="${this._undoStack.length === 0}"` (currently
   `?disabled="${!this._document.canUndo()}"`)
 - `PageDocument.undo()` / `PageDocument.redo()` / `PageDocument.canUndo()` /
-  `PageDocument.canRedo()` — removed. Replaced by shell-managed string snapshot
-  stack. `PageDocument._undoStack` and `_redoStack` fields are also removed.
+  `PageDocument.canRedo()` — public API removed. Replaced by shell-managed
+  string snapshot stacks.
+- `PageDocument._undoStack` and `_redoStack` — **private fields kept**.
+  In coordinated mode, `_pushUndo` is a no-op so they stay empty. In
+  standalone mode, they continue to function for internal undo tracking.
+  Removing them would crash `_pushUndoInternal()` (called from 25 mutation
+  methods across 6 node classes) and `abortTransaction()` (called from 4
+  compound operations: `wrapInRow`, `replaceWith`, `moveToSlot`, `wrapIn`).
 - PageDocument's internal `_pushUndo()` / `_pushUndoInternal()` and
   `_notify()` / `_notifyInternal()` become no-ops via the `_coordinated`
   flag (see §Coordinated Mode). The methods remain in PageDocument for
-  standalone use (tests, non-shell consumers); they are suppressed, not deleted
+  standalone use (tests, non-shell consumers); they are suppressed, not
+  deleted.
 
 ## What Gets Preserved
 
@@ -647,13 +658,16 @@ is undo.
 
 - **`PageDocument` transaction API** — `beginTransaction()` /
   `commitTransaction()` / `abortTransaction()` remain, simplified by the
-  `_coordinated` flag (see §Coordinated Mode). In coordinated mode,
-  `beginTransaction()` skips its undo push and `commitTransaction()` skips
-  notification — but the `_inTransaction` flag and `_transactionSnapshot` still
-  function for **rollback**: `abortTransaction()` restores the document from
-  `_transactionSnapshot` if a compound mutation fails partway. In standalone
-  mode (tests, non-shell consumers), the full original behavior — undo push,
-  notification coalescing, rollback — is preserved.
+  `_coordinated` flag (see §Coordinated Mode). In coordinated mode:
+  - `beginTransaction()` skips `_undoStack.push()` and `_redoStack` clear
+  - `commitTransaction()` skips notification
+  - `abortTransaction()` skips `_undoStack.pop()` and `_redoStack` clear
+    (symmetry: nothing was pushed, so nothing to pop)
+  - All three still manage `_inTransaction` and `_transactionSnapshot` — the
+    atomicity and rollback mechanism is fully functional.
+
+  In standalone mode (tests, non-shell consumers), the full original
+  behavior — undo push, notification coalescing, rollback — is preserved.
 
   Methods using transactions: `PageNode.wrapInRow`, `ComponentNode.replaceWith`,
   `ComponentNode.moveToSlot`, `ComponentNode.wrapIn`.
@@ -716,9 +730,11 @@ Incremental, not big bang. Each step is independently testable.
    wrap-row, wrap-column, wrap-tabs, replace-with, drag-drop reorder.
 
 8. **Shell-managed undo** — replace PageDocument undo with string snapshots.
-   Remove `PageDocument.undo()`, `redo()`, `canUndo()`, `canRedo()`, and the
-   internal `_undoStack`/`_redoStack` fields. Update toolbar button bindings
-   to use shell stack state. Tests: undo/redo across all edit origins.
+   Remove public API: `PageDocument.undo()`, `redo()`, `canUndo()`,
+   `canRedo()`. Keep private fields `_undoStack`/`_redoStack` (needed by
+   standalone mode and `abortTransaction()`). Update toolbar button bindings
+   to use shell stack state. Tests: undo/redo across all edit origins,
+   `abortTransaction()` rollback in coordinated mode.
 
 ## References
 
