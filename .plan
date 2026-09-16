@@ -13,3 +13,16 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#449 — Issue #449 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: Coordinated mode PageDocument
+  - [ ] Batch 2: Coordinator
+    - [ ] Task 2: _applyEdit + _syncViews
+    - [ ] Task 3: computeMinimalChanges + _diffPatchEditor
+  - [ ] Batch 3: Cleanup
+    - [ ] Task 4: Remove YamlSync + inline editor handler
+  - [ ] Batch 4: TreeActions
+    - [ ] Task 5: Wire tree-action + tree-drop
+  - [ ] Batch 5: Undo
+    - [ ] Task 6: Shell-managed undo/redo
+  - [ ] Batch 6: PropertySource
+    - [ ] Task 7: Lazy resolve closures
