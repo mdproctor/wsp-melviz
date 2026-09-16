@@ -13,8 +13,8 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#449 — Issue #449 ← active
-  - [ ] Batch 1: Foundation
-    - [ ] Task 1: Coordinated mode PageDocument
+  - [x] Batch 1: Foundation
+    - [x] Task 1: Coordinated mode PageDocument
   - [ ] Batch 2: Coordinator
     - [ ] Task 2: _applyEdit + _syncViews
     - [ ] Task 3: computeMinimalChanges + _diffPatchEditor
