@@ -17,7 +17,7 @@ flyway-next-v: none
     - [x] Task 1: Coordinated mode PageDocument
   - [ ] Batch 2: Coordinator
     - [x] Task 2: _applyEdit + _syncViews
-    - [ ] Task 3: computeMinimalChanges + _diffPatchEditor
+    - [x] Task 3: computeMinimalChanges + _diffPatchEditor
   - [ ] Batch 3: Cleanup
     - [ ] Task 4: Remove YamlSync + inline editor handler
   - [ ] Batch 4: TreeActions
