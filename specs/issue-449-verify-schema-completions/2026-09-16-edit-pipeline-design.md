@@ -445,6 +445,26 @@ deferred to the implementation issue.
 handler dispatches the picker, and the mutation happens in the picker's callback
 via `_applyEdit('tree', ...)`. This is the same pattern as `_handleTreeAdd`.
 
+**Template wiring:** `_syncTree` must wire `@tree-action` and `@tree-drop`
+event listeners on the `<pages-builder-tree>` element — currently it only
+wires `@node-select` and `@tree-add`.
+
+### Tree: drag-drop (tree-drop)
+
+```
+Drag component → drop on target node
+               → _handleTreeDrop(sourcePath, dropTarget)
+               → _applyEdit('tree', () => {
+                   component.moveToIndex(dropTarget.parent, dropTarget.index)
+                 })
+               → _syncViews('tree')
+```
+
+The tree component (`builder-tree.ts:473-485`) fires `tree-drop` events with
+`sourcePath` and a `dropTarget` object (computed by `computeDropTarget`). The
+shell resolves the source component and calls `ComponentNode.moveToIndex()` or
+`ComponentNode.moveToSlot()` depending on the drop target type.
+
 ### Properties: field change
 
 ```
@@ -566,19 +586,23 @@ is undo.
 - `YamlSync` class — replaced by `_handleEditorInput` + `_flushEditorSync`
   in the shell
 - `_subscribeToDocument` method — fully removed. In the new architecture,
-  `_applyEdit`, `_undo`, `_redo`, and `willUpdate` each handle `_syncViews`,
-  `_emitChange`, and `requestUpdate` explicitly. No onChange listener on
-  PageDocument is needed. All calls to `_subscribeToDocument` in
-  `_undo()`, `_redo()`, `_flushEditorSync()`, and `willUpdate()` are removed.
+  `_syncViews` handles `_emitChange` and `requestUpdate` internally. All
+  code paths (`_applyEdit`, `_undo`, `_redo`, `willUpdate`) call `_syncViews`
+  to get the full post-mutation sequence. No onChange listener on PageDocument
+  is needed. All calls to `_subscribeToDocument` in `_undo()`, `_redo()`,
+  `_flushEditorSync()`, and `willUpdate()` are removed.
 - `_pushYamlToEditor` — replaced by `_diffPatchEditor` in `_syncViews`
 - `_docUnsub` field — no listener to unsubscribe
 - The render template binds toolbar button state to the shell's stacks:
   `?disabled="${this._undoStack.length === 0}"` (currently
   `?disabled="${!this._document.canUndo()}"`)
-- PageDocument's internal `_pushUndo()` / `_pushUndoInternal()` calls and
-  `_notify()` / `_notifyInternal()` calls become no-ops via the `_coordinated`
+- `PageDocument.undo()` / `PageDocument.redo()` / `PageDocument.canUndo()` /
+  `PageDocument.canRedo()` — removed. Replaced by shell-managed string snapshot
+  stack. `PageDocument._undoStack` and `_redoStack` fields are also removed.
+- PageDocument's internal `_pushUndo()` / `_pushUndoInternal()` and
+  `_notify()` / `_notifyInternal()` become no-ops via the `_coordinated`
   flag (see §Coordinated Mode). The methods remain in PageDocument for
-  standalone use (tests, diagram-base-mixin); they are suppressed, not deleted
+  standalone use (tests, non-shell consumers); they are suppressed, not deleted
 
 ## What Gets Preserved
 
@@ -616,7 +640,9 @@ is undo.
 - `_diffPatchEditor()` — minimal diff text sync
 - `computeMinimalChanges(before, after)` — line-based diff utility
 - `_handleEditorInput()` / `_flushEditorSync()` — debounced editor→model
-- `_handleTreeAction(e)` — context menu handler (wires all tree actions)
+- `_handleTreeAction(e)` — context menu handler (wires all 11 tree actions)
+- `_handleTreeDrop(e)` — drag-drop handler (wires `tree-drop` events)
+- `PageDocument.setCoordinated(value)` — flag to suppress internal undo/notify
 - Shell-managed undo/redo stacks
 
 ## Migration Path
@@ -624,27 +650,47 @@ is undo.
 Incremental, not big bang. Each step is independently testable.
 
 1. **Add `_applyEdit` coordinator** — wrap all existing mutation sites in
-   `_applyEdit`. Keep existing sync paths. Tests: coordinator is called for
-   every mutation.
+   `_applyEdit`. This includes 7 onChange closures in `_updatePropertySource`
+   (page name, column span, component properties, dataset properties, nav-item
+   properties), plus `_addPage`, `_addDataset`, and `_handleComponentSelect`.
+   Each wrapping is mechanical: `this._applyEdit(origin, () => { existing code })`.
+   Keep existing sync paths as a fallback during migration. Tests: coordinator
+   is called for every mutation.
 
 2. **Add `_syncViews` with origin** — replace individual sync calls with
-   single fan-out. Tests: each origin skips its own view.
+   single fan-out. Move `_emitChange()` and `requestUpdate()` into `_syncViews`.
+   Tests: each origin skips its own view.
 
 3. **Replace `_pushYamlToEditor` with `_diffPatchEditor`** — cursor
    preservation. Tests: cursor stays after property change.
 
-4. **Remove dual write-back** — delete `_subscribeToDocument` → editor path
-   and YamlSync's doc→editor path. Keep only `_syncViews`. Tests: no double
-   updates.
+4. **Add coordinated mode to PageDocument** — add `_coordinated` flag,
+   `setCoordinated(value)` method. When set: `_pushUndo`/`_pushUndoInternal`
+   and `_notify`/`_notifyInternal` become no-ops; `beginTransaction` skips
+   undo push; `commitTransaction` skips notification. Shell sets the flag on
+   every document it creates. Tests: no internal undo entries, no mid-pipeline
+   notifications when coordinated.
 
-5. **Replace YamlSync with inline editor handler** — debounced parse in shell.
-   Tests: editor changes flow through `_applyEdit('editor', ...)`.
+5. **Remove `_subscribeToDocument`** — the coordinated mode flag makes the
+   onChange listener inert. Remove the method, the `_docUnsub` field, and all
+   call sites (`willUpdate`, `_undo`, `_redo`, `_flushEditorSync`). The tree
+   component's own `_subscribeToDocument` also becomes inert — tree rebuilds
+   are driven by `_syncTree` from the shell. Tests: no listener registration,
+   no `_docUnsub`.
 
-6. **Wire tree-action** — handle all context menu actions. Tests: delete,
-   move, duplicate via tree.
+6. **Replace YamlSync with inline editor handler** — debounced parse in shell
+   using diagnostics check (not try/catch). Tests: editor changes flow through
+   `_applyEdit('editor', ...)`, invalid YAML leaves model untouched.
 
-7. **Shell-managed undo** — replace PageDocument undo with string snapshots.
-   Tests: undo/redo across all edit origins.
+7. **Wire tree-action and tree-drop** — handle all 11 context menu actions
+   and drag-drop moves. Add `@tree-action` and `@tree-drop` listeners to the
+   `_syncTree` template. Tests: delete, move-up, move-down, duplicate,
+   wrap-row, wrap-column, wrap-tabs, replace-with, drag-drop reorder.
+
+8. **Shell-managed undo** — replace PageDocument undo with string snapshots.
+   Remove `PageDocument.undo()`, `redo()`, `canUndo()`, `canRedo()`, and the
+   internal `_undoStack`/`_redoStack` fields. Update toolbar button bindings
+   to use shell stack state. Tests: undo/redo across all edit origins.
 
 ## References
 
