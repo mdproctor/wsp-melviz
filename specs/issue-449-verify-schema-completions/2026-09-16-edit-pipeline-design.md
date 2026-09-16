@@ -20,10 +20,15 @@ write-back paths, and no coordination between them. The result:
    from it. The editor text is one view, not the document.
 
 2. **Edit origin tracking.** Every mutation carries its origin. The sync fan-out
-   skips the origin view — you never write back to the thing that just changed.
+   uses the origin to avoid destructive write-back — specifically, the editor is
+   skipped when it originates the edit because replacing editor content would
+   destroy cursor position and in-progress typing. Other views (tree, properties,
+   preview) derive from the model via getters, so re-syncing them from any origin
+   is idempotent and safe.
 
-3. **No circular sync.** A → B → A loops are eliminated by construction. The
-   origin check makes them impossible.
+3. **No circular sync.** A → B → A loops are eliminated by construction. View
+   syncs read from the model and render — they don't trigger mutations, so
+   re-syncing the origin view cannot create a feedback loop.
 
 4. **Cursor preservation.** Editor updates use minimal text diffs, not full
    replacement. The cursor stays where the user left it.
@@ -33,6 +38,41 @@ write-back paths, and no coordination between them. The result:
 
 6. **Single coordinator.** One method (`_applyEdit`) is the only path from edit
    sources to view sync. No shortcuts, no parallel paths.
+
+## Coordinated Mode
+
+PageDocument has its own undo stack and change notification, designed for
+standalone use. Every node method (`PageNode.addRow()`, `ComponentNode.setProperty()`,
+etc.) calls `_pushUndoInternal()` and `_notifyInternal()` after each mutation.
+PageDocument's own mutation methods (`addPage()`, `setProperty()`, etc.) call
+`_pushUndo()` and `_notify()` directly.
+
+When the shell takes over coordination, these internal mechanisms conflict:
+- **Dual undo:** both the shell's undo stack and PageDocument's internal stack
+  record every mutation.
+- **Mid-pipeline notification:** `_notifyInternal()` fires listeners during
+  `fn()` execution — before `_syncViews` runs — causing partial syncs,
+  double editor writes, and double change emissions.
+
+**Solution:** PageDocument gains a `_coordinated` flag. When set:
+- `_pushUndo()` / `_pushUndoInternal()` → no-op (shell manages undo)
+- `_notify()` / `_notifyInternal()` → no-op (shell manages view sync)
+- `beginTransaction()` skips its undo push (but still sets `_inTransaction`
+  for rollback via `abortTransaction()`)
+- `commitTransaction()` skips notification (but still clears `_inTransaction`)
+
+The transaction API remains functional for **atomicity** — complex multi-step
+operations like `replaceWith()`, `moveToSlot()`, and `wrapIn()` still use
+`beginTransaction/abortTransaction` for rollback on error. The only change
+is that notification and undo recording are deferred to the coordinator.
+
+The shell sets `_coordinated = true` on every PageDocument instance it creates
+or receives (initial parse, editor flush, undo/redo restore).
+
+**Consequence:** `_subscribeToDocument()` in the shell is removed entirely.
+The shell no longer registers an `onChange` listener on PageDocument — all
+view updates flow through `_syncViews`, all change notifications through
+`_emitChange()` in `_syncViews`.
 
 ## Architecture
 
@@ -47,7 +87,8 @@ write-back paths, and no coordination between them. The result:
 │  │ Palette:  component pick│          │ 2. Snapshot undo │   │
 │  │ Props:    field change   │          │ 3. Execute fn()  │   │
 │  │ Editor:   text debounce  │          │ 4. _syncViews()  │   │
-│  └─────────────────────────┘          │                  │   │
+│  └─────────────────────────┘          │ 5. _emitChange() │   │
+│                                       │ 6. requestUpdate()│  │
 │                                       ▼                  │   │
 │                              ┌────────────────────┐      │   │
 │                              │   PageDocument      │      │   │
@@ -84,7 +125,8 @@ Single entry point for all document mutations.
 ```typescript
 private _applyEdit(origin: EditOrigin, fn: () => void): void {
   // 1. If a structured edit arrives while editor has pending debounced
-  //    changes, flush them first so we don't lose in-progress text
+  //    changes, flush them first so we don't lose in-progress text.
+  //    _flushEditorSync pushes its own undo snapshot directly (no recursion).
   if (origin !== 'editor' && this._pendingEditorSync) {
     this._flushEditorSync();
   }
@@ -96,8 +138,12 @@ private _applyEdit(origin: EditOrigin, fn: () => void): void {
   // 3. Execute the mutation
   fn();
 
-  // 4. Sync all views, skipping origin
+  // 4. Sync all views
   this._syncViews(origin);
+
+  // 5. Notify external consumers and trigger Lit re-render
+  this._emitChange();
+  this.requestUpdate();
 }
 ```
 
@@ -108,9 +154,20 @@ to the last pause point, not each character.
 
 **Flush-before-structured-edit:** When the user is typing in the editor and then
 clicks a palette item, the pipeline flushes pending text changes to the model
-first, THEN applies the palette insert. This preserves the user's typing. If
-the pending text is invalid YAML, the flush fails silently and the structured
-edit operates on the last valid model state.
+first, THEN applies the palette insert. `_flushEditorSync` pushes its own undo
+snapshot and swaps the document directly — it does NOT call `_applyEdit`, which
+avoids nested undo snapshots and double `_syncViews` calls. The outer
+`_applyEdit` then pushes a second snapshot and syncs all views once. If the
+pending text is invalid YAML, the flush fails silently and the structured edit
+operates on the last valid model state.
+
+**`_emitChange()` and `requestUpdate()`:** The current `_subscribeToDocument`
+fires these on every model change. In the new pipeline, they move into
+`_applyEdit` — after `_syncViews` completes. `_emitChange()` dispatches
+`builder-change` (consumed by `pages-runtime/site.ts` and
+`pages-aria/tutorial-host.ts`). `requestUpdate()` triggers Lit's re-render
+cycle for reactive properties that depend on document state (e.g. undo/redo
+button enablement via the shell's `_undoStack.length` / `_redoStack.length`).
 
 ### _syncViews
 
@@ -148,6 +205,20 @@ private _diffPatchEditor(): void {
 diff. Only changed lines produce replacement ranges. Unchanged ranges keep
 their cursor position, selection, and decorations.
 
+**Algorithm:** Line-based prefix/suffix matching. Split both strings into lines.
+Find the longest common prefix (lines identical from the top) and longest common
+suffix (lines identical from the bottom). The changed region is everything
+between. Produce a single `ChangeSpec` replacing that region's character range.
+O(n) for the common case (single contiguous edit region). For typical page
+documents (<100 lines), this is sub-millisecond.
+
+This approach produces a single replacement range, not per-line diffs. A full
+Myers/LIS diff would find multiple disjoint change regions, but the extra
+complexity isn't warranted: structured edits (property change, add component)
+typically touch one contiguous YAML block, and the prefix/suffix approach
+correctly identifies it. The cursor is preserved for all content outside the
+replaced region — which is the design goal.
+
 ### EditorInputHandler (replaces YamlSync for editor→model)
 
 Handles editor text changes with debouncing and active-typing suppression.
@@ -160,7 +231,21 @@ private _handleEditorInput(): void {
   this._editorDirty = true;
   clearTimeout(this._pendingEditorSync);
   this._pendingEditorSync = window.setTimeout(() => {
-    this._flushEditorSync();
+    // Standalone debounce timeout — go through _applyEdit for full
+    // sync + emit. _applyEdit won't re-enter _flushEditorSync because
+    // origin is 'editor'.
+    const text = this._getEditorText();
+    try {
+      const newDoc = PageDocument.parse(text);
+      this._applyEdit('editor', () => {
+        this._document = newDoc;
+      });
+      this._editorDirty = false;
+      this._pendingEditorSync = undefined;
+    } catch {
+      // Invalid YAML — keep editor dirty, model stays at last valid state.
+      this._pendingEditorSync = undefined;
+    }
   }, 300);
 }
 
@@ -172,11 +257,16 @@ private _flushEditorSync(): void {
   const text = this._getEditorText();
   try {
     const newDoc = PageDocument.parse(text);
-    this._applyEdit('editor', () => {
-      this._document = newDoc;
-      this._subscribeToDocument();
-    });
+    // Push undo snapshot and swap document directly — NOT via _applyEdit.
+    // This avoids nested undo/sync when _applyEdit calls _flushEditorSync
+    // as part of flush-before-structured-edit.
+    this._undoStack.push(this._document.toString());
+    this._redoStack.length = 0;
+    this._document = newDoc;
     this._editorDirty = false;
+    // No _syncViews here — the calling _applyEdit will sync after
+    // its own mutation. When called standalone (debounce timeout),
+    // use _applyEdit instead (see _handleEditorInput).
   } catch {
     // Invalid YAML — model stays at last valid state.
     // Editor shows the user's text. Lint markers show errors.
@@ -184,11 +274,47 @@ private _flushEditorSync(): void {
 }
 ```
 
+**Why 300ms debounce (up from YamlSync's 150ms):** 150ms fires while many users
+are still composing — the inter-keystroke gap for a moderate typist (60 WPM)
+is ~200ms. At 150ms, partial words trigger parse attempts that will fail and
+immediately be superseded. 300ms aligns with typical pause-between-words timing,
+reducing unnecessary parse failures during active typing while remaining
+responsive enough that the model updates feel immediate when the user pauses.
+
 **Why PageDocument.parse (new instance) is acceptable here:** Editor text edits
 can produce arbitrarily different YAML. An in-place diff-and-patch on the
 model would be complex and fragile. Creating a new PageDocument from the text
 is correct — the undo stack lives in the shell (string snapshots), not in the
 PageDocument instance.
+
+### External Property Changes (`willUpdate`)
+
+When the host sets `shell.yaml = "new yaml"` (e.g. loading a different page),
+the Lit `willUpdate` lifecycle handles it outside the edit pipeline:
+
+```typescript
+override willUpdate(changed: Map<PropertyKey, unknown>): void {
+  if (changed.has('yaml') && changed.get('yaml') !== undefined) {
+    this._document = PageDocument.parse(this.yaml);
+    // External property change = new document baseline.
+    // Clear undo stacks — the previous document's history is irrelevant.
+    this._undoStack.length = 0;
+    this._redoStack.length = 0;
+    // Cancel any pending editor sync from the previous document.
+    clearTimeout(this._pendingEditorSync);
+    this._pendingEditorSync = undefined;
+    this._editorDirty = false;
+    // Full view sync — this is not an edit, it's a document replacement.
+    this._syncViews('toolbar');
+    this._emitChange();
+  }
+}
+```
+
+This is NOT routed through `_applyEdit` because:
+- It's not a user edit — no undo snapshot should be pushed
+- It clears the undo stack (new document baseline)
+- The origin is external, not any of the five EditOrigin panels
 
 ### Undo/Redo
 
@@ -204,8 +330,9 @@ private _undo(): void {
   this._redoStack.push(this._document.toString());
   const prev = this._undoStack.pop()!;
   this._document = PageDocument.parse(prev);
-  this._subscribeToDocument();
   this._syncViews('toolbar');
+  this._emitChange();
+  this.requestUpdate();
 }
 
 private _redo(): void {
@@ -213,10 +340,15 @@ private _redo(): void {
   this._undoStack.push(this._document.toString());
   const next = this._redoStack.pop()!;
   this._document = PageDocument.parse(next);
-  this._subscribeToDocument();
   this._syncViews('toolbar');
+  this._emitChange();
+  this.requestUpdate();
 }
 ```
+
+No `_subscribeToDocument()` — the coordinator pattern means no onChange listener
+is needed on the new document. `_applyEdit`, `_undo`, and `_redo` each handle
+`_syncViews`, `_emitChange`, and `requestUpdate` explicitly.
 
 Stack size limit: 100 entries. Each entry ~2KB. Total: ~200KB. Negligible.
 
@@ -231,6 +363,8 @@ Button click → _applyEdit('toolbar', () => doc.addPage())
               → _syncTree (new page node appears)
               → _syncProperties (selection unchanged)
               → _syncPreview (new page rendered)
+            → _emitChange()
+            → requestUpdate()
 ```
 
 ### Toolbar: Undo, Redo
@@ -265,25 +399,49 @@ Click + → _handleTreeAdd
           → _syncTree
           → _syncProperties
           → _syncPreview
+        → _emitChange()
+        → requestUpdate()
 ```
 
 ### Tree: context menu (tree-action)
 
 ```
 Right-click → context menu → action selected
-            → _handleTreeAction
-            → _applyEdit('tree', () => {
-                match action:
-                  'delete' → doc.removeAt(path)
-                  'move-up' → doc.moveUp(path)
-                  'duplicate' → doc.duplicateAt(path)
-                  'add-row' → page.addRow()
-                  'add-column' → row.addColumn()
-                  'add-child' → node.addComponent(...)
-                  'wrap-row' → doc.wrapInRow(path)
-              })
+            → _handleTreeAction(action, path, nodeType)
+            → _applyEdit('tree', fn)
             → _syncViews('tree')
 ```
+
+The handler resolves `path` to the appropriate node using existing shell path
+helpers (`_findPageAtPath`, `_findRowAtPath`, `_findColumnAtPath`,
+`_findComponentAtPath`, `_findDatasetAtPath`), then calls the existing
+node-level API.
+
+**Complete action set** (derived from `tree-context-menu.ts`):
+
+| Action | Node types | API call |
+|--------|-----------|----------|
+| `delete` | all | `parentNode.removeChild(index)` / `row.removeColumn(index)` / `col.removeComponent(index)` |
+| `move-up` | component, row, column | `component.moveToIndex(parent, index - 1)` / sequence swap for rows/columns |
+| `move-down` | component, row, column | `component.moveToIndex(parent, index + 1)` / sequence swap for rows/columns |
+| `duplicate` | component, dataset | `component.duplicate()` |
+| `add-row` | page | `page.addRow()` |
+| `add-column` | row | `row.addColumn()` |
+| `add-child` | page, column, container component | `node.addComponent(type, props)` — opens palette picker |
+| `wrap-row` | component | `page.wrapInRow([componentIndex])` |
+| `wrap-column` | component | `component.wrapIn('column-container')` or equivalent container type |
+| `wrap-tabs` | component | `component.wrapIn('tabs')` |
+| `replace-with` | component | `component.replaceWith(newType)` — opens type picker |
+
+**Move up/down for rows and columns** requires adding `moveToIndex` support on
+`RowNode` and `ColumnNode`, or implementing sequence-level swaps directly. The
+existing `ComponentNode.moveToIndex` demonstrates the pattern — extract the YAML
+node, delete, splice at the new position. This is a PageDocument API extension
+deferred to the implementation issue.
+
+**`add-child` and `replace-with`** open a picker UI before the mutation. The
+handler dispatches the picker, and the mutation happens in the picker's callback
+via `_applyEdit('tree', ...)`. This is the same pattern as `_handleTreeAdd`.
 
 ### Properties: field change
 
@@ -293,15 +451,16 @@ Field edit → source.onChange(field, value)
            → _syncViews('properties')
              → _diffPatchEditor (cursor preserved)
              → _syncTree (label might change)
+             → _syncProperties (re-renders with live model getters)
              → _syncPreview (visual updates)
-             → props NOT refreshed (origin)
+           → _emitChange()
+           → requestUpdate()
 ```
 
-Wait — properties IS the origin, but we still want to refresh the properties
-panel because `source.data` is a getter that reads from the live document.
-Since the mutation already happened, the getter returns updated data. The
-property palette re-reads `source.data` on its next render cycle. No explicit
-refresh needed.
+`_syncProperties` IS called even though properties is the origin. This is safe
+and intentional: `source.data` is a getter that reads from the live document,
+so re-rendering reflects the committed mutation. No circular sync risk — the
+render reads, it doesn't write.
 
 ### Palette: component select
 
@@ -314,6 +473,8 @@ Click tile → _applyEdit('palette', () => {
              → _syncTree (new component node)
              → _syncProperties (select new component)
              → _syncPreview
+           → _emitChange()
+           → requestUpdate()
 ```
 
 ### Editor: keystroke
@@ -322,14 +483,16 @@ Click tile → _applyEdit('palette', () => {
 Keystroke → CodeMirror updates text immediately (user sees change)
          → _handleEditorInput (starts/resets 300ms debounce)
          → ... user keeps typing, debounce resets ...
-         → 300ms idle → _flushEditorSync
+         → 300ms idle → _applyEdit('editor', () => parse + swap document)
            → PageDocument.parse(text)
-             → success: _applyEdit('editor', () => swap document)
+             → success:
                → _syncViews('editor')
                  → editor SKIPPED (origin)
                  → _syncTree (structure may have changed)
                  → _syncProperties (values may have changed)
                  → _syncPreview (visual updates)
+               → _emitChange()
+               → requestUpdate()
              → failure: no-op (invalid YAML, model stays at last valid)
 ```
 
@@ -348,12 +511,15 @@ Click → find component at click target
 User types in editor, then clicks a palette tile before debounce fires.
 
 1. `_applyEdit('palette', ...)` is called
-2. Coordinator flushes pending editor sync first
-3. If flush succeeds: model has user's text changes + palette insert
-4. If flush fails (invalid YAML): palette insert operates on last valid model,
-   editor text is overwritten with model+insert result
-5. In case 4, the user's invalid text is lost — but the palette action they
-   requested takes effect. Undo reverts to just before the palette click.
+2. Step 1: `_flushEditorSync()` runs — pushes undo snapshot #1, swaps document
+   to reflect user's pending text. No `_syncViews` (that's the caller's job).
+3. Step 2: outer `_applyEdit` pushes undo snapshot #2 (state after flush)
+4. Step 3: palette mutation executes on the flushed document
+5. Step 4-6: single `_syncViews('palette')` + `_emitChange()` + `requestUpdate()`
+6. Result: two undo entries, one sync pass. Undo #1 reverts the palette insert.
+   Undo #2 reverts the flushed editor text.
+7. If flush fails (invalid YAML): no snapshot #1 pushed, palette operates on
+   last valid model, editor text is overwritten with model+insert result.
 
 ### E2: Rapid edits from different sources
 
@@ -395,11 +561,66 @@ is undo.
 
 - `YamlSync` class — replaced by `_handleEditorInput` + `_flushEditorSync`
   in the shell
-- `_subscribeToDocument` → `_pushYamlToEditor` path — replaced by
-  `_syncViews` which calls `_diffPatchEditor`
-- `_syncSource` flag — replaced by `EditOrigin` parameter
-- `PageDocument.undo()` / `PageDocument.redo()` — replaced by shell-managed
-  string snapshot stack
+- `_subscribeToDocument` method — fully removed. In the new architecture,
+  `_applyEdit`, `_undo`, `_redo`, and `willUpdate` each handle `_syncViews`,
+  `_emitChange`, and `requestUpdate` explicitly. No onChange listener on
+  PageDocument is needed. All calls to `_subscribeToDocument` in
+  `_undo()`, `_redo()`, `_flushEditorSync()`, and `willUpdate()` are removed.
+- `_pushYamlToEditor` — replaced by `_diffPatchEditor` in `_syncViews`
+- `_docUnsub` field — no listener to unsubscribe
+- `PageDocument.undo()` / `PageDocument.redo()` / `PageDocument.canUndo()` /
+  `PageDocument.canRedo()` — replaced by shell-managed string snapshot stack.
+  The render template binds toolbar button state to the shell's stacks:
+  `?disabled="${this._undoStack.length === 0}"` (currently
+  `?disabled="${!this._document.canUndo()}"`)
+- `PageDocument._undoStack` / `PageDocument._redoStack` — undo state moves
+  to shell
+- `PageDocument._pushUndo()` method and all 28 `_pushUndoInternal()` calls
+  across node types (PageNode, RowNode, ColumnNode, ComponentNode, DatasetNode,
+  NavTreeNode). These calls push to a stack that nobody reads when undo lives
+  in the shell. Each node mutation method (e.g. `setProperty`, `addPage`,
+  `addComponent`, `removeChild`, `duplicate`, `moveToIndex`) currently calls
+  `this._doc._pushUndoInternal()` before mutating — all of these are removed.
+  `_notifyInternal()` calls remain (they fire onChange, which the transaction
+  API still uses for notification coalescing)
+
+## What Gets Preserved
+
+- **`_syncSource` flag** — this is a selection-sync mechanism, orthogonal to
+  `EditOrigin`. `_syncSource` (`'tree' | 'yaml' | 'visual' | null`) tracks
+  which panel initiated a *selection* (click/cursor move), so
+  `_updatePropertySource` knows whether to scroll or highlight the YAML
+  editor. `EditOrigin` tracks which panel initiated a *mutation*, so
+  `_syncViews` knows what to skip. These solve different problems:
+  - Selection sync: "I clicked in the preview — don't scroll the editor to
+    where I already am"
+  - Edit sync: "The editor changed the YAML — don't push YAML back to the
+    editor"
+  `EditOrigin` doesn't include `'visual'` (preview clicks aren't edits).
+  `_syncSource` doesn't include `'properties'` or `'palette'` (those trigger
+  mutations, not selections). Both mechanisms coexist.
+
+- **`PageDocument` transaction API** — `beginTransaction()` /
+  `commitTransaction()` / `abortTransaction()` remain, but are simplified.
+  With undo moving to the shell, transactions no longer manage undo snapshots.
+  They retain two responsibilities:
+  1. **Notification coalescing**: suppress intermediate `_notify()` calls
+     during multi-step mutations (e.g. `wrapInRow` deletes then inserts).
+     `commitTransaction()` fires a single coalesced `_notify()`.
+  2. **Rollback**: `abortTransaction()` restores from `_transactionSnapshot`
+     if a compound mutation fails partway.
+
+  `beginTransaction()` saves a snapshot to `_transactionSnapshot` and sets
+  `_inTransaction = true` — but no longer pushes to any undo stack. The
+  shell's `_applyEdit` has already pushed its snapshot before `fn()` runs.
+  `_pushUndo()` calls during the transaction are still suppressed (they would
+  be redundant — the shell owns the undo stack). `commitTransaction()` clears
+  the flag and fires `_notify()`. `abortTransaction()` restores from
+  `_transactionSnapshot`, clears the flag, and does NOT fire `_notify()` (the
+  mutation was rolled back).
+
+  Methods using transactions: `PageNode.wrapInRow`, `ComponentNode.replaceWith`,
+  `ComponentNode.moveToSlot`, `ComponentNode.wrapIn`.
 
 ## What Gets Added
 
