@@ -82,6 +82,63 @@ static parseCoordinated(yaml: string): PageDocument {
 }
 ```
 
+**Modified methods under coordinated mode.** The `_coordinated` guard is in
+exactly two internal methods — `_pushUndo()` and `_notify()`. Since
+`_pushUndoInternal()` delegates to `_pushUndo()` and `_notifyInternal()`
+delegates to `_notify()`, all 26 `_pushUndoInternal` and 28
+`_notifyInternal` call sites across 6 node classes are covered by these
+two guards. The transaction methods need explicit guards only for their
+direct stack manipulation (which bypasses `_pushUndo`).
+
+```typescript
+private _pushUndo(): void {
+  if (this._coordinated) return;
+  if (this._inTransaction) return;
+  this._undoStack.push(this.toString());
+  if (this._undoStack.length > MAX_UNDO_STACK) {
+    this._undoStack.shift();
+  }
+  this._redoStack.length = 0;
+}
+
+private _notify(): void {
+  if (this._coordinated) return;
+  if (this._inTransaction) return;
+  const yaml = this.toString();
+  for (const l of this._listeners) l(yaml);
+}
+
+beginTransaction(): void {
+  if (this._inTransaction) throw new Error('Already in transaction');
+  this._inTransaction = true;
+  this._transactionSnapshot = this.toString();
+  if (!this._coordinated) {
+    this._undoStack.push(this._transactionSnapshot);
+    if (this._undoStack.length > MAX_UNDO_STACK) {
+      this._undoStack.shift();
+    }
+    this._redoStack.length = 0;
+  }
+}
+
+commitTransaction(): void {
+  this._inTransaction = false;
+  this._transactionSnapshot = null;
+  this._notify(); // no-op when _coordinated (guard is in _notify)
+}
+
+abortTransaction(): void {
+  if (!this._inTransaction) return;
+  this._inTransaction = false;
+  this._doc = parseDocument(this._transactionSnapshot!, { keepSourceTokens: true });
+  this._transactionSnapshot = null;
+  if (!this._coordinated) {
+    this._undoStack.pop();
+    this._redoStack.length = 0;
+  }
+}
+```
+
 Tests and standalone consumers continue to use `PageDocument.parse()` (which
 returns `_coordinated = false` by default). The factory is the only API that
 sets the flag — no public setter needed.
@@ -206,12 +263,17 @@ private _syncViews(origin: EditOrigin): void {
     this._diffPatchEditor();
   }
   this._syncTree();
-  this._syncProperties();
+  this._resolvePropertySource();
   this._syncPreview();
   this._emitChange();
   this.requestUpdate();
 }
 ```
+
+`_resolvePropertySource()` re-creates `_propertySource` from the current
+document on every sync pass (see §Property Source Resolution). This
+ensures property panel data and mutation closures always reference the
+current document — not a stale reference captured at selection time.
 
 ### _diffPatchEditor (replaces _pushYamlToEditor)
 
@@ -383,6 +445,73 @@ up to ~20–50KB for large documents (10 pages × 5 rows × 3 columns × 2
 components each). Worst case at 50 entries: ~2.5MB. Acceptable for a desktop
 editor; the stack is capped and entries are plain strings.
 
+### Property Source Resolution
+
+The current code (`_updatePropertySource`, builder-shell.ts:492–623) captures
+node references eagerly at selection time — closures like `onChange` and
+getters like `get data()` hold a reference to the PageNode/ComponentNode
+resolved when the user clicked a tree node. This works today because
+`YamlSync.onDocumentChange` calls `_updatePropertySource()` after every
+document swap, refreshing all captured references.
+
+In the new design, `_updatePropertySource` is called only on selection
+changes (user clicks a tree/preview node). All other property source
+freshness is handled by **lazy node resolution** — closures resolve nodes
+from `this._document` at execution time, not at capture time.
+
+**Design rule:** No `_propertySource` closure may hold a direct reference
+to a PageNode, ComponentNode, or any other document-derived object. All
+closures capture a **resolve function** that navigates the current
+`this._document` by path.
+
+`_resolvePropertySource()` handles the node resolution part of
+`_updatePropertySource` without the selection side-effects (scroll,
+highlight). It is called from `_syncViews` on every sync pass:
+
+```typescript
+private _resolvePropertySource(): void {
+  if (!this._selectedPath || !this._selectedNodeType) {
+    this._propertySource = undefined;
+    return;
+  }
+  const nt = this._selectedNodeType;
+  const path = this._selectedPath;
+
+  if (nt === 'component') {
+    const resolve = () => this._findComponentAtPath(path);
+    const node = resolve();
+    if (!node) { this._propertySource = undefined; return; }
+    this._propertySource = {
+      schema: addBlankEnumOptions(node.getSchema()),
+      get data() { return resolve()?.getProperties() ?? {}; },
+      onChange: (field, value) => {
+        this._applyEdit('properties', () => {
+          const n = resolve();
+          if (!n) return;
+          const v = value === '' ? undefined : value;
+          if (v === undefined) n.removeProperty(String(field[0]));
+          else n.setProperty(String(field[0]), v);
+        });
+      },
+    };
+    return;
+  }
+  // ... same pattern for page, row, column, dataset, nav-item
+}
+```
+
+`_updatePropertySource()` calls `_resolvePropertySource()` plus
+scroll/highlight for selection-driven updates. `_handleNodeSelect` calls
+`_updatePropertySource()`. `_syncViews` calls `_resolvePropertySource()`
+directly.
+
+This eliminates two categories of stale-reference bugs:
+1. **Mutation closures** (`onChange`) that mutate old document nodes after
+   `_flushEditorSync` swaps the document (the trigger scenario from
+   XC-R1-02).
+2. **Data getters** (`get data()`) that read from old document nodes after
+   undo, redo, or external property changes swap the document.
+
 ## Edit Flows (all entry points)
 
 ### Toolbar: +Page, +Dataset
@@ -392,7 +521,7 @@ Button click → _applyEdit('toolbar', () => doc.addPage())
             → _syncViews('toolbar')
               → _diffPatchEditor (cursor preserved)
               → _syncTree (new page node appears)
-              → _syncProperties (selection unchanged)
+              → _resolvePropertySource (selection unchanged)
               → _syncPreview (new page rendered)
               → _emitChange()
               → requestUpdate()
@@ -428,7 +557,7 @@ Click + → _handleTreeAdd
         → _syncViews('tree')
           → _diffPatchEditor
           → _syncTree
-          → _syncProperties
+          → _resolvePropertySource
           → _syncPreview
           → _emitChange()
           → requestUpdate()
@@ -484,6 +613,8 @@ wires `@node-select` and `@tree-add`.
 Drag component → drop on target node
                → _handleTreeDrop(sourcePath, dropTarget)
                → _applyEdit('tree', () => {
+                   const component = this._findComponentAtPath(sourcePath);
+                   if (!component) return;
                    component.moveToIndex(dropTarget.parent, dropTarget.index)
                  })
                → _syncViews('tree')
@@ -491,27 +622,41 @@ Drag component → drop on target node
 
 The tree component (`builder-tree.ts:473-485`) fires `tree-drop` events with
 `sourcePath` and a `dropTarget` object (computed by `computeDropTarget`). The
-shell resolves the source component and calls `ComponentNode.moveToIndex()` or
-`ComponentNode.moveToSlot()` depending on the drop target type.
+shell resolves the source component **inside** the `_applyEdit` closure
+(lazy resolution, see §Property Source Resolution) and calls
+`ComponentNode.moveToIndex()` or `ComponentNode.moveToSlot()` depending on
+the drop target type. This ensures the component reference is valid after
+any `_flushEditorSync` document swap.
 
 ### Properties: field change
 
 ```
 Field edit → source.onChange(field, value)
-           → _applyEdit('properties', () => node.setProperty(field, value))
+           → _applyEdit('properties', () => {
+               const node = resolve();   // lazy — resolves from this._document
+               if (!node) return;
+               node.setProperty(field, value);
+             })
            → _syncViews('properties')
              → _diffPatchEditor (cursor preserved)
              → _syncTree (label might change)
-             → _syncProperties (re-renders with live model getters)
+             → _resolvePropertySource (re-creates source from current doc)
              → _syncPreview (visual updates)
              → _emitChange()
              → requestUpdate()
 ```
 
-`_syncProperties` IS called even though properties is the origin. This is safe
-and intentional: `source.data` is a getter that reads from the live document,
-so re-rendering reflects the committed mutation. No circular sync risk — the
-render reads, it doesn't write.
+The `resolve()` call inside the `_applyEdit` closure resolves the node
+lazily from the current `this._document` (see §Property Source Resolution).
+If `_flushEditorSync` swapped the document before `fn()` executes, the
+lazy resolution picks up the new document — not the stale reference
+captured at selection time.
+
+`_resolvePropertySource` IS called even though properties is the origin.
+This is safe and intentional: `source.data` is a getter that reads from
+the live document via lazy resolution, so re-rendering reflects the
+committed mutation. No circular sync risk — the render reads, it doesn't
+write.
 
 ### Palette: component select
 
@@ -522,7 +667,7 @@ Click tile → _applyEdit('palette', () => {
            → _syncViews('palette')
              → _diffPatchEditor
              → _syncTree (new component node)
-             → _syncProperties (select new component)
+             → _resolvePropertySource (select new component)
              → _syncPreview
              → _emitChange()
              → requestUpdate()
@@ -540,7 +685,7 @@ Keystroke → CodeMirror updates text immediately (user sees change)
                → _syncViews('editor')
                  → editor SKIPPED (origin)
                  → _syncTree (structure may have changed)
-                 → _syncProperties (values may have changed)
+                 → _resolvePropertySource (values may have changed)
                  → _syncPreview (visual updates)
                  → _emitChange()
                  → requestUpdate()
@@ -625,9 +770,15 @@ is undo.
 - The render template binds toolbar button state to the shell's stacks:
   `?disabled="${this._undoStack.length === 0}"` (currently
   `?disabled="${!this._document.canUndo()}"`)
+- Shell's `_undo()` / `_redo()` methods — no longer delegate to
+  `PageDocument.undo()` / `PageDocument.redo()`. Replaced by shell-managed
+  string snapshot stacks (see §Undo/Redo).
 - `PageDocument.undo()` / `PageDocument.redo()` / `PageDocument.canUndo()` /
-  `PageDocument.canRedo()` — public API removed. Replaced by shell-managed
-  string snapshot stacks.
+  `PageDocument.canRedo()` — **remain on PageDocument** for standalone
+  consumers and tests. In coordinated mode these methods are inert
+  (`_pushUndo` is a no-op, so the internal stack is always empty). The shell
+  no longer calls them — toolbar button bindings change from
+  `this._document.canUndo()` to `this._undoStack.length > 0`.
 - `PageDocument._undoStack` and `_redoStack` — **private fields kept**.
   In coordinated mode, `_pushUndo` is a no-op so they stay empty. In
   standalone mode, they continue to function for internal undo tracking.
@@ -676,6 +827,7 @@ is undo.
 
 - `_applyEdit(origin, fn)` — single coordinator method
 - `_syncViews(origin)` — fan-out with origin check
+- `_resolvePropertySource()` — lazy node resolution for property panel (see §Property Source Resolution)
 - `_diffPatchEditor()` — minimal diff text sync
 - `computeMinimalChanges(before, after)` — line-based diff utility
 - `_handleEditorInput()` / `_flushEditorSync()` — debounced editor→model
@@ -687,54 +839,69 @@ is undo.
 
 ## Migration Path
 
-Incremental, not big bang. Each step is independently testable.
+Incremental, not big bang. Each step is independently testable. The key
+ordering insight: coordinated mode (step 1) must come FIRST — it
+suppresses internal notifications and undo recording, eliminating the
+double-fire window that would otherwise exist between adding the
+coordinator and removing the old sync paths.
 
-1. **Add `_applyEdit` coordinator** — wrap all existing mutation sites in
-   `_applyEdit`. This includes 7 onChange closures in `_updatePropertySource`
-   (page name, column span, component properties, dataset properties, nav-item
+1. **Add coordinated mode to PageDocument** — add `_coordinated` flag,
+   `parseCoordinated(yaml)` factory method, and `_parseDocument` shell
+   helper. When coordinated: `_pushUndo`/`_pushUndoInternal` and
+   `_notify`/`_notifyInternal` become no-ops; transaction methods skip
+   undo/redo stack manipulation but preserve atomicity (see §Coordinated
+   Mode for full code). Shell switches all document creation to
+   `_parseDocument()` / `parseCoordinated()`. Tests: node mutations
+   produce no internal undo entries and no mid-pipeline notifications
+   when coordinated. **Negative tests required:** verify `_notifyInternal`
+   does NOT fire after `abortTransaction()`, after `commitTransaction()`,
+   and during transactional rollback sequences (`wrapInRow`, `replaceWith`,
+   `moveToSlot`, `wrapIn`). Do not proceed to step 2 until coordinated
+   mode is verified under all transaction API paths.
+
+2. **Add `_applyEdit` coordinator and `_syncViews`** — single step (they
+   depend on each other). Wrap all existing mutation sites in `_applyEdit`.
+   This includes 7 onChange closures in `_updatePropertySource` (page name,
+   column span, component properties, dataset properties, nav-item
    properties), plus `_addPage`, `_addDataset`, and `_handleComponentSelect`.
-   Each wrapping is mechanical: `this._applyEdit(origin, () => { existing code })`.
-   Keep existing sync paths as a fallback during migration. Tests: coordinator
-   is called for every mutation.
-
-2. **Add `_syncViews` with origin** — replace individual sync calls with
-   single fan-out. Move `_emitChange()` and `requestUpdate()` into `_syncViews`.
-   Tests: editor is skipped when origin is `'editor'`; tree, properties,
-   and preview always sync regardless of origin.
+   Each wrapping is mechanical: `this._applyEdit(origin, () => { existing
+   code })`. Add `_syncViews` with origin-based fan-out. Move `_emitChange()`
+   and `requestUpdate()` into `_syncViews`. Because coordinated mode
+   suppresses internal notifications (step 1), there is no double-fire —
+   `_subscribeToDocument`'s callback receives no events during `fn()`
+   execution. Tests: coordinator is called for every mutation; editor is
+   skipped when origin is `'editor'`; tree, properties, and preview always
+   sync.
 
 3. **Replace `_pushYamlToEditor` with `_diffPatchEditor`** — cursor
-   preservation. Tests: cursor stays after property change.
+   preservation via minimal text diffs. Tests: cursor stays after property
+   change; only changed ranges are replaced.
 
-4. **Add coordinated mode to PageDocument** — add `_coordinated` flag and
-   `parseCoordinated(yaml)` factory method. When coordinated:
-   `_pushUndo`/`_pushUndoInternal` and `_notify`/`_notifyInternal` become
-   no-ops; `beginTransaction` skips undo push; `commitTransaction` skips
-   notification. Shell uses `parseCoordinated()` for every document it
-   creates. Tests: no internal undo entries, no mid-pipeline notifications
-   when coordinated.
+4. **Remove `_subscribeToDocument`** — already inert from step 1
+   (coordinated mode makes onChange listener a no-op). Remove the method,
+   the `_docUnsub` field, and all call sites (`willUpdate`, `_undo`,
+   `_redo`, `_flushEditorSync`). The tree component's own
+   `_subscribeToDocument` also becomes inert — tree rebuilds are driven
+   by `_syncTree` from the shell. Tests: no listener registration, no
+   `_docUnsub`.
 
-5. **Remove `_subscribeToDocument`** — the coordinated mode flag makes the
-   onChange listener inert. Remove the method, the `_docUnsub` field, and all
-   call sites (`willUpdate`, `_undo`, `_redo`, `_flushEditorSync`). The tree
-   component's own `_subscribeToDocument` also becomes inert — tree rebuilds
-   are driven by `_syncTree` from the shell. Tests: no listener registration,
-   no `_docUnsub`.
+5. **Replace YamlSync with inline editor handler** — debounced parse in
+   shell using diagnostics check (not try/catch). Tests: editor changes
+   flow through `_applyEdit('editor', ...)`, invalid YAML leaves model
+   untouched.
 
-6. **Replace YamlSync with inline editor handler** — debounced parse in shell
-   using diagnostics check (not try/catch). Tests: editor changes flow through
-   `_applyEdit('editor', ...)`, invalid YAML leaves model untouched.
-
-7. **Wire tree-action and tree-drop** — handle all 11 context menu actions
-   and drag-drop moves. Add `@tree-action` and `@tree-drop` listeners to the
-   `_syncTree` template. Tests: delete, move-up, move-down, duplicate,
+6. **Wire tree-action and tree-drop** — handle all 11 context menu actions
+   and drag-drop moves. Add `@tree-action` and `@tree-drop` listeners to
+   the `_syncTree` template. Tests: delete, move-up, move-down, duplicate,
    wrap-row, wrap-column, wrap-tabs, replace-with, drag-drop reorder.
 
-8. **Shell-managed undo** — replace PageDocument undo with string snapshots.
-   Remove public API: `PageDocument.undo()`, `redo()`, `canUndo()`,
-   `canRedo()`. Keep private fields `_undoStack`/`_redoStack` (needed by
-   standalone mode and `abortTransaction()`). Update toolbar button bindings
-   to use shell stack state. Tests: undo/redo across all edit origins,
-   `abortTransaction()` rollback in coordinated mode.
+7. **Shell-managed undo** — replace shell's use of PageDocument undo with
+   string snapshots. Shell's `_undo()` and `_redo()` use the new stacks.
+   PageDocument's public undo API (`undo()`, `redo()`, `canUndo()`,
+   `canRedo()`) remains for standalone consumers — inert in coordinated
+   mode. Update toolbar button bindings to use shell stack state. Tests:
+   undo/redo across all edit origins, `abortTransaction()` rollback in
+   coordinated mode.
 
 ## References
 
