@@ -1,0 +1,17 @@
+# Work Plan — issue-439-dock-workbench-polish
+
+## State
+branch: issue-439-dock-workbench-polish
+state: scaffolded
+project-sha: 574104ebe6fc8ef2695417ff23ba5e8c5814e105
+date: 2026-09-16
+issue-repo: casehubio/casehub-pages
+covers: 439,440,441
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#439 — Issue #439 ← active
+- [ ] casehubio/casehub-pages#440 — Add slide animation for dock panel transitions
+- [ ] casehubio/casehub-pages#441 — Evaluate and remove renderDockBar()
