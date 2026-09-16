@@ -15,14 +15,14 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#449 — Issue #449 ← active
   - [x] Batch 1: Foundation
     - [x] Task 1: Coordinated mode PageDocument
-  - [ ] Batch 2: Coordinator
+  - [x] Batch 2: Coordinator
     - [x] Task 2: _applyEdit + _syncViews
     - [x] Task 3: computeMinimalChanges + _diffPatchEditor
-  - [ ] Batch 3: Cleanup
-    - [ ] Task 4: Remove YamlSync + inline editor handler
+  - [x] Batch 3: Cleanup
+    - [x] Task 4: Remove YamlSync + inline editor handler
   - [ ] Batch 4: TreeActions
     - [ ] Task 5: Wire tree-action + tree-drop
-  - [ ] Batch 5: Undo
+  - [x] Batch 5: Undo
     - [x] Task 6: Shell-managed undo/redo (included in Task 2)
   - [ ] Batch 6: PropertySource
     - [ ] Task 7: Lazy resolve closures
