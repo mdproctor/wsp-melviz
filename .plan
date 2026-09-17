@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-439-dock-workbench-polish
-state: closing:review
+state: closing:promoted
 project-sha: 574104ebe6fc8ef2695417ff23ba5e8c5814e105
 date: 2026-09-16
 issue-repo: casehubio/casehub-pages
