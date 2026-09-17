@@ -63,3 +63,19 @@
 - `packages/pages-schema/scripts/generate-schemas.ts:71,157` — generator emits deprecated patterns
 **Exploration:** quick
 **Status:** captured
+
+## D4: Manual migration, no codemod
+
+**Choice:** All changes done manually — no community codemod.
+
+**Alternatives:**
+- Run `zod-v3-to-v4` codemod first for bulk `z.record()` fixes, then manual for the rest — saves typing but requires reviewing every codemod change.
+
+**Rationale:** The mechanical changes are well-scoped and regex-friendly. We understand every file. The codemod doesn't handle the hard parts (`._def`, `optionsMap`, generator, deprecated API cleanup) and could introduce unexpected transforms. Manual gives full control with no surprises.
+
+**Trade-offs:** More typing for ~100 `z.record()` calls. Trivial — the generator script handles ~50 of them automatically, and IDE find-replace covers the rest.
+
+**Sources:**
+- [zod-v3-to-v4 codemod](https://github.com/nicoespeon/zod-v3-to-v4) — community-maintained, unofficial
+**Exploration:** quick
+**Status:** captured
