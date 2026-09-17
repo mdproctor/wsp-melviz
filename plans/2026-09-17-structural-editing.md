@@ -794,7 +794,321 @@ Start dev server. Select a component in tree. Ctrl+X — node disappears, target
 feat: structural editing — cut/copy/paste with guided targets  Refs #433
 ```
 
+---
+
+## Batch 5: Visual Mode — Overlay Clipboard Operations
+
+### Task 8: Component overlay positioning engine
+
+**Files:**
+- Create: `packages/pages-builder/src/overlay/component-overlay.ts`
+- Test: `packages/pages-builder/src/overlay/component-overlay.test.ts`
+- Modify: `packages/pages-builder/src/shell/builder-shell.ts` — wire overlay after preview render
+
+**Interfaces:**
+- Consumes: `BuilderClipboard` (Task 1), preview container DOM
+- Produces: `ComponentOverlayManager` class — creates/positions/removes overlays tracking `[data-component-type]` elements
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { ComponentOverlayManager } from './component-overlay.js';
+
+describe('ComponentOverlayManager', () => {
+  let container: HTMLDivElement;
+  let overlayRoot: HTMLDivElement;
+
+  afterEach(() => {
+    container?.remove();
+    overlayRoot?.remove();
+  });
+
+  it('creates overlay divs for each data-component-type element', () => {
+    container = document.createElement('div');
+    container.innerHTML = `
+      <div data-component-type="metric" style="width:100px;height:50px;"></div>
+      <div data-component-type="bar-chart" style="width:200px;height:100px;"></div>
+    `;
+    document.body.appendChild(container);
+    overlayRoot = document.createElement('div');
+    document.body.appendChild(overlayRoot);
+
+    const mgr = new ComponentOverlayManager(container, overlayRoot);
+    mgr.update();
+
+    const overlays = overlayRoot.querySelectorAll('.component-overlay');
+    expect(overlays.length).toBe(2);
+  });
+
+  it('each overlay has add, insert, cut, copy buttons', () => {
+    container = document.createElement('div');
+    container.innerHTML = `<div data-component-type="metric" style="width:100px;height:50px;"></div>`;
+    document.body.appendChild(container);
+    overlayRoot = document.createElement('div');
+    document.body.appendChild(overlayRoot);
+
+    const mgr = new ComponentOverlayManager(container, overlayRoot);
+    mgr.update();
+
+    const overlay = overlayRoot.querySelector('.component-overlay')!;
+    expect(overlay.querySelector('.overlay-add-btn')).toBeTruthy();
+    expect(overlay.querySelector('.overlay-insert-btn')).toBeTruthy();
+    expect(overlay.querySelector('.overlay-cut-btn')).toBeTruthy();
+    expect(overlay.querySelector('.overlay-copy-btn')).toBeTruthy();
+  });
+
+  it('buttons are hidden by default, visible on hover', () => {
+    container = document.createElement('div');
+    container.innerHTML = `<div data-component-type="metric" style="width:100px;height:50px;"></div>`;
+    document.body.appendChild(container);
+    overlayRoot = document.createElement('div');
+    document.body.appendChild(overlayRoot);
+
+    const mgr = new ComponentOverlayManager(container, overlayRoot);
+    mgr.update();
+
+    const toolbar = overlayRoot.querySelector('.overlay-toolbar') as HTMLElement;
+    expect(toolbar).toBeTruthy();
+  });
+
+  it('highlights valid targets when insert mode active', () => {
+    container = document.createElement('div');
+    container.innerHTML = `
+      <div data-component-type="metric"></div>
+      <div data-component-type="bar-chart"></div>
+    `;
+    document.body.appendChild(container);
+    overlayRoot = document.createElement('div');
+    document.body.appendChild(overlayRoot);
+
+    const mgr = new ComponentOverlayManager(container, overlayRoot);
+    mgr.update();
+    mgr.setInsertMode('component');
+
+    const targets = overlayRoot.querySelectorAll('.paste-target');
+    expect(targets.length).toBe(2);
+  });
+
+  it('dispose removes all overlays', () => {
+    container = document.createElement('div');
+    container.innerHTML = `<div data-component-type="metric"></div>`;
+    document.body.appendChild(container);
+    overlayRoot = document.createElement('div');
+    document.body.appendChild(overlayRoot);
+
+    const mgr = new ComponentOverlayManager(container, overlayRoot);
+    mgr.update();
+    mgr.dispose();
+
+    expect(overlayRoot.querySelectorAll('.component-overlay').length).toBe(0);
+  });
+});
+```
+
+- [ ] **Step 2: Run tests — verify failure**
+
+- [ ] **Step 3: Implement ComponentOverlayManager**
+
+The manager:
+1. Queries `container` for all `[data-component-type]` elements
+2. For each, creates an absolutely-positioned overlay `div` in `overlayRoot`
+3. Positions each overlay using `getBoundingClientRect()` relative to `overlayRoot`
+4. Each overlay contains a toolbar (top-right) with Add/Insert/Cut/Copy buttons
+5. Toolbar uses `opacity: 0` → `opacity: 1` on overlay hover
+6. `setInsertMode(fragmentType)` adds `paste-target` class to valid overlays
+7. `update()` recalculates positions (call on scroll, resize, re-render)
+8. `dispose()` removes all overlays
+
+Overlay button clicks fire custom events (`overlay-add`, `overlay-insert`, `overlay-cut`, `overlay-copy`) with the component's index/path info.
+
+- [ ] **Step 4: Run tests — verify pass**
+
+- [ ] **Step 5: Commit**
+
+```
+wip: add component overlay manager for visual mode  Refs #433
+```
+
+### Task 9: Wire overlays into builder-shell preview
+
+**Files:**
+- Modify: `packages/pages-builder/src/shell/builder-shell.ts` — create overlay root, wire manager lifecycle
+- Modify: `packages/pages-builder/src/shell/builder-shell.test.ts`
+
+**Interfaces:**
+- Consumes: `ComponentOverlayManager` (Task 8), `BuilderClipboard` (Task 1)
+- Produces: visual mode cut/copy/paste working end-to-end
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+it('visual mode shows overlays on rendered components', async () => {
+  el = document.createElement('pages-builder-shell') as PagesBuilderShell;
+  el.yaml = MINIMAL_PAGE;
+  el.renderPreview = (container, yaml) => {
+    container.innerHTML = '<div data-component-type="title" style="width:100px;height:50px;">Hello</div>';
+  };
+  document.body.appendChild(el);
+  await awaitReady(el);
+
+  const overlayRoot = el.shadowRoot!.querySelector('.overlay-root');
+  expect(overlayRoot).toBeTruthy();
+  const overlays = overlayRoot!.querySelectorAll('.component-overlay');
+  expect(overlays.length).toBeGreaterThan(0);
+});
+```
+
+- [ ] **Step 2: Run tests — verify failure**
+
+- [ ] **Step 3: Implement overlay wiring**
+
+In `builder-shell.ts`:
+- Add an overlay root `div` as a sibling of the preview container (positioned relative to the preview, `pointer-events: none` except on overlay buttons)
+- After `_refreshPreview()` completes, call `overlayManager.update()`
+- Subscribe to `BuilderClipboard` — when insert mode changes, call `overlayManager.setInsertMode(fragmentType)`
+- Handle overlay button events (`overlay-add`, etc.) — same logic as tree event handlers
+- On preview scroll/resize, call `overlayManager.update()` to reposition
+
+- [ ] **Step 4: Run tests — verify pass**
+
+- [ ] **Step 5: Run full test suite**
+
+- [ ] **Step 6: Visual verification in browser**
+
+Start dev server. Switch to Split/Visual mode. Hover over a rendered component — toolbar appears top-right. Click Copy. Valid target overlays highlight. Click Insert on a target — position picker → paste.
+
+- [ ] **Step 7: Commit**
+
+```
+wip: wire visual overlay clipboard operations  Refs #433
+```
+
+---
+
+## Batch 6: YAML Text View — Guided Line Indicators
+
+### Task 10: CodeMirror paste-target line decorations
+
+**Files:**
+- Create: `packages/pages-builder/src/shell/yaml-paste-indicators.ts`
+- Test: `packages/pages-builder/src/shell/yaml-paste-indicators.test.ts`
+- Modify: `packages/pages-builder/src/shell/builder-shell.ts` — add extension to editor
+
+**Interfaces:**
+- Consumes: `BuilderClipboard` (Task 1), `PageDocument`, `findPathAtOffset` / `classifyPath` from `yaml-path.ts`
+- Produces: CodeMirror extension that shows gutter markers at valid paste lines
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { computeValidPasteLines } from './yaml-paste-indicators.js';
+import { PageDocument } from '@casehubio/pages-document';
+
+const ROWS_PAGE = `pages:
+- name: Dashboard
+  rows:
+  - columns:
+    - span: 6
+      components:
+      - type: metric
+    - span: 6
+      components:
+      - type: bar-chart
+`;
+
+describe('computeValidPasteLines', () => {
+  it('returns line numbers where a component can be pasted', () => {
+    const doc = PageDocument.parse(ROWS_PAGE);
+    const lines = computeValidPasteLines(doc, 'component');
+    // Components can be siblings of existing components (before/after)
+    // and children of columns/pages
+    expect(lines.length).toBeGreaterThan(0);
+    // Should include lines near existing components
+    const yaml = doc.toString();
+    const metricLine = yaml.split('\n').findIndex(l => l.includes('type: metric')) + 1;
+    expect(lines.some(l => Math.abs(l.line - metricLine) <= 1)).toBe(true);
+  });
+
+  it('returns empty for invalid fragment type at all positions', () => {
+    const doc = PageDocument.parse(ROWS_PAGE);
+    // 'dataset' fragments can't be inserted among components
+    const lines = computeValidPasteLines(doc, 'dataset');
+    expect(lines).toHaveLength(0);
+  });
+
+  it('each result includes position strategy', () => {
+    const doc = PageDocument.parse(ROWS_PAGE);
+    const lines = computeValidPasteLines(doc, 'component');
+    for (const entry of lines) {
+      expect(['before', 'after', 'child']).toContain(entry.position);
+      expect(entry.line).toBeGreaterThan(0);
+    }
+  });
+});
+```
+
+- [ ] **Step 2: Run tests — verify failure**
+
+- [ ] **Step 3: Implement paste-line computation and CodeMirror extension**
+
+`computeValidPasteLines(doc, fragmentType)`:
+1. Walk the document tree (pages → rows → columns → components)
+2. For each node, check if the fragment type is valid at that position
+3. For valid positions, compute the YAML line number where a before/after/child indicator should appear
+4. Return `{ line: number, position: 'before' | 'after' | 'child', path: (string|number)[] }[]`
+
+CodeMirror extension:
+- State field holding valid paste lines (updated when clipboard changes)
+- Gutter markers at valid lines — small colored indicators (▸ for before, ▾ for after, + for child)
+- Line decorations with subtle background on valid lines
+- Click on a gutter marker → execute paste at that position
+- Extension is inert when `insertMode === false`
+
+```typescript
+import { StateEffect, StateField, type Extension } from '@codemirror/state';
+import { EditorView, gutter, GutterMarker } from '@codemirror/view';
+
+export const setPasteTargets = StateEffect.define<PasteLineEntry[] | null>();
+
+// ... gutter + decoration setup similar to yaml-gutter.ts
+```
+
+- [ ] **Step 4: Run tests — verify pass**
+
+- [ ] **Step 5: Wire into builder-shell**
+
+In `builder-shell.ts`:
+- Add `yamlPasteIndicatorExtension` to the code editor's extensions
+- When clipboard state changes (subscribe), compute valid paste lines and dispatch `setPasteTargets` effect
+- When a gutter marker is clicked, execute the paste using the stored path and position
+
+- [ ] **Step 6: Run full test suite**
+
+- [ ] **Step 7: Visual verification in browser**
+
+Start dev server. Copy a component from the tree. Switch focus to the YAML editor. Gutter shows colored markers at valid insert points. Click a marker — component pasted at that line.
+
+- [ ] **Step 8: Commit**
+
+```
+feat: YAML text view guided paste indicators  Refs #433
+```
+
 ## References
+
+- `specs/issue-439-dock-workbench-polish/2026-09-17-structural-editing-design.md` — design spec
+- `packages/pages-builder/src/tree/builder-tree.ts` — tree component
+- `packages/pages-builder/src/tree/tree-dnd.ts` — existing DnD (to be removed)
+- `packages/pages-document/src/page-document.ts:828` — `ComponentNode.moveToIndex()`
+- `packages/pages-builder/src/clipboard/` — new clipboard module
+- `packages/pages-builder/src/catalog/component-catalog.ts` — type validation
+- `packages/pages-builder/src/palette/inline-picker.ts` — existing picker
+- `packages/pages-builder/src/shell/yaml-gutter.ts` — existing gutter extension pattern
+- `packages/pages-builder/src/shell/yaml-path.ts` — path/range computation
+- GitHub #433 — Tree/visual structural editing
+- GitHub #439 — Dock workbench polish
 
 - `specs/issue-439-dock-workbench-polish/2026-09-17-structural-editing-design.md` — design spec
 - `packages/pages-builder/src/tree/builder-tree.ts` — tree component
