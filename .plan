@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-451-zod-v4-migration
-state: scaffolded
+state: closing:review
 project-sha: 8c2fd80e6088cb50f98221963538c61273094925
 date: 2026-09-17
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#451 — Issue #451 ← active
   - [x] Batch 1: Version Bump + Generator
