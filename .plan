@@ -1,0 +1,15 @@
+# Work Plan — issue-433-structural-editing
+
+## State
+branch: issue-433-structural-editing
+state: scaffolded
+project-sha: 52973b15c1c549f2b25786452cc81d8f138abfeb
+date: 2026-09-17
+issue-repo: casehubio/casehub-pages
+covers: 433
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#433 — Issue #433 ← active
