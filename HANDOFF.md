@@ -1,20 +1,5 @@
 # Session Handover
 
-**Branch:** `main`
-**Date:** 2026-09-14
-
-## Cross-repo commit (2026-09-14)
-
-- **Commit:** `d1b7de59` on main — `fix: re-export onPagesEvent from pages-component barrel`
-- **Reason:** pages-component/src/index.ts was missing `export * from './events.js'`, so `@casehubio/pages-component` consumers (drafthouse) couldn't import `onPagesEvent`. Added `events.ts` re-export file and barrel entry.
-- **Commit:** `af197265` on main — `fix: build order — pages-component must precede pages-primitives`
-- **Reason:** dock-workbench rework (616ef95e) added pages-component dependency to pages-primitives, but build:packages had primitives before component. TypeScript compilation failed in CI.
-- **Commit:** `ca48024c` on main — `fix: add intermediate unknown cast for LayoutState → Record conversion`
-- **Reason:** TypeScript strict mode rejects direct `LayoutState as Record<string, unknown>` cast. Added `as unknown` intermediate.
-- **Triggered by:** drafthouse issue-117 CI failure
-
-## Previous session
-
 **Branch:** `main` (issue-437-lsp4ij-completions closed)
 **Issue:** #437 — fix(intellij): LSP4IJ not delivering completions
 **Date:** 2026-09-14
