@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-451-zod-v4-migration
-state: closing:review
+state: closing:promoted
 project-sha: 8c2fd80e6088cb50f98221963538c61273094925
 date: 2026-09-17
 issue-repo: casehubio/casehub-pages
