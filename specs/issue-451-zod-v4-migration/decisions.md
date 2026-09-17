@@ -41,3 +41,25 @@
 - [Zod v4 schemas.ts source](https://github.com/colinhacks/zod/blob/main/packages/zod/src/v4/classic/schemas.ts) — DU def has `options` + `discriminator`, no `optionsMap`
 **Exploration:** quick
 **Status:** captured
+
+## D3: Migrate all deprecated APIs, not just removed ones
+
+**Choice:** Update all deprecated v3 patterns to their v4 replacements — no technical debt. Applies to both hand-written code and the generator script.
+
+**Alternatives:**
+- Minimal migration (fix only removed APIs) — leaves deprecated `.passthrough()`, `.merge()`, `.strict()` calls in place since they still work in v4. Less churn but accumulates debt.
+
+**Rationale:** Pre-release project — bold changes welcome, no backward compat concerns. Leaving deprecated calls in generated output signals stale tooling. The changes are mechanical:
+- `.passthrough()` → remove (v4 objects are passthrough by default) or use `z.looseObject()` where explicit passthrough is needed
+- `.merge(other)` → `.extend(other.shape)` (5 calls, all in dead-code `component-schemas.ts` — but clean up anyway)
+- `.strict()` → `z.strictObject()` (1 test file)
+- `z.record(val)` → `z.record(z.string(), val)` (~100+ calls + generator template)
+- Generator script: update both the `z.record()` template and the `fieldSchemaBlock` `.passthrough()` — regenerate output
+
+**Trade-offs:** Slightly larger diff. But all changes are mechanical, independently testable, and leave zero deprecated API usage behind.
+
+**Sources:**
+- [Zod v4 migration guide](https://zod.dev/v4/changelog) — .passthrough(), .merge(), .strict() deprecated not removed
+- `packages/pages-schema/scripts/generate-schemas.ts:71,157` — generator emits deprecated patterns
+**Exploration:** quick
+**Status:** captured
