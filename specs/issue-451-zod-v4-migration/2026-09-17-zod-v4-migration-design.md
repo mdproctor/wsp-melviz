@@ -54,7 +54,7 @@ renamed and 2 structures changed shape.
 | `"ZodObject"` | `"object"` |
 | `"ZodArray"` | `"array"` |
 | `"ZodEnum"` | `"enum"` |
-| `"ZodNativeEnum"` | `"enum"` |
+| `"ZodNativeEnum"` | `"enum"` (same as ZodEnum — distinguish by `entries` format) |
 | `"ZodLiteral"` | `"literal"` |
 | `"ZodUnion"` | `"union"` |
 | `"ZodDiscriminatedUnion"` | `"union"` (+ `discriminator` field present) |
@@ -88,7 +88,7 @@ left behind. Pre-release project, no backward compat concerns.
 
 | v3 Pattern | v4 Replacement | Locations |
 |---|---|---|
-| `.passthrough()` | Remove (v4 default) or `z.looseObject()` | Generated schemas, generator script |
+| `.passthrough()` | `z.looseObject()` (v4 default is still strip) | Generated schemas, generator script |
 | `.merge(other)` | `.extend(other.shape)` | 5 calls in `component-schemas.ts` (dead code, clean up) |
 | `.strict()` | `z.strictObject()` | 1 test file |
 | `z.record(val)` | `z.record(z.string(), val)` | ~100+ calls across all packages |
@@ -175,6 +175,7 @@ come first. Step 7 must come last.
 | v4 `shape` is lazy (function) not plain object | Low — v4 simplified this | `getShape()` already handles both; test will catch |
 | v4 discriminated union has additional internal state beyond `discriminator` + `options` | Low | Tests cover DU narrowing; complete test suite runs |
 | `z.ZodType` compat alias missing `.description` at type level | Medium | Check at typecheck step; if broken, use `(schema as any).description` temporarily and file upstream |
+| ZodEnum and ZodNativeEnum both map to `type: "enum"` — `entries` format may differ | Low | Console.log both formats at implementation start; adjust accessor accordingly |
 
 ## References
 
