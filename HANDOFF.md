@@ -1,39 +1,43 @@
 # Session Handover
 
-**Branch:** `main` (issue-437-lsp4ij-completions closed)
-**Issue:** #437 — fix(intellij): LSP4IJ not delivering completions
-**Date:** 2026-09-14
+**Branch:** `issue-433-structural-editing` (30 commits ahead of main)
+**Issue:** #433 — Tree/visual structural editing
+**Date:** 2026-09-18
 
-## What happened
+## What Was Built
 
-Debugged and fixed LSP4IJ completion delivery for the IntelliJ plugin. Root cause was a dual-plugin conflict: `io.casehub.pages` (CaseHub Pages, from pages repo) and `io.casehub.yaml` (CaseHub YAML, from blocks-ui repo) were both installed, both registering LSP servers for the same YAML file patterns. LSP4IJ couldn't route documents with two competing servers.
+### Clipboard Foundation
+- `BuilderClipboard` singleton with subscribe/notify
+- YAML fragment serialization and type detection
 
-Secondary issues fixed: stale bundle cache (extractServer never re-extracted), TextDocumentSync bare number form (LSP4IJ needs object form with `openClose: true`), missing Node.js macOS fallback paths in blocks-ui plugin, CompletionWeigher for YAML `{}` item deprioritization.
+### Tree Structural Editing (Complete)
+- 4 inline buttons per node: Add (+), Insert (↓), Cut (✂), Copy (⎘)
+- Insert flow: Before/After picker → filtered component picker → schema-compliant insertion
+- Cut/Copy serialize to clipboard, Insert mode highlights valid targets
+- Keyboard shortcuts: Ctrl+X, Ctrl+C, Escape
+- Auto-expand and auto-select new nodes, correct nodeType via classifyPath
 
-Verified end-to-end: file-based logging at `/tmp/casehub-lsp.log` confirms initialize → didOpen → completion handshake completes. Page completions appear in IntelliJ.
+### Visual Preview
+- Component overlay engine, scope highlight in overlay-root
+- composedPath for shadow DOM click traversal
+- Async renderPreview awaited before highlighting
+- Double-click navigates up parent chain one level at a time
 
-## Decisions / gotchas
+### 289 tests passing across 17 test files
 
-- **Two plugins must never coexist.** CaseHub Pages (`io.casehub.pages`) and CaseHub YAML (`io.casehub.yaml`) have different plugin IDs but claim the same files. IntelliJ treats them as independent plugins. The rename from `io.casehub.yaml` → `io.casehub.pages` left the old installation behind.
-- CaseHub YAML is the superset plugin (all 5 formats) but its bundle build fails — `.casehub-packages` in blocks-ui is stale (missing `lookupSchema`, `externalDataSetDefSchema` from pages-data).
-- Currently CaseHub YAML is installed (without CaseHub Pages). It uses a pages-lsp bundle with Page schemas only — SWF/Case/HTN/Org return empty completions.
-- Indentation bug: completion selection inserts text at column 0, losing YAML context indentation.
-- File-based diagnostic logging (`/tmp/casehub-lsp.log`) is committed to pages main — remove after debugging is complete.
+## Design Decision — Next Session
 
-## Follow-up (3 items for next session)
+**Visual toolbar should be selection-based, not hover-based:**
+- Buttons appear ONLY on the selected container's blue outline (top-right)
+- No hover noise — buttons follow the selection, not the cursor
+- Double-click refinement (metric → column → row → page) gives copy/paste precision
+- User agreed this is the right direction
 
-1. **Sync `.casehub-packages` in blocks-ui** — rebuild from current pages source so lsp-schemas bundle builds. Then rebuild + reinstall CaseHub YAML with domain schemas.
-2. **Fix indentation bug** — completion insertText doesn't preserve YAML indent context.
-3. **Apply pages fixes to blocks-ui plugin** — TextDocumentSync object form, serverInfo, CompletionWeigher, stale cache removal. The blocks-ui `CaseHubLspServerDescriptor.kt` already has Node.js fallback paths and stale cache fix from this session.
+## What's Next
 
-## References
-
-| Artifact | Path |
-|----------|------|
-| Diary | `blog/2026-09-14-mdp01-lsp4ij-silent-server.md` |
-| Garden: CompletionWeigher | `GE-20260914-54f581` |
-| Garden: TextDocumentSync | `GE-20260914-330473` |
-| Build integration issue | #438 |
-| Diagnostic log | `/tmp/casehub-lsp.log` |
-| blocks-ui plugin | `blocks-ui/plugins/intellij-casehub/` |
-| pages plugin | `pages/plugins/intellij/` |
+| Priority | Item | Scale |
+|----------|------|-------|
+| 1 | Visual toolbar redesign — selection-based | M |
+| 2 | Wire delete button in overlay | S |
+| 3 | Wire paste execution for Insert flow | S |
+| 4 | CodeMirror paste gutter indicators | M |
