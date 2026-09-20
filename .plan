@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-433-structural-editing
-state: scaffolded
+state: active
 project-sha: 52973b15c1c549f2b25786452cc81d8f138abfeb
 date: 2026-09-17
 issue-repo: casehubio/casehub-pages
@@ -13,3 +13,7 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#433 — Issue #433 ← active
+  - [ ] Batch 1: SelectionOverlay
+    - [ ] Task 1: SelectionOverlay class with tests
+  - [ ] Batch 2: Wiring
+    - [ ] Task 2: Wire SelectionOverlay into builder-shell
