@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-457-460-graph-editing-fixes
-state: scaffolded
+state: active
 project-sha: 
 date: 2026-09-20
 issue-repo: casehubio/casehub-pages
@@ -12,7 +12,7 @@ design-section-hashes:
 flyway-next-v: none
 
 ## Queue
-- [ ] casehubio/casehub-pages#459 — Verify connector click picker insert-at-point <- active
-- [ ] casehubio/casehub-pages#460 — Splice move-to-edge Edge not found
+- [x] casehubio/casehub-pages#459 — Verify connector click picker insert-at-point
+- [ ] casehubio/casehub-pages#460 — Splice move-to-edge Edge not found ← active
 - [ ] casehubio/casehub-pages#457 — Palette add strategy attached vs detached
 - [ ] casehubio/casehub-pages#458 — Palette drag-to-canvas
