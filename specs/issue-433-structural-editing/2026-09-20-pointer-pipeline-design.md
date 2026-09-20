@@ -213,7 +213,7 @@ The DrillDownStack does NOT create multiple React Flow instances. GraphCanvas ha
 
 3. **Container layout:** The GraphCanvas container uses CSS flexbox. Bars are fixed-width (`32px`) flex items. The React container (hosting `ReactFlowApp`) is `flex: 1` and fills the remaining width. When bars are added/removed, CSS flexbox naturally redistributes space and React Flow's `fitView` is called after the transition completes (200ms animation).
 
-4. **State management:** The stack is a plain TypeScript class instantiated by `GraphCanvas` when a `drillDown` config is provided. Stack state (array of `StackLevel` objects) is managed internally. `push`/`pop` operations call back to `GraphCanvas` to trigger model re-rendering and bar DOM updates. Bars are plain DOM elements created/destroyed by the stack — they live outside the React root, in the GraphCanvas shadow DOM.
+4. **State management:** The stack is a plain TypeScript class instantiated by `GraphCanvas` when a `drillDown` config is provided. Stack state (array of `StackLevel` objects) is managed internally. `push`/`pop` operations call back to `GraphCanvas` to trigger model re-rendering and bar DOM updates. Bars are plain DOM elements created/destroyed by the stack — they live outside the React root, as siblings of the React container in the GraphCanvas light DOM (GraphCanvas overrides `createRenderRoot()` to return `this`, disabling shadow DOM).
 
 ```typescript
 interface StackLevel {
@@ -285,7 +285,7 @@ user clicks ⤢ button
   → on success: drillDownStack.push(target)
 ```
 
-GraphCanvas registers a listener for `graph:drill-down` on its container. The `composed: true` flag ensures the event crosses the shadow DOM boundary from the React root to the Lit host.
+GraphCanvas registers a listener for `graph:drill-down` on its container. The `composed: true` flag is set for forward-compatibility (if GraphCanvas ever adopts shadow DOM), but since `createRenderRoot()` returns `this` (light DOM), standard bubbling is sufficient today.
 
 **Model lifecycle:** The `DrillDownTarget.model` returned by `resolve()` is a snapshot owned by the consumer. The stack does not observe, invalidate, or synchronise models across levels. This is intentional — different consumers have different data flow models (static examples, live server-backed data, editable graphs). Consumers with live data should re-resolve when their source changes. Edit propagation across levels and model garbage collection are consumer concerns, not stack concerns. See GitHub issue for future live-data protocol when a concrete consumer needs it.
 
