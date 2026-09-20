@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-456-pointer-pipeline
-state: closing:verified
+state: closing:promoted
 project-sha: ad3df8582b75bcd96a15fe77a8c6e6cb857b787c
 date: 2026-09-20
 issue-repo: casehubio/casehub-pages
