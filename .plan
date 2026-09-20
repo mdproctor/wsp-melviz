@@ -13,3 +13,14 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#456 — Issue #456 ← active
+  - [ ] Batch 1: Gesture Coordinator
+    - [ ] Task 1: NodeGestureCoordinator
+    - [ ] Task 2: Wire into GraphCanvas
+  - [ ] Batch 2: Drill-Down Foundation
+    - [ ] Task 3: DrillDownState
+    - [ ] Task 4: DrillDownBars ARIA
+  - [ ] Batch 3: Drill-Down Wiring
+    - [ ] Task 5: isDrillable + button
+    - [ ] Task 6: Wire into GraphCanvas
+  - [ ] Batch 4: Examples
+    - [ ] Task 7: Nested Pipeline
