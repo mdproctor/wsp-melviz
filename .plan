@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-456-pointer-pipeline
-state: scaffolded
+state: active
 project-sha: ad3df8582b75bcd96a15fe77a8c6e6cb857b787c
 date: 2026-09-20
 issue-repo: casehubio/casehub-pages
@@ -13,14 +13,14 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#456 — Issue #456 ← active
-  - [ ] Batch 1: Gesture Coordinator
-    - [ ] Task 1: NodeGestureCoordinator
-    - [ ] Task 2: Wire into GraphCanvas
-  - [ ] Batch 2: Drill-Down Foundation
-    - [ ] Task 3: DrillDownState
-    - [ ] Task 4: DrillDownBars ARIA
-  - [ ] Batch 3: Drill-Down Wiring
-    - [ ] Task 5: isDrillable + button
-    - [ ] Task 6: Wire into GraphCanvas
-  - [ ] Batch 4: Examples
-    - [ ] Task 7: Nested Pipeline
+  - [x] Batch 1: Gesture Coordinator
+    - [x] Task 1: NodeGestureCoordinator
+    - [x] Task 2: Wire into GraphCanvas
+  - [x] Batch 2: Drill-Down Foundation
+    - [x] Task 3: DrillDownState
+    - [x] Task 4: DrillDownBars ARIA
+  - [x] Batch 3: Drill-Down Wiring
+    - [x] Task 5: isDrillable + button
+    - [x] Task 6: Wire into GraphCanvas
+  - [x] Batch 4: Examples
+    - [x] Task 7: Nested Pipeline
