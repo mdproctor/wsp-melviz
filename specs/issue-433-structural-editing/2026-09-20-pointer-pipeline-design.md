@@ -1,7 +1,7 @@
 # Unified Pointer Event Pipeline & Drill-Down Stack
 
-**Issue:** TBD (new issue — separate from #433)
-**Branch:** TBD
+**Issue:** #456 — Unified pointer event pipeline and drill-down stack
+**Branch:** issue-456-pointer-pipeline (to be created)
 **Date:** 2026-09-20
 
 ## Overview
