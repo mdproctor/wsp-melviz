@@ -68,17 +68,17 @@ pointerdown (capture phase on container)
                 │
                 start hold timer, track pointer position
                 │
-                ├─ pointer moves >threshold during hold
+                ├─ pointer moves >holdMoveTolerance (3px mouse / 10px touch)
                 │     → CONNECT: replay PointerEvent on .stencil-source-handle
                 │     → React Flow draws connection normally
                 │
-                ├─ pointer released before hold duration, movement ≤threshold
+                ├─ pointer released before HOLD_DURATION, movement ≤holdMoveTolerance
                 │     → CLICK: no action — native click event propagates
                 │       to React Flow's onClick, which fires onNodeClick
                 │       (onNodeClick handles shift-click → _handleShiftClick,
                 │        non-shift click → _clearMultiSelect)
                 │
-                └─ hold duration elapsed, pointer still down, movement ≤threshold
+                └─ HOLD_DURATION elapsed, pointer still down, movement ≤holdMoveTolerance
                       → MOVE: NodeMoveCoordinator.activateMove(...)
                       │
                       ├─ pointer moves >DRAG_THRESHOLD (5px)
@@ -97,7 +97,7 @@ pointerdown (capture phase on container)
 
 #### Event Replay for CONNECT
 
-When a quick drag is detected (moved >threshold before hold duration elapses):
+When a quick drag is detected (moved >holdMoveTolerance before HOLD_DURATION elapses):
 
 1. Find the `.stencil-source-handle` element within the node
 2. **Null guard:** If the Handle element does not exist (node has no outbound connections — `stencil-wrapper.tsx:235` conditionally renders the Handle only when `!hideHandles && hasSource && grammar?.connections.outbound.max !== 0`), abandon the CONNECT classification. The node cannot initiate connections, so no replay is meaningful. The gesture is discarded — no action taken.
@@ -148,7 +148,7 @@ The coordinator must be disposed when `GraphCanvas` disconnects from the DOM, fo
 
 Stencil actions (drill-down `⤢`, and any future buttons) have CSS class `.stencil-action`. The coordinator checks `event.composedPath()` for `.stencil-action` — if found, it does nothing and lets the button's own click handler fire.
 
-The `.stencil-action` class is new — it does not exist in the codebase today. It is added by `stencil-wrapper.tsx` when rendering the drill-down `⤢` button (see Part 2, Key Files: `stencil-wrapper.tsx` — "conditionally render ⤢ button based on resolve returning non-null"). Any future stencil-level action buttons must also carry this class to be excluded from gesture classification.
+The `.stencil-action` class is new — it does not exist in the codebase today. It is added by `stencil-wrapper.tsx` when rendering the drill-down `⤢` button (see Part 2, Drill-Down Button Data Path: `stencil-wrapper.tsx` renders the button when `data._drillable === true`). Any future stencil-level action buttons must also carry this class to be excluded from gesture classification.
 
 ## Part 2: Drill-Down Stack
 
@@ -156,7 +156,7 @@ The `.stencil-action` class is new — it does not exist in the codebase today. 
 
 The 3-phase protocol from blocks-ui, generalized:
 
-1. **Classify** — `DrillDownConfig.resolve(nodeId, model)` returns `DrillDownTarget | null`. If `null`, the node isn't drillable (no `⤢` button rendered).
+1. **Classify** — `DrillDownConfig.isDrillable(nodeId, model)` returns `boolean`. If `false`, the node isn't drillable (no `⤢` button rendered). This is sync and cheap — a property check, not a data fetch.
 2. **Resolve** — the consumer's callback fetches domain data and produces a `GraphModel`. This is domain-specific: blocks-ui resolves case definitions and SWF YAML into `GraphModel` instances. The `resolve` callback is the parse-to-model boundary — the consumer owns the full pipeline from domain data (YAML strings, definitions) to a renderable graph model. graph-renderer never sees YAML.
 3. **Navigate** — `DrillDownStack` pushes the target, collapses the current diagram into a vertical bar, renders the sub-diagram.
 
@@ -232,6 +232,7 @@ interface StackLevel {
 
 ```typescript
 interface DrillDownConfig {
+  isDrillable: (nodeId: string, model: GraphModel) => boolean;
   resolve: (nodeId: string, model: GraphModel) => Promise<DrillDownTarget | null>;
   renderBar?: (level: DrillDownLevel) => HTMLElement;
 }
@@ -249,11 +250,42 @@ interface DrillDownLevel {
 }
 ```
 
-- `resolve` returning `null` for a node means no drill-down button rendered on that stencil
-- `resolve` is the parse-to-model boundary: the consumer fetches domain data (YAML, definitions) and produces a `GraphModel`. The parse logic already exists in blocks-ui — `casehub-diagram.ts` already transforms case definitions and SWF YAML into renderable models today.
+- `isDrillable` — **sync** predicate, called at render time to determine button visibility. Cheap property check (e.g. blocks-ui: `return !!(doBlock || definitionRef)`). Must NOT perform I/O or expensive computation.
+- `resolve` — **async** operation, called when user clicks the ⤢ button. Fetches domain data and produces a `GraphModel`. The parse logic already exists in blocks-ui — `casehub-diagram.ts` already transforms case definitions and SWF YAML into renderable models today. Returning `null` from resolve cancels the drill-down (button was shown but navigation is impossible — e.g. definition was deleted between render and click).
 - `renderBar` optional — default renders vertical bar with rotated name text
 - `diagramType` is consumer metadata (e.g. blocks-ui uses it to select the right stencil registry per level — case stencils vs SWF stencils). It does NOT select a different rendering engine — all levels render through the same `ReactFlowApp`
 - `GraphCanvas` gains optional `drillDown?: DrillDownConfig` prop
+
+#### Drill-Down Button Data Path
+
+The ⤢ button rendering requires two data paths: a **render-time** path (should this node show the button?) and a **click-time** path (what happens when the button is clicked?).
+
+**Render-time — drillability injection into node data:**
+
+`isDrillable` is sync and cheap — it answers "can this node be drilled into?" without fetching data. GraphCanvas calls it for each node during the `toReactFlowGraph` mapping step (the same step that injects `_decoration`, `_targetHandlePosition`, and `_sourceHandlePosition` into node data). The result is injected as `_drillable: true` into the node's `data` object:
+
+```
+GraphCanvas._runLayout()
+  → toReactFlowGraph(model, layout, decorations, direction)
+    → for each node: if drillDownConfig.isDrillable(node.id, model)
+         node.data._drillable = true
+```
+
+`stencil-wrapper.tsx` reads `data._drillable` and conditionally renders the ⤢ button with `.stencil-action` class. No async call, no Promise — identical to how `_decoration` drives badge rendering today.
+
+**Click-time — drill-down event dispatch:**
+
+The ⤢ button dispatches a `graph:drill-down` custom event with `{ nodeId }` that bubbles up to GraphCanvas (follows the existing `emitPagesEvent` pattern used for `graph:node:click`, `graph:edge:create`, etc.):
+
+```
+user clicks ⤢ button
+  → button dispatches CustomEvent('graph:drill-down', { detail: { nodeId }, bubbles: true, composed: true })
+  → event bubbles through React → Lit shadow DOM → GraphCanvas
+  → GraphCanvas listener calls config.resolve(nodeId, model)
+  → on success: drillDownStack.push(target)
+```
+
+GraphCanvas registers a listener for `graph:drill-down` on its container. The `composed: true` flag ensures the event crosses the shadow DOM boundary from the React root to the Lit host.
 
 **Model lifecycle:** The `DrillDownTarget.model` returned by `resolve()` is a snapshot owned by the consumer. The stack does not observe, invalidate, or synchronise models across levels. This is intentional — different consumers have different data flow models (static examples, live server-backed data, editable graphs). Consumers with live data should re-resolve when their source changes. Edit propagation across levels and model garbage collection are consumer concerns, not stack concerns. See GitHub issue for future live-data protocol when a concrete consumer needs it.
 
@@ -267,7 +299,8 @@ interface DrillDownLevel {
 | `graph-renderer/src/drill-down/drill-down-bars.test.ts` | **New** — DOM rendering tests |
 | `graph-renderer/src/drill-down/types.ts` | **New** — `DrillDownConfig`, `DrillDownTarget`, `DrillDownLevel`, `StackLevel` |
 | `graph-renderer/src/bridge/GraphCanvas.ts` | Modify — accept `drillDown` prop, wire state + bars, extend `_keyDownHandler` with drill-down keyboard shortcuts |
-| `graph-renderer/src/stencil-wrapper.tsx` | Modify — conditionally render `⤢` button based on `resolve` returning non-null |
+| `graph-renderer/src/mapping.ts` | Modify — inject `_drillable: true` into node data during `toReactFlowGraph` when `isDrillable` returns true |
+| `graph-renderer/src/stencil-wrapper.tsx` | Modify — render `⤢` button with `.stencil-action` class when `data._drillable === true`; dispatch `graph:drill-down` event on click |
 
 ### Keyboard Handler Ownership
 
@@ -316,7 +349,7 @@ The example provides a static `resolve` callback with pre-built models for each 
 **TDD is mandatory** — this area has repeated regressions from competing event systems.
 
 ### NodeGestureCoordinator tests
-- Quick drag (moved >threshold before hold) → CONNECT event replayed on Handle
+- Quick drag (moved >holdMoveTolerance before HOLD_DURATION) → CONNECT event replayed on Handle
 - Quick drag on node without source handle (outbound.max === 0) → CONNECT abandoned, no action
 - Hold then drag → MOVE classification, ghost appears
 - Click (release before hold, no movement) → native click propagates, onNodeClick fires once
@@ -349,7 +382,10 @@ The example provides a static `resolve` callback with pre-built models for each 
 ### DrillDown integration tests
 - Push saves viewport + layout, pop restores viewport + layout (skip re-layout)
 - Single ReactFlowApp instance throughout — model swapped, not duplicated
-- `resolve` returning null → no drill-down button on stencil
+- `isDrillable` returning false → no drill-down button on stencil
+- `isDrillable` returning true → `_drillable` injected in node data, ⤢ button rendered
+- ⤢ button click dispatches `graph:drill-down` event → `resolve` called → stack pushed
+- `resolve` returning null after click → drill-down cancelled, no stack change
 - Active gesture cancelled on push/pop (move coordinator, rubber band)
 - Multi-select cleared on push/pop
 - `_layoutGeneration` incremented on push (pending layout discarded)
