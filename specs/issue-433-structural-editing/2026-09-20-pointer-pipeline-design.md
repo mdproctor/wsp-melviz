@@ -56,31 +56,41 @@ pointerdown (capture phase on container)
           stopPropagation()  ← blocks Handle (descendant),
           │                    allows sibling capture listeners
           │
-          start hold timer, track pointer position
+          check multi-select state (via getMultiSelectState callback)
           │
-          ├─ pointer moves >threshold during hold
-          │     → CONNECT: replay PointerEvent on .stencil-source-handle
-          │     → React Flow draws connection normally
+          ├─ constrained selection + node in selection + boundaries?
+          │     → SEGMENT path: delegate immediately to
+          │       NodeMoveCoordinator.startSegmentDrag()
+          │       (hold timer is internal to move coordinator)
+          │       No CONNECT classification for segment nodes.
           │
-          ├─ pointer released before hold duration, movement ≤threshold
-          │     → CLICK: no action — native click event propagates
-          │       to React Flow's onClick, which fires onNodeClick
-          │
-          └─ hold duration elapsed, pointer still down, movement ≤threshold
-                → MOVE: enter drag mode
-                → attach capture-phase pointermove/pointerup
-                → existing NodeMoveCoordinator drag logic
+          └─ all other cases
                 │
-                ├─ pointer moves >DRAG_THRESHOLD (5px)
-                │     → ghost node appears, splice detection starts
+                start hold timer, track pointer position
                 │
-                ├─ pointer leaves node container
-                │     → LEAVE_TIMEOUT (500ms) grace period
-                │     → re-enters within 500ms → continue drag
-                │     → exceeds 500ms → cancel drag (no visual change)
+                ├─ pointer moves >threshold during hold
+                │     → CONNECT: replay PointerEvent on .stencil-source-handle
+                │     → React Flow draws connection normally
                 │
-                └─ pointer released before DRAG_THRESHOLD
-                      → cancelled (no visual change)
+                ├─ pointer released before hold duration, movement ≤threshold
+                │     → CLICK: no action — native click event propagates
+                │       to React Flow's onClick, which fires onNodeClick
+                │       (onNodeClick handles shift-click → _handleShiftClick,
+                │        non-shift click → _clearMultiSelect)
+                │
+                └─ hold duration elapsed, pointer still down, movement ≤threshold
+                      → MOVE: NodeMoveCoordinator.activateMove(...)
+                      │
+                      ├─ pointer moves >DRAG_THRESHOLD (5px)
+                      │     → ghost node appears, splice detection starts
+                      │
+                      ├─ pointer leaves node container
+                      │     → LEAVE_TIMEOUT (500ms) grace period
+                      │     → re-enters within 500ms → continue drag
+                      │     → exceeds 500ms → cancel drag (no visual change)
+                      │
+                      └─ pointer released before DRAG_THRESHOLD
+                            → cancelled (no visual change)
 ```
 
 **Single-pointer guard:** The coordinator tracks one active classification at a time. If a `pointerdown` arrives with a different `pointerId` while a classification is active, it is ignored. This prevents multi-touch scenarios from corrupting the gesture state machine.
@@ -105,7 +115,7 @@ When a quick drag is detected (moved >threshold before hold duration elapses):
 | `graph-renderer/src/gesture/node-gesture-coordinator.ts` | **New** — capture-phase interceptor, gesture classification, event replay |
 | `graph-renderer/src/gesture/node-gesture-coordinator.test.ts` | **New** — TDD tests for all gesture paths |
 | `graph-renderer/src/bridge/GraphCanvas.ts` | Modify — replace bubble-phase pointerdown (lines 177-206) with coordinator setup; pass multi-select state callback to coordinator |
-| `graph-renderer/src/editing/node-move-coordinator.ts` | Modify — remove hold timer and pointer capture release (coordinator owns this now). Keep `activateDrag`, `onDragMove`, `onDragUp` |
+| `graph-renderer/src/editing/node-move-coordinator.ts` | Modify — **Remove from public API:** `startDrag()`, `startSegmentDrag()` (hold timer setup, pointer capture release, `onHoldMove`/`onHoldUp` — all classification-phase logic moves to the gesture coordinator). **New public API:** `activateMove(nodeId, event, model)` — enters confirmed-hold state directly (ghosts node, registers drag listeners, skips hold timer). `activateSegmentMove(subject, event, model)` — same for segment drag. **Keep unchanged:** `activateDrag` (ghost/clone creation), `onDragMove` (splice detection), `onDragUp` (splice commit), `confirmHold` internals (ghost/class setup — called by `activateMove`), cleanup, dispose. The hold timer moves to the gesture coordinator; the drag engine stays here. |
 | `graph-renderer/src/bridge/ReactFlowApp.tsx` | No change — `nodesDraggable={false}` stays |
 | `graph-renderer/src/stencil-wrapper.tsx` | Modify — add `.stencil-action` class to action buttons rendered by stencil wrapper (see Part 2); full-node Handle stays, coordinator handles the conflict |
 
@@ -182,9 +192,23 @@ Level 0 (full)    → drill into Node B →
 
 The DrillDownStack does NOT create multiple React Flow instances. GraphCanvas has a single `_root: Root` that renders one `ReactFlowApp`. The stack works by swapping which `GraphModel` is rendered:
 
-1. **Push (drill down):** The stack saves the current level's model and viewport state (`{ x, y, zoom }` from React Flow's `getViewport()`). `GraphCanvas` re-renders `ReactFlowApp` with the new target's model. A collapsed bar (plain DOM `<button>` element) for the previous level is inserted before the React container.
+1. **Push (drill down):**
+   - Cancel active gestures: dispose/reset `_moveCoordinator`, cancel rubber band if active
+   - Clear `_multiSelect` state
+   - Save current `StackLevel`: model, viewport (`getViewport()`), layout nodes/edges, `_layoutGeneration`, source `nodeId` (focus restoration target on pop)
+   - Increment `_layoutGeneration` — any pending layout for the previous level races against the new generation and is discarded (same guard as `_runLayout()`)
+   - Swap `model` to `DrillDownTarget.model`, trigger re-layout
+   - Insert a collapsed bar for the previous level before the React container
+   - After layout completes, set viewport to fit-to-view, move focus to first node
 
-2. **Pop (navigate back via bar click):** The stack restores the saved model and viewport. `GraphCanvas` re-renders `ReactFlowApp` with the restored model. Bars for popped levels are removed from the DOM — destroyed, not hidden. The saved model and viewport provide instant restoration without re-fetching from the consumer.
+2. **Pop (navigate back via bar click):**
+   - Cancel active gestures (same as push)
+   - Clear `_multiSelect` state
+   - Pop the stack, retrieve saved `StackLevel`
+   - Restore saved model and layout nodes/edges directly (skip re-layout — the saved layout is still valid). Increment `_layoutGeneration` to discard any pending layout
+   - Restore saved viewport
+   - Remove bars for popped levels from the DOM — destroyed, not hidden
+   - Move focus to `sourceNodeId` (the node that was drilled into)
 
 3. **Container layout:** The GraphCanvas container uses CSS flexbox. Bars are fixed-width (`32px`) flex items. The React container (hosting `ReactFlowApp`) is `flex: 1` and fills the remaining width. When bars are added/removed, CSS flexbox naturally redistributes space and React Flow's `fitView` is called after the transition completes (200ms animation).
 
@@ -193,9 +217,12 @@ The DrillDownStack does NOT create multiple React Flow instances. GraphCanvas ha
 ```typescript
 interface StackLevel {
   name: string;
-  nodeId: string;
+  nodeId: string;           // source node that was drilled into (focus target on pop)
   model: GraphModel;
   viewport: { x: number; y: number; zoom: number };
+  layoutNodes: Node[];      // saved React Flow nodes (restored on pop, skip re-layout)
+  layoutEdges: Edge[];      // saved React Flow edges
+  layoutGeneration: number; // saved generation (for race detection)
   diagramType?: string;
 }
 ```
@@ -233,10 +260,12 @@ interface DrillDownLevel {
 
 | File | Change |
 |------|--------|
-| `graph-renderer/src/drill-down/drill-down-stack.ts` | **New** — stack state, push/pop/navigate, bar rendering |
-| `graph-renderer/src/drill-down/drill-down-stack.test.ts` | **New** — TDD tests |
-| `graph-renderer/src/drill-down/types.ts` | **New** — `DrillDownConfig`, `DrillDownTarget`, `DrillDownLevel` |
-| `graph-renderer/src/bridge/GraphCanvas.ts` | Modify — accept `drillDown` prop, wire to stack, extend `_keyDownHandler` with drill-down keyboard shortcuts |
+| `graph-renderer/src/drill-down/drill-down-state.ts` | **New** — pure stack state: `push(target)`, `pop()`, `navigateTo(depth)`, `levels`, `activeIndex`. No DOM dependency. Unit-testable without jsdom. |
+| `graph-renderer/src/drill-down/drill-down-state.test.ts` | **New** — pure logic tests (no DOM) |
+| `graph-renderer/src/drill-down/drill-down-bars.ts` | **New** — reads state from `drill-down-state`, renders vertical bars, dispatches navigation events. Presentation only. |
+| `graph-renderer/src/drill-down/drill-down-bars.test.ts` | **New** — DOM rendering tests |
+| `graph-renderer/src/drill-down/types.ts` | **New** — `DrillDownConfig`, `DrillDownTarget`, `DrillDownLevel`, `StackLevel` |
+| `graph-renderer/src/bridge/GraphCanvas.ts` | Modify — accept `drillDown` prop, wire state + bars, extend `_keyDownHandler` with drill-down keyboard shortcuts |
 | `graph-renderer/src/stencil-wrapper.tsx` | Modify — conditionally render `⤢` button based on `resolve` returning non-null |
 
 ### Keyboard Handler Ownership
@@ -261,6 +290,8 @@ The drill-down cascade must be accessible:
 - **Focus management**: After drill-down, focus moves to the first node in the sub-diagram (first element in the model's node array). After navigating back, focus returns to the node that was drilled into. **Layout-aware:** Focus transfer is deferred until after `_runLayout()` completes for the new sub-diagram, since nodes have no positioned DOM elements until ELK layout finishes. The stack listens for the layout promise to resolve before calling `focus()` on the target node element.
 
 ### blocks-ui Migration
+
+**Cross-repo issue required:** A GitHub issue must be filed in the blocks-ui repository before this spec is implemented, tracking the migration with acceptance criteria: (1) all diagram types currently supported (SWF, CMMN, HTN), (2) any blocks-ui drill-down features that the generalized `DrillDownStack` must preserve, (3) the interim coexistence plan while both implementations exist. Until blocks-ui migrates, the old drill-down implementation in `diagram-workbench.ts` continues to work — graph-renderer's new `DrillDownStack` is opt-in via the `drillDown` config prop.
 
 After this lands, blocks-ui's `diagram-workbench.ts` drill-down stack is replaced:
 1. Passes a `resolve` callback to `GraphCanvas`'s `drillDown` config
@@ -298,17 +329,28 @@ The example provides a static `resolve` callback with pre-built models for each 
 - Multi-select active + pointerdown on non-selected node → multi-select cleared, individual classification
 - RubberBandSelect capture handler not blocked by coordinator's stopPropagation
 
-### DrillDownStack tests
-- `push(target)` → stack depth increases, bar rendered
-- Click bar at depth N → all levels >N popped, level N expanded
-- `resolve` returning null → no drill-down button on stencil
-- 3-level deep drill-down → 2 bars + active diagram
-- Pop to root → no bars, full diagram
-- Pop destroys bar DOM elements (not hidden)
-- Push saves viewport, pop restores viewport
-- Single ReactFlowApp instance throughout — model swapped, not duplicated
+### DrillDownState tests (pure logic, no DOM)
+- `push(target)` → stack depth increases, `activeIndex` advances
+- `pop()` → depth decreases, returns popped level
+- `navigateTo(depth)` → all levels above `depth` removed
+- 3-level deep push → `levels.length === 3`
+- Pop to root → `levels.length === 0`, `activeIndex === -1`
 - Concurrent resolve: second resolve supersedes first, stale result discarded
 - Navigate back during pending resolve → stale result discarded
+
+### DrillDownBars tests (DOM rendering)
+- Push → bar rendered with correct level name (rotated text)
+- Click bar at depth N → `navigateTo(N)` called, bars for popped levels destroyed
+- Pop destroys bar DOM elements (not hidden)
+- Bar has `role="button"`, `aria-label` with level name
+
+### DrillDown integration tests
+- Push saves viewport + layout, pop restores viewport + layout (skip re-layout)
+- Single ReactFlowApp instance throughout — model swapped, not duplicated
+- `resolve` returning null → no drill-down button on stencil
+- Active gesture cancelled on push/pop (move coordinator, rubber band)
+- Multi-select cleared on push/pop
+- `_layoutGeneration` incremented on push (pending layout discarded)
 
 ### ARIA tests
 - Vertical bars have `role="navigation"`, each bar is a focusable button
