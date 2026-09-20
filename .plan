@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-456-pointer-pipeline
-state: active
+state: closing:verified
 project-sha: ad3df8582b75bcd96a15fe77a8c6e6cb857b787c
 date: 2026-09-20
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#456 — Issue #456 ← active
   - [x] Batch 1: Gesture Coordinator
