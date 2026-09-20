@@ -13,6 +13,6 @@ flyway-next-v: none
 
 ## Queue
 - [x] casehubio/casehub-pages#459 — Verify connector click picker insert-at-point
-- [ ] casehubio/casehub-pages#460 — Splice move-to-edge Edge not found ← active
-- [ ] casehubio/casehub-pages#457 — Palette add strategy attached vs detached
+- [x] casehubio/casehub-pages#460 — Splice move-to-edge Edge not found
+- [ ] casehubio/casehub-pages#457 — Palette add strategy attached vs detached ← active
 - [ ] casehubio/casehub-pages#458 — Palette drag-to-canvas
