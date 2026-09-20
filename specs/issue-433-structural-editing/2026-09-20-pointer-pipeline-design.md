@@ -100,9 +100,10 @@ pointerdown (capture phase on container)
 When a quick drag is detected (moved >threshold before hold duration elapses):
 
 1. Find the `.stencil-source-handle` element within the node
-2. Create a new `PointerEvent('pointerdown', { clientX, clientY, pointerId, bubbles: true, ... })` from the original event's coordinates
-3. Dispatch on the Handle element — React Flow processes it normally
-4. Forward the current pointermove to the Handle so the connection line follows the cursor
+2. **Null guard:** If the Handle element does not exist (node has no outbound connections — `stencil-wrapper.tsx:235` conditionally renders the Handle only when `!hideHandles && hasSource && grammar?.connections.outbound.max !== 0`), abandon the CONNECT classification. The node cannot initiate connections, so no replay is meaningful. The gesture is discarded — no action taken.
+3. Create a new `PointerEvent('pointerdown', { clientX, clientY, pointerId, bubbles: true, ... })` from the original event's coordinates
+4. Dispatch on the Handle element — React Flow processes it normally
+5. Forward the current pointermove to the Handle so the connection line follows the cursor
 
 **CSS class management:** The replayed event triggers React Flow's Handle internal handler, which calls `setPointerCapture()` and fires `onConnectStart`. The `onConnectStart` callback in `GraphCanvas.ts:393-398` adds the `graph-connecting` CSS class, activating the extensive CSS rules in `css-isolation.ts:53-68` (handle visibility, connection line z-index, node hover effects). This class management works unmodified — the replayed event follows the exact same path as a real user event from React Flow's perspective.
 
@@ -159,7 +160,7 @@ The 3-phase protocol from blocks-ui, generalized:
 2. **Resolve** — the consumer's callback fetches domain data and produces a `GraphModel`. This is domain-specific: blocks-ui resolves case definitions and SWF YAML into `GraphModel` instances. The `resolve` callback is the parse-to-model boundary — the consumer owns the full pipeline from domain data (YAML strings, definitions) to a renderable graph model. graph-renderer never sees YAML.
 3. **Navigate** — `DrillDownStack` pushes the target, collapses the current diagram into a vertical bar, renders the sub-diagram.
 
-**Stale resolve guard:** The stack maintains a `_resolveGeneration` counter, incremented on every `resolve()` call. When a resolve completes, it checks whether the generation matches the current counter. If a newer resolve has been initiated (user clicked ⤢ on a different node while the first was pending), or the user has navigated back during the resolve, the stale result is discarded. This follows the same pattern as `GraphCanvas._layoutGeneration` in `_runLayout()`. No AbortController needed — the resolve function runs domain logic that completes normally; only the stack-push is gated.
+**Stale resolve guard:** The stack maintains a `_resolveGeneration` counter, incremented on every `resolve()` call **and on every pop/navigateTo operation**. When a resolve completes, it checks whether the generation matches the current counter. If a newer resolve has been initiated (user clicked ⤢ on a different node while the first was pending), or the user has navigated back during the resolve, the stale result is discarded. This follows the same pattern as `GraphCanvas._layoutGeneration` in `_runLayout()`. No AbortController needed — the resolve function runs domain logic that completes normally; only the stack-push is gated.
 
 ### Visual Cascade
 
@@ -316,6 +317,7 @@ The example provides a static `resolve` callback with pre-built models for each 
 
 ### NodeGestureCoordinator tests
 - Quick drag (moved >threshold before hold) → CONNECT event replayed on Handle
+- Quick drag on node without source handle (outbound.max === 0) → CONNECT abandoned, no action
 - Hold then drag → MOVE classification, ghost appears
 - Click (release before hold, no movement) → native click propagates, onNodeClick fires once
 - Stencil button click (.stencil-action) → coordinator does not interfere
@@ -336,7 +338,7 @@ The example provides a static `resolve` callback with pre-built models for each 
 - 3-level deep push → `levels.length === 3`
 - Pop to root → `levels.length === 0`, `activeIndex === -1`
 - Concurrent resolve: second resolve supersedes first, stale result discarded
-- Navigate back during pending resolve → stale result discarded
+- Navigate back during pending resolve → `_resolveGeneration` incremented by pop, stale result discarded
 
 ### DrillDownBars tests (DOM rendering)
 - Push → bar rendered with correct level name (rotated text)
