@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-433-structural-editing
-state: active
+state: paused
 project-sha: 52973b15c1c549f2b25786452cc81d8f138abfeb
 date: 2026-09-17
 issue-repo: casehubio/casehub-pages
