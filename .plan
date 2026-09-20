@@ -13,7 +13,7 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#433 — Issue #433 ← active
-  - [ ] Batch 1: SelectionOverlay
-    - [ ] Task 1: SelectionOverlay class with tests
-  - [ ] Batch 2: Wiring
-    - [ ] Task 2: Wire SelectionOverlay into builder-shell
+  - [x] Batch 1: SelectionOverlay
+    - [x] Task 1: SelectionOverlay class with tests
+  - [x] Batch 2: Wiring
+    - [x] Task 2: Wire SelectionOverlay into builder-shell
