@@ -13,3 +13,16 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#461 — Issue #461 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: VirtualClock
+    - [ ] Task 2: StepQueue
+    - [ ] Task 3: StepExecutor interface
+  - [ ] Batch 2: Types and parser
+    - [ ] Task 4: Extended scenario types
+    - [ ] Task 5: Parser orchestration recognition
+    - [ ] Task 6: YamlBinder
+  - [ ] Batch 3: Scheduler
+    - [ ] Task 7: TriggerEvaluator
+    - [ ] Task 8: DES Scheduler core
+  - [ ] Batch 4: Migration
+    - [ ] Task 9: Delete old runners and wire consumer
