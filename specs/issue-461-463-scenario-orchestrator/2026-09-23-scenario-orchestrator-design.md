@@ -225,26 +225,40 @@ async function tickLoop() {
       try {
         await dispatchStep(step, queue);
 
-        // Post-step delay (decorator)
+        // If dispatchStep set queue to blocked (concurrent, semaphore,
+        // signal.await), skip all post-dispatch processing — the
+        // construct owns the queue's lifecycle from here.
+        if (queue.state !== 'ready') return;
+
+        // Determine whether to advance position (loop check first)
+        let advancePosition = true;
+        if (decorators?.loop) {
+          if (evaluateLoopContinuation(decorators.loop, posKey, loopState, conditionEvaluator)) {
+            advancePosition = false;
+            retryState.delete(posKey);
+          } else {
+            loopState.delete(posKey);
+          }
+        }
+
+        if (advancePosition) {
+          retryState.delete(posKey);
+          queue.position++;
+        }
+
+        // Post-step delay (applies to both loop-repeat and advance)
         if (decorators?.delay) {
           queue.wakeTime = clock.now() + parseDuration(decorators.delay);
           queue.state = 'blocked';
+          // After delay expires, queue resumes at current position:
+          // - if loop repeated: same step (position unchanged)
+          // - if advanced: next step (position incremented above)
           return;
         }
 
-        // Loop handling — check whether to repeat this step
-        if (decorators?.loop) {
-          const shouldRepeat = evaluateLoopContinuation(decorators.loop, posKey, loopState, conditionEvaluator);
-          if (shouldRepeat) {
-            retryState.delete(posKey); // reset retries for new loop iteration
-            return; // don't advance position — repeat next tick
-          }
-          loopState.delete(posKey);
-        }
-
-        retryState.delete(posKey);
-        queue.position++;
-        if (queue.position >= queue.steps.length) {
+        // Check done (only when no delay — delay defers done check
+        // to the next tick after unblocking)
+        if (advancePosition && queue.position >= queue.steps.length) {
           queue.state = 'done';
           resolveParentIfChildrenDone(queue);
         }
@@ -256,7 +270,6 @@ async function tickLoop() {
         const retryCount = retryState.get(posKey) ?? 0;
         if (retryCount < retryMax) {
           retryState.set(posKey, retryCount + 1);
-          // don't advance position — retry same step next tick
         } else {
           retryState.delete(posKey);
           queue.state = 'done';
@@ -371,11 +384,51 @@ finds the first executor where `canExecute(step)` returns true and calls
 ### Public API
 
 ```typescript
+interface SchedulerOptions {
+  eventTarget: EventTarget;     // required — state events and controller commands
+  contentBase?: string;         // base path for template content resolution
+  speed?: number;               // initial speed multiplier (default: 1.0)
+  startPaused?: boolean;        // start in paused state (default: false)
+  executors?: StepExecutor[];   // additional executors (AriaExecutor is always registered)
+  onComplete?: (scenarioName: string) => void;
+}
+
+function createScheduler(
+  scenario: Scenario,           // accepts both flat and sectioned
+  options: SchedulerOptions,
+): ScenarioRunner;
+```
+
+`createScheduler` parses the scenario into queues via YamlBinder, creates
+a `ScenarioScope`, registers the built-in `AriaExecutor` plus any
+additional executors from `options.executors`, and starts the tick loop.
+
+The scheduler registers a `scenario-command` event listener on
+`options.eventTarget` internally (matching the existing
+`sectioned-runner.ts` pattern at line 169). This bridges the
+`PagesScenarioController`'s transport controls:
+
+```typescript
+eventTarget.addEventListener('scenario-command', (e: Event) => {
+  const { command, speed, label } = (e as CustomEvent).detail;
+  switch (command) {
+    case 'pause':  runner.pause(); break;
+    case 'resume': runner.play(); break;
+    case 'step':   runner.step(); break;
+    case 'speed':  if (speed != null) runner.setSpeed(speed); break;
+    case 'run-to': if (label) runner.runTo(label); break;
+  }
+});
+```
+
+The listener is removed on `dispose()`.
+
+```typescript
 interface ScenarioRunner {
   play(): void;
   pause(): void;
   step(): Promise<void>;      // execute one step, then pause
-  runTo(sectionTitle: string): Promise<void>;
+  runTo(sectionTitle: string): void;
   setSpeed(multiplier: number): void;
   dispose(): void;
 
@@ -388,10 +441,21 @@ interface ScenarioRunner {
 }
 ```
 
-`runTo(sectionTitle)` finds the section by title, resets the scheduler
-to execute from that section's first step, and runs in a single tick
-burst (skipping rAF yields). This matches the existing `TutorialRunner`
-API consumed by `PagesTutorialHost`.
+**`runTo(sectionTitle)`** is a **teleport** — it sets position directly
+to the target section's first step, pauses the scheduler, resolves the
+section's content (template fetch), and emits a `scenario:state` event.
+It does NOT execute any intermediate steps. This matches the existing
+`sectioned-runner.ts` behavior (lines 262-272) where sections are slides
+— users navigate between them instantly without side effects.
+
+For orchestrated scenarios with scope primitives (semaphores, signals,
+channels), `runTo()` also **resets the scope** — calls `scope.close()`
+and creates a fresh `ScenarioScope`. This avoids stale state from
+previous sections (e.g., a semaphore acquired in section 2 would block
+section 5 if the scope were preserved). All queues except the target
+section's main queue are discarded. Triggered and concurrent queues
+are re-created from the target section forward by re-running YamlBinder
+on the remaining sections.
 
 `step()` executes exactly one step from the next ready queue and pauses.
 For sub-step operations (line-by-line editor typing), the AriaExecutor
@@ -743,7 +807,7 @@ export type {
   SectionContent, DataTrigger, TimeTrigger, StepDecorators,
   OrchestrationBlock,
 } from './types.js';
-export type { ScenarioRunner } from './scheduler.js';
+export type { ScenarioRunner, SchedulerOptions } from './scheduler.js';
 export type { StepExecutor, ExecutionContext } from './step-executor.js';
 ```
 
