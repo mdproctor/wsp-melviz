@@ -1,23 +1,25 @@
-## D1: Concurrency model — cooperative round-robin, not Web Workers
+## D1: Concurrency model — cooperative DES scheduler, not Web Workers
 
-**Choice:** Cooperative round-robin scheduler on the main thread with Promise-based coordination
+**Choice:** Cooperative discrete-event simulation (DES) scheduler on the main thread with Promise-based coordination. Coroutines run to their next yield point, then the scheduler advances virtual time to the next wake time and runs newly-ready coroutines. NOT round-robin — wake order is time-ordered (a 50ms delay fires before a 100ms delay).
 **Alternatives:**
 - Web Workers with SharedArrayBuffer/Atomics — heavyweight, no shared memory, would need to rebuild coordination primitives across worker boundaries
 - Raw Promise.all with natural event-loop interleaving — non-deterministic ordering, no virtual time control
-**Rationale:** Single-threaded cooperative model eliminates all Atomics/SharedArrayBuffer complexity. All primitives become plain TS objects with Promise callbacks. Round-robin gives deterministic step interleaving needed for tutorials and simulation replay. Web Workers can't share objects and would require a coordinator pattern that rebuilds the same primitives — complexity explosion for no benefit.
+- Pure round-robin (alternating turns) — doesn't preserve temporal ordering between branches
+**Rationale:** Single-threaded cooperative model eliminates all Atomics/SharedArrayBuffer complexity. All primitives become plain TS objects with Promise callbacks. DES scheduling gives deterministic execution that preserves temporal relationships. At speed=infinity, a 2-hour simulation completes in milliseconds — critical for test determinism.
 **Trade-offs:** No true CPU parallelism — but the use case (tutorials, simulation) doesn't need it. Steps are I/O-bound (DOM updates, network, timers), not compute-bound.
-**Sources:** Discussion with user, browser API constraints (Atomics.wait() blocked on main thread)
+**Sources:** Discussion with user, browser API constraints (Atomics.wait() blocked on main thread), platform #412 analysis validating cooperative approach
 **Exploration:** deep-analysis
 **Status:** captured
 
 ## D2: Virtual time — scheduler owns all clocks
 
-**Choice:** Scheduler maintains virtual clock. Timers, delays, and wait states are scheduler-managed, not browser timers.
+**Choice:** Scheduler maintains virtual clock. Timers, delays, and wait states are scheduler-managed, not browser timers. At speed=infinity, virtual time advances instantly — a 2-hour simulation completes in milliseconds with zero real waiting.
 **Alternatives:**
 - Real setTimeout/setInterval — can't pause, can't speed-control, non-deterministic
-**Rationale:** Tutorial/simulation engine needs pause/resume, speed multiplier, and deterministic replay. All three require virtual time. Every real-time simulation system ends up here.
+- SpeedMultiplier on real timers (Java approach) — adjusts real sleep durations (200ms at 2x → 100ms), but can't skip time entirely
+**Rationale:** Tutorial/simulation engine needs pause/resume, speed multiplier, and deterministic replay. Virtual time is strictly more powerful than SpeedMultiplier — it subsumes speed adjustment and adds instant-mode for testing. Every simulation system ends up here.
 **Trade-offs:** Building a lightweight cooperative runtime adds complexity. Worth it for the pause/speed/replay capabilities.
-**Sources:** User discussion, SpeedMultiplier interface in Java yaml-core
+**Sources:** User discussion, SpeedMultiplier interface in Java yaml-core, platform #412 DES trace showing time-ordered wake queue
 **Exploration:** quick
 **Status:** captured
 
