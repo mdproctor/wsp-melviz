@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-461-463-scenario-orchestrator
-state: scaffolded
+state: active
 project-sha: 5683c97be02e4e6735e2e924b8a9ab873eaabdca
 date: 2026-09-23
 issue-repo: casehubio/casehub-pages
@@ -13,16 +13,16 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#461 — Issue #461 ← active
-  - [ ] Batch 1: Foundation
-    - [ ] Task 1: VirtualClock
-    - [ ] Task 2: StepQueue
-    - [ ] Task 3: StepExecutor interface
-  - [ ] Batch 2: Types and parser
-    - [ ] Task 4: Extended scenario types
-    - [ ] Task 5: Parser orchestration recognition
-    - [ ] Task 6: YamlBinder
-  - [ ] Batch 3: Scheduler
-    - [ ] Task 7: TriggerEvaluator
-    - [ ] Task 8: DES Scheduler core
-  - [ ] Batch 4: Migration
-    - [ ] Task 9: Delete old runners and wire consumer
+  - [x] Batch 1: Foundation
+    - [x] Task 1: VirtualClock
+    - [x] Task 2: StepQueue
+    - [x] Task 3: StepExecutor interface
+  - [x] Batch 2: Types and parser
+    - [x] Task 4: Extended scenario types
+    - [x] Task 5: Parser orchestration recognition
+    - [x] Task 6: YamlBinder
+  - [x] Batch 3: Scheduler
+    - [x] Task 7: TriggerEvaluator
+    - [x] Task 8: DES Scheduler core
+  - [x] Batch 4: Migration
+    - [x] Task 9: Delete old runners and wire consumer
