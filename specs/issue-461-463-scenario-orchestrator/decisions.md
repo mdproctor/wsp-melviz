@@ -9,3 +9,16 @@
 **Sources:** Survey of runner.ts, sectioned-runner.ts, types.ts in pages-aria/src/scenario/
 **Exploration:** quick
 **Status:** captured
+
+## D2: Strategy pattern for step dispatch
+
+**Choice:** Scheduler calls a `StepExecutor` interface per delivery type. `AriaExecutor`, `GraphqlExecutor`, `SimulatedExecutor` each implement `execute(step): Promise<void>`. Scheduler is delivery-agnostic — it manages queues and timing, executors handle domain-specific step logic.
+**Alternatives:**
+- Switch in scheduler — couples scheduler to every delivery type, grows as types are added
+- Event-based dispatch — fully decoupled but needs Promise-based ack for completion tracking, overengineered for 3 known types
+**Rationale:** Clean separation. The scheduler manages concurrency, virtual time, and queue ordering. Executors handle DOM (aria), network (graphql), or data injection (simulated). Adding a new delivery type is one new class, zero scheduler changes.
+**Trade-offs:** One extra interface. Negligible cost for the extensibility it provides.
+**Sources:** Existing command-executor.ts (aria dispatch), ScenarioStep discriminated union in types.ts
+**Exploration:** quick
+**Depends on:** D1 (scheduler is the only runner)
+**Status:** captured
