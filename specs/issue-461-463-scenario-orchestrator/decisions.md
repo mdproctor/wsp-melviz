@@ -22,3 +22,17 @@
 **Exploration:** quick
 **Depends on:** D1 (scheduler is the only runner)
 **Status:** captured
+
+## D3: Dual-level YAML — inline for small, top-level for complex
+
+**Choice:** Orchestration constructs can be expressed both ways: small coordination (mutex, retry, signal, wait, concurrent) inline as step fields or standalone step entries; complex structures (state machines, named barriers with specific counts, typed channels) declared in a top-level `orchestration:` block and referenced by name from steps.
+**Alternatives:**
+- Inline only — forces complex state machine definitions into step arrays, cluttered and hard to read
+- Top-level only — verbose for simple cases like `retry: 3` or `signal: go`, everything needs a name
+- Step decorators only — can't express standalone signals or concurrent blocks
+**Rationale:** Matches existing YAML patterns in the codebase (inline parameters vs named module references). Small things stay local and readable. Complex things get named, documented, and reusable. Parser handles both: inline constructs are syntactic sugar that create anonymous ScenarioScope entries; top-level constructs are named entries created at parse time.
+**Trade-offs:** Parser handles two paths for the same constructs. Worth it — the YAML authoring experience is significantly better.
+**Sources:** Existing yaml-core module/parameter patterns, YAML binding table in #463 issue body
+**Exploration:** quick
+**Depends on:** D1 (scheduler is the only runner)
+**Status:** captured
