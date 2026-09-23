@@ -16,7 +16,7 @@ YAML binding for orchestration constructs at both inline and top-level.
 **In scope:**
 - DES scheduler with virtual clock, step queues, tick loop
 - YAML binding for orchestration constructs (concurrent, mutex, barrier,
-  signal, wait, retry, loop, state machine, channel, trigger)
+  signal, await, retry, loop, state machine, channel, trigger)
 - Dual-level YAML: inline for small constructs, top-level `orchestration:`
   block for complex/reusable definitions
 - DataTrigger and TimeTrigger evaluation as queue activators
@@ -149,13 +149,22 @@ The clock maintains virtual time as a monotonic counter in milliseconds.
 `advance(delta)` adds exactly `delta` to the counter — virtual time
 advancement is always deterministic and independent of playback speed.
 
-Speed controls *yield timing* (how long the scheduler waits between ticks
-in real time), not virtual time advancement:
-- speed=1: yield uses `rAF` (~16ms real time per tick)
-- speed=2: yield uses `setTimeout(0)` (ticks run as fast as the browser allows)
-- speed=Infinity (test mode): yield resolves immediately, all delays complete
-  in zero real time
-- speed=0: equivalent to `pause()` — the tick loop suspends
+Speed controls *inter-step pacing* — the real-time delay between ticks:
+`await new Promise(r => setTimeout(r, baseDelay / speed))` where
+`baseDelay = 300ms`. This matches the existing `sectioned-runner.ts`
+behavior (line 235: `setTimeout(r, 300 / rs.speed)`):
+- speed=1 → 300ms between steps (human-watchable tutorial pace)
+- speed=2 → 150ms
+- speed=4 → 75ms
+- speed=0.5 → 600ms (slow motion)
+- speed=Infinity (test mode): delay resolves immediately via
+  `Promise.resolve()`, all steps execute in zero real time
+
+The tick loop also yields to the browser via `rAF` after each tick to
+ensure the rendering pipeline can paint. The inter-step delay and rAF
+yield serve different purposes: rAF syncs with the display, the delay
+paces the tutorial. Both are injectable — tests replace both with
+immediate resolution.
 
 `setSpeed(multiplier)` requires `multiplier > 0` or `Infinity`. Speed=0 is
 not accepted; use `pause()` instead.
@@ -191,6 +200,8 @@ States:
 ```typescript
 async function tickLoop() {
   let staleTicks = 0;
+  const retryState = new Map<string, number>(); // queue:position → retry count
+  const loopState = new Map<string, number>();   // queue:position → remaining iterations
 
   while (hasActiveQueues()) {
     if (disposed) return;
@@ -200,21 +211,54 @@ async function tickLoop() {
     const ready = readyQueues();
     await Promise.all(ready.map(async (queue) => {
       const step = queue.steps[queue.position];
+      const decorators = step.decorators;
+      const posKey = `${queue.id}:${queue.position}`;
+
+      // when: guard — skip step if condition is false
+      if (decorators?.when) {
+        if (!conditionEvaluator.evaluate(decorators.when)) {
+          queue.position++;
+          return;
+        }
+      }
+
       try {
         await dispatchStep(step, queue);
+
+        // Post-step delay (decorator)
+        if (decorators?.delay) {
+          queue.wakeTime = clock.now() + parseDuration(decorators.delay);
+          queue.state = 'blocked';
+          return;
+        }
+
+        // Loop handling — check whether to repeat this step
+        if (decorators?.loop) {
+          const shouldRepeat = evaluateLoopContinuation(decorators.loop, posKey, loopState, conditionEvaluator);
+          if (shouldRepeat) {
+            retryState.delete(posKey); // reset retries for new loop iteration
+            return; // don't advance position — repeat next tick
+          }
+          loopState.delete(posKey);
+        }
+
+        retryState.delete(posKey);
         queue.position++;
         if (queue.position >= queue.steps.length) {
           queue.state = 'done';
           resolveParentIfChildrenDone(queue);
         }
       } catch (err) {
-        scope.resultStore().recordFailure(step.name ?? `queue:${queue.id}:${queue.position}`, {
+        scope.resultStore().recordFailure(step.name ?? posKey, {
           message: (err as Error).message, stepName: step.name ?? '',
         });
-        if (step.retry && step.retryCount < step.retry.max) {
-          step.retryCount++;
+        const retryMax = decorators?.retry?.max ?? 0;
+        const retryCount = retryState.get(posKey) ?? 0;
+        if (retryCount < retryMax) {
+          retryState.set(posKey, retryCount + 1);
           // don't advance position — retry same step next tick
         } else {
+          retryState.delete(posKey);
           queue.state = 'done';
           emitError(queue, step, err);
         }
@@ -222,7 +266,8 @@ async function tickLoop() {
     }));
 
     // 2. Advance virtual time to next wake point
-    const nextWake = earliestWakeTime();
+    //    Considers both blocked queue wakeTimes AND suspended TimeTrigger fireTimes
+    const nextWake = earliestWakeTime(); // includes trigger.fireTime for TimeTrigger queues
     if (nextWake !== undefined) {
       clock.advance(nextWake - clock.now());
       // Unblock queues whose wakeTime <= clock.now()
@@ -241,32 +286,66 @@ async function tickLoop() {
       }
     }
 
-    // 4. Deadlock detection — if no state changed, count stale ticks
+    // 4. Deadlock detection
+    //    Only count stale ticks when no DataTrigger-suspended queues exist
+    //    (DataTrigger queues wait for external push data — not a deadlock)
     if (queueStateEquals(snapshotBefore, queueStateSnapshot())) {
-      staleTicks++;
-      if (staleTicks > 100) {
-        emitError(null, null, new Error('Scheduler deadlock: no progress for 100 ticks'));
-        return;
+      const hasDataTriggerQueues = suspendedQueues().some(q => q.trigger?.type === 'data');
+      if (!hasDataTriggerQueues) {
+        staleTicks++;
+        if (staleTicks > 100) {
+          emitError(null, null, new Error('Scheduler deadlock: no progress for 100 ticks'));
+          return;
+        }
       }
     } else {
       staleTicks = 0;
     }
 
-    // 5. Yield to browser (timing affected by speed)
-    await tick(); // rAF in browser, Promise.resolve() in tests
+    // 5. Yield to browser + inter-step pacing
+    await tick();    // rAF in browser, Promise.resolve() in tests
+    await delay();   // setTimeout(baseDelay / speed), immediate in tests
   }
 }
 ```
 
+**`earliestWakeTime()`** returns the minimum of:
+- `wakeTime` from blocked queues (virtual-time delays)
+- `trigger.fireTime` from suspended TimeTrigger queues
+
+This ensures virtual time advances to reach TimeTrigger fire points even
+when no blocked queues exist.
+
+**`evaluateLoopContinuation()`** checks whether the loop should repeat:
+- `type: 'count'`: initialises remaining count on first call, decrements
+  each iteration. Repeats while remaining > 0.
+- `type: 'until'`: evaluates condition via `ConditionEvaluator`. Repeats
+  while condition is false. (Inverse of `when:` — `until` is "repeat
+  while NOT condition".)
+- `type: 'count-until'`: stops when count exhausted OR condition is true.
+
+Loop state (remaining iterations) is tracked per queue-position key in
+the scheduler's `loopState` map, not on the step object. Retry count
+resets on each new loop iteration.
+
 When a step encounters an orchestration construct (concurrent block,
-signal wait, semaphore acquire), the scheduler handles it:
+signal await, semaphore acquire), the scheduler handles it:
 
 - **concurrent:** creates child queues, sets parent queue to blocked
   until all children are done
-- **delay/wait:** sets `wakeTime` on the queue, transitions to blocked
+- **delay/await:** sets `wakeTime` on the queue, transitions to blocked
 - **semaphore.acquire:** calls the primitive; if the Promise doesn't
-  resolve synchronously, queue transitions to blocked with `blockReason`
-- **signal.await:** same as semaphore — queue blocks on the Promise
+  resolve synchronously, queue transitions to blocked with `blockReason`.
+  The Promise's `.then()` callback sets `queue.state = 'ready'` and
+  clears `blockReason` — this transition happens asynchronously via the
+  microtask queue between ticks. The queue becomes ready and is picked
+  up by `readyQueues()` on the next tick. State mutations from Promise
+  resolution happen OUTSIDE the tick loop's control flow — this is
+  correct DES behavior (events at virtual time T are fully processed
+  before time advances, and inter-tick Promise resolutions take effect
+  at the start of the next tick).
+- **signal.await:** same mechanism as semaphore — queue blocks on the
+  Promise, `.then()` transitions to ready between ticks
 
 ### Step Dispatch
 
@@ -281,7 +360,7 @@ interface ExecutionContext {
   clock: VirtualClock;
   eventTarget: EventTarget;
   speed: number;
-  conditionEvaluator: ConditionEvaluator;  // from yaml-core/orchestration
+  conditionEvaluator: ConditionEvaluator;  // from @casehubio/yaml-core/condition (not yet exported — yaml-core barrel update needed)
 }
 ```
 
@@ -326,7 +405,15 @@ flat scenario with implicit queue breaks at section boundaries.
 
 **Dispose:** `dispose()` sets a `disposed` flag, causes the tick loop to
 exit at the next check, calls `scope.close()` (which closes all channels,
-signals all signals, releases all primitives), and removes all event listeners.
+signals all signals, releases all primitives), removes all event listeners,
+and **clears the queue array** (`queues.length = 0`). This breaks the
+reference chain `scheduler → queues → blockReason → semaphore._waiters`
+and allows GC. Without clearing, `DefaultOrcSemaphore` has no `close()`
+method, so `scope.close()` cannot reject pending acquires — the
+`_waiters` array retains resolve callbacks indefinitely. Clearing the
+queue array is the scheduler's responsibility; the primitive gap is a
+#462 concern.
+
 After `dispose()`, pending Promises from primitives may resolve/reject but
 their callbacks find the scheduler disposed and no-op.
 
@@ -375,7 +462,7 @@ initial state emission.
 // New orchestrated step types added to ScenarioStep union:
 | { delivery: 'orchestration'; construct: 'concurrent'; branches: Record<string, ScenarioStep[]> }
 | { delivery: 'orchestration'; construct: 'signal'; name: string }
-| { delivery: 'orchestration'; construct: 'wait'; signal?: string; barrier?: string; timeout?: string }
+| { delivery: 'orchestration'; construct: 'await'; signal?: string; barrier?: string; timeout?: string }
 | { delivery: 'orchestration'; construct: 'delay'; duration: string }
 
 // Step-level decorators (on any delivery type):
@@ -383,9 +470,17 @@ interface StepDecorators {
   mutex?: string;
   retry?: RetryDirective;
   loop?: LoopDirective;
-  when?: string;          // condition guard
+  when?: string;          // condition guard — skip step if false
   timeout?: string;       // step-level timeout
+  delay?: string;         // post-step virtual-time delay (e.g. "100ms")
 }
+
+// OrchestratedStep extends the base step union with optional decorators:
+type OrchestratedStep = (ScenarioStep | OrchestrationConstruct) & {
+  decorators?: StepDecorators;
+};
+// The YamlBinder merges inline YAML keys (mutex, retry, loop, when,
+// timeout, delay) into the decorators field during binding.
 
 // Top-level orchestration block:
 interface OrchestrationBlock {
@@ -430,7 +525,7 @@ Transforms a parsed `ScenarioModel` into a `ScenarioScope` + root
 2. Walk the step tree:
    - Regular steps → append to current queue
    - `concurrent:` → create child queues, one per branch
-   - `signal:` / `wait:` → inline primitive operations
+   - `signal:` / `await:` → inline primitive operations
    - Step decorators (mutex, retry, loop) → wrap in orchestration logic
 3. Triggered steps → create suspended queues with trigger conditions
 4. Return `{ scope, queues, triggers }`
@@ -441,12 +536,23 @@ Top-level constructs use their declared names. The binder validates
 that no top-level `orchestration:` name starts with `__anon_` — this
 prefix is reserved for inline-generated primitives.
 
-`when:` guards are evaluated via `ConditionEvaluator` from yaml-core.
+`when:` guards are evaluated via `ConditionEvaluator` from
+`@casehubio/yaml-core/condition` (currently not exported from the
+yaml-core barrel — a barrel update is needed as a prerequisite).
 The evaluator delegates to `isTruthy()` for simple boolean checks and
 to a pluggable expression delegate for comparisons:
 - `${result.step-name.field} == 'value'` — checks StepResultStore
 - `${scope.signal-name.signalled}` — checks signal state
-The `loop.until` condition uses the same evaluator.
+
+**`when:` semantics:** evaluated inside `dispatchStep()` before calling
+the executor. If the condition is false, the step is **skipped** — the
+queue advances position and continues to the next step. This is
+conditional execution, not "wait until."
+
+**`loop.until` semantics:** evaluated after the step executes. If the
+condition is true, the loop ends (advances position). If false, the
+step repeats next tick. This is the inverse of `when:` — `until` means
+"repeat while condition is false."
 
 `quorum:` binds to `scope.latch(name, required)` where `required < of.length`:
 ```yaml
@@ -479,7 +585,7 @@ steps:
   - click: { role: button, name: Refresh }
     mutex: portfolio-write
     retry: 3
-  - wait: { signal: data-loaded, timeout: 30s }
+  - await: { signal: data-loaded, timeout: 30s }
   - assert: { role: cell, name: "AAPL", hasText: "150.00" }
 ```
 
@@ -508,7 +614,7 @@ steps:
         - simulated: { dataset: news, data: { headline: "Fed holds rates" } }
           delay: 200ms
         - signal: all-feeds-ready
-  - wait: { barrier: all-feeds-ready }
+  - await: { barrier: all-feeds-ready }
   - assert: { role: heading, hasText: "3 feeds active" }
 ```
 
@@ -608,7 +714,17 @@ New scheduler-specific tests:
 
 ### Modified Files
 - `types.ts` — extended with OrchestratedStep types, triggers, decorators
-- `parser.ts` — extended to recognize orchestration YAML constructs
+- `parser.ts` — extended with three new recognition paths in `parseSteps()`:
+  1. **Delivery shorthands:** `simulated:` and `graphql:` keys produce
+     steps with `delivery: 'simulated'` / `delivery: 'graphql'` directly,
+     bypassing `expandAriaShorthand()`. Checked before ARIA fallback.
+  2. **Orchestration constructs:** `concurrent:`, `signal:`, `await:`,
+     `delay:` keys produce `delivery: 'orchestration'` steps. `await:`
+     is used instead of `wait:` to avoid collision with the existing
+     ARIA `wait` action in `ARIA_ACTIONS` (line 10 of current parser).
+  3. **Decorator extraction:** inline keys matching `StepDecorators`
+     fields (`mutex`, `retry`, `loop`, `when`, `timeout`, `delay`) are
+     separated from the step body and stored in `step.decorators`.
 - `packages/pages-aria/src/executor/command-executor.ts` — adapted to implement `StepExecutor` interface (stays in `src/executor/`)
 - `index.ts` — updated exports (see barrel specification below)
 
