@@ -13,3 +13,9 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#464 — Issue #464 ← active
+  - [ ] Batch 1: Batch 1
+    - [ ] Task 1: Export scheduler from casehub-entry
+    - [ ] Task 2: Flow Control page and companion
+    - [ ] Task 3: Coordination page and companion
+    - [ ] Task 4: Composition page and companion
+    - [ ] Task 5: Update samples.json and rebuild
