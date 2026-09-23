@@ -124,7 +124,7 @@ interface OrcSemaphore {
 - `acquire()`: if permits > 0, decrement and resolve immediately; else enqueue
 - `release()`: if queue non-empty, dequeue and resolve; else increment permits
 - Fair ordering (FIFO) matches Java's fair semaphore
-- No token-bucket replenishment at primitive level — that's a scheduler concern (virtual time)
+- No token-bucket replenishment at primitive level — Java's `semaphore(name, permits, Duration window)` overload uses a ScheduledExecutorService for timed replenishment, which maps to virtual time in TS. The scheduler (#461/#463) will add replenishment as a periodic virtual-time task. The ScenarioScope factory method omits the `window` parameter for now; it will be added when the scheduler provides virtual time support.
 
 ### OrcLatch
 
