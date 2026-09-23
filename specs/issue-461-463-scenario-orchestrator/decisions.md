@@ -49,3 +49,16 @@
 **Exploration:** quick
 **Depends on:** D1 (scheduler), D3 (YAML surface for triggers)
 **Status:** captured
+
+## D5: requestAnimationFrame for browser yield
+
+**Choice:** Scheduler yields to the browser via `requestAnimationFrame` after each tick. One rAF per tick — scheduler runs all ready queues for the current virtual-time instant, then yields. Browser gets a full frame cycle (paint, layout, events). The `tick` function is injectable — defaults to rAF in browser, replaced with immediate resolution (`Promise.resolve()`) in tests.
+**Alternatives:**
+- setTimeout(0) — macrotask yield but minimum ~4ms delay adds up, no frame alignment
+- Configurable per-environment — unnecessary complexity; injectable tick function achieves the same thing via standard DI
+**Rationale:** rAF aligns step execution with browser paint cycles — visual tutorials look smooth. Injectable tick function means tests run at speed=infinity with zero real delay. No rAF mocking needed.
+**Trade-offs:** In environments without rAF (Node, SSR), the injected tick must be provided. Not a problem — the scheduler constructor requires it.
+**Sources:** Browser rendering pipeline, existing sectioned-runner speed control pattern
+**Exploration:** quick
+**Depends on:** D1 (scheduler)
+**Status:** captured
