@@ -36,3 +36,16 @@
 **Exploration:** quick
 **Depends on:** D1 (scheduler is the only runner)
 **Status:** captured
+
+## D4: Triggers as queue activators
+
+**Choice:** Triggered steps start with their queue suspended. DataTrigger watches a condition (e.g. channel has data); TimeTrigger watches virtual clock. When the trigger fires, the queue activates and enters the scheduler's run set. Same mechanism as `signal.await()` — triggers are named activation conditions resolved by the scheduler.
+**Alternatives:**
+- Polling guards — scheduler checks trigger conditions every tick. Wastes ticks on unchanged conditions.
+- Event listeners on EventTarget — fully decoupled but needs a bridge between virtual time and real events, overcomplicates the scheduler.
+**Rationale:** Triggers are just another form of "wait for condition" — the same pattern the primitives already implement. A DataTrigger is semantically equivalent to `channel.receive()` (wait for data). A TimeTrigger is semantically equivalent to `scheduler.delay(duration)` (wait for virtual time). Unifying them as queue activation conditions keeps the scheduler's run loop simple: run ready queues, advance virtual time, check if any suspended queues can activate.
+**Trade-offs:** Trigger conditions must be expressible as scheduler-evaluable predicates. Complex conditions (e.g. "when field X of the last received message > 100") need a condition evaluator — ConditionEvaluator from #462 handles this.
+**Sources:** Java ScenarioOrchestrator.dispatchTriggeredSteps(), #461 issue body
+**Exploration:** quick
+**Depends on:** D1 (scheduler), D3 (YAML surface for triggers)
+**Status:** captured
