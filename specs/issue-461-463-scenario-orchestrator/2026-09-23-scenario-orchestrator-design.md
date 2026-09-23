@@ -272,7 +272,7 @@ existing sectioned-runner):
 
 ```typescript
 // New orchestrated step types added to ScenarioStep union:
-| { delivery: 'orchestration'; construct: 'concurrent'; branches: ScenarioStep[][] }
+| { delivery: 'orchestration'; construct: 'concurrent'; branches: Record<string, ScenarioStep[]> }
 | { delivery: 'orchestration'; construct: 'signal'; name: string }
 | { delivery: 'orchestration'; construct: 'wait'; signal?: string; barrier?: string; timeout?: string }
 | { delivery: 'orchestration'; construct: 'delay'; duration: string }
