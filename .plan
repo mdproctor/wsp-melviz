@@ -13,3 +13,19 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#462 — Issue #462 ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: Error and callback types
+    - [ ] Task 2: Duration parser
+    - [ ] Task 3: Directives
+  - [ ] Batch 2: Core primitives
+    - [ ] Task 4: OrcSignal
+    - [ ] Task 5: OrcLatch
+    - [ ] Task 6: OrcSemaphore
+  - [ ] Batch 3: Complex primitives
+    - [ ] Task 7: OrcChannel
+    - [ ] Task 8: OrcStateMachine
+    - [ ] Task 9: StepResultStore
+  - [ ] Batch 4: Integration
+    - [ ] Task 10: ScenarioScope
+    - [ ] Task 11: ConditionEvaluator and VariablePrefixRewriter
+    - [ ] Task 12: Barrel export and package wiring
