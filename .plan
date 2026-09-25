@@ -1,0 +1,15 @@
+# Work Plan — issue-22-server-data-providers
+
+## State
+branch: issue-22-server-data-providers
+state: scaffolded
+project-sha: 0fe9d5fd317981970f0941e4ff532324ad3c33b4
+date: 2026-09-25
+issue-repo: casehubio/casehub-pages
+covers: 22
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#22 — Issue #22 ← active
