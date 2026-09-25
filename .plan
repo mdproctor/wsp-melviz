@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-22-server-data-providers
-state: scaffolded
+state: active
 project-sha: 0fe9d5fd317981970f0941e4ff532324ad3c33b4
 date: 2026-09-25
 issue-repo: casehubio/casehub-pages
@@ -13,13 +13,13 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#22 — Issue #22 ← active
-  - [ ] Batch 1: Core SPI
-    - [ ] Task 1: QueryResult and DataProvider return type
-    - [ ] Task 2: DataQueryException and ExceptionMapper
-  - [ ] Batch 2: Prometheus
-    - [ ] Task 3: Maven module and config
-    - [ ] Task 4: PromQL query builder
-    - [ ] Task 5: HTTP client
-    - [ ] Task 6: PrometheusDataProvider CDI bean
-  - [ ] Batch 3: TypeScript
-    - [ ] Task 7: remainingOps handling in resolver
+  - [x] Batch 1: Core SPI
+    - [x] Task 1: QueryResult and DataProvider return type
+    - [x] Task 2: DataQueryException and ExceptionMapper
+  - [x] Batch 2: Prometheus
+    - [x] Task 3: Maven module and config
+    - [x] Task 4: PromQL query builder
+    - [x] Task 5: HTTP client
+    - [x] Task 6: PrometheusDataProvider CDI bean
+  - [x] Batch 3: TypeScript
+    - [x] Task 7: remainingOps handling in resolver
