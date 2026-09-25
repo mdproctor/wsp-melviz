@@ -156,6 +156,12 @@ public record ServiceCapabilities(
 `DataResource.capabilities()` populates `providerCapabilities` by iterating
 all discovered `DataProvider` beans and calling `capability()`.
 
+**Migration:** Adding a field to a Java record changes all positional
+constructor call sites. Existing tests (`DataResourceQueryTest`) construct
+`ServiceCapabilities` with 4 args. These must be updated to include the
+new `providerCapabilities` map. Use `Map.of()` for tests that don't care
+about capabilities.
+
 ## Prometheus Provider (backend/data-prometheus/)
 
 ### Configuration
