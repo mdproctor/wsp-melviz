@@ -83,6 +83,11 @@ Providers that handle all operations (e.g. `SqlDataProvider`) use the
 `complete()` factory. Providers with partial translation (e.g. Prometheus)
 construct with the ops they couldn't translate.
 
+**Ordering constraint:** The `remainingOps` list must preserve the relative
+ordering of operations from the original `DataSetLookup.operations` list.
+The client's `applyOps()` calls `validateOpOrder()` which enforces
+`/^F*G*S?$/` — reordered ops would be rejected.
+
 ### DataProvider interface
 
 ```java
@@ -138,9 +143,64 @@ current time, and generates a `BETWEEN` clause with bind parameters.
 | `NoOpDataProviderTest` | Assert on `QueryResult` |
 | `SqlDataProviderTest` | Assert on `QueryResult` |
 | `DataCacheService.queryCached()` | Generic type: `DataSetResult` → `QueryResult` |
+| `manager.ts` | Extract `resolveOps` to `ops-resolve.ts`, import from there |
 
 **DataResource.query()**: Return type changes to `QueryResult`. The endpoint
 serializes both the result and `remainingOps` in the response.
+
+### DataQueryException
+
+New exception class for provider errors, used by all providers:
+
+```java
+public class DataQueryException extends RuntimeException {
+    private final String code;
+
+    public DataQueryException(String code, String message) {
+        super(message);
+        this.code = code;
+    }
+
+    public DataQueryException(String code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
+    public String code() { return code; }
+}
+```
+
+Error codes: `INVALID_QUERY`, `FETCH_FAILED`, `RESULT_TOO_LARGE`.
+
+### DataQueryExceptionMapper
+
+JAX-RS `ExceptionMapper` that maps provider errors to structured HTTP
+responses with appropriate status codes:
+
+```java
+@Provider
+public class DataQueryExceptionMapper implements ExceptionMapper<DataQueryException> {
+    @Override
+    public Response toResponse(DataQueryException e) {
+        Response.Status status = switch (e.code()) {
+            case "INVALID_QUERY" -> Response.Status.BAD_REQUEST;           // 400
+            case "RESULT_TOO_LARGE" -> Response.Status.REQUEST_ENTITY_TOO_LARGE; // 413
+            case "FETCH_FAILED" -> Response.Status.BAD_GATEWAY;            // 502
+            default -> Response.Status.INTERNAL_SERVER_ERROR;              // 500
+        };
+        return Response.status(status)
+            .entity(Map.of("error", e.getMessage(), "code", e.code()))
+            .type(MediaType.APPLICATION_JSON)
+            .build();
+    }
+}
+```
+
+This lives in the `data/` core module so all providers benefit. Without it,
+any exception from `provider.query()` propagates to Quarkus's default
+handler and becomes HTTP 500 Internal Server Error — unhelpful for
+diagnosable errors like invalid metric names (400) or Prometheus
+unreachable (502).
 
 ## Prometheus Provider (backend/data-prometheus/)
 
@@ -207,6 +267,12 @@ When an `And` node contains a mix of translatable and untranslatable
 children, the provider extracts the translatable children as label matchers
 and returns a new `FilterOp` containing only the untranslatable children
 as `remainingOps`.
+
+**Multiple TIME_FRAME precedence:** Prometheus accepts a single `start`/`end`
+pair. If the operations contain multiple TIME_FRAME filters (on different
+columns or as duplicates), the provider consumes the first TIME_FRAME for
+`start`/`end` query parameters and returns any additional TIME_FRAME filters
+in `remainingOps` for client-side application.
 
 **LIKE_TO → PromQL regex conversion:**
 
@@ -298,17 +364,18 @@ configured, the provider uses a default of `60s`.
 
 | Prometheus response | Mapped to |
 |---|---|
-| HTTP 422 (invalid PromQL) | `DataSetError("INVALID_QUERY", response.error)` |
-| HTTP 503 (overloaded) | `DataSetError("FETCH_FAILED", "Prometheus unavailable")` |
-| HTTP 4xx/5xx (other) | `DataSetError("FETCH_FAILED", "HTTP <status>: <error>")` |
-| Sample count > `max-samples` | Truncate result, log warning |
-| Connect timeout | `DataSetError("FETCH_FAILED", "Connection timed out")` |
-| Read timeout | `DataSetError("FETCH_FAILED", "Read timed out")` |
+| HTTP 422 (invalid PromQL) | `throw new DataQueryException("INVALID_QUERY", response.error)` |
+| HTTP 503 (overloaded) | `throw new DataQueryException("FETCH_FAILED", "Prometheus unavailable")` |
+| HTTP 4xx/5xx (other) | `throw new DataQueryException("FETCH_FAILED", "HTTP <status>: <error>")` |
+| Sample count > `max-samples` | `throw new DataQueryException("RESULT_TOO_LARGE", "...")` |
+| Connect timeout | `throw new DataQueryException("FETCH_FAILED", "Connection timed out")` |
+| Read timeout | `throw new DataQueryException("FETCH_FAILED", "Read timed out")` |
 
-Error responses follow the same pattern as the SQL provider, which wraps
-`SQLException` in `IllegalStateException`. The Prometheus provider wraps
-HTTP/transport errors in `DataSetError` using category codes consistent
-with the client-side `DataSetError` taxonomy.
+The `DataQueryExceptionMapper` (see §Core SPI Changes) translates these
+to structured HTTP responses: `INVALID_QUERY` → 400, `FETCH_FAILED` → 502,
+`RESULT_TOO_LARGE` → 413. The SQL provider should also migrate from
+`IllegalStateException` to `DataQueryException` for consistency — this
+is a minor follow-up, not blocking.
 
 ## TypeScript Changes (packages/pages-data/)
 
@@ -346,7 +413,34 @@ assumed handled.
 
 ### Resolver serverQuery path
 
-The resolver applies `remainingOps` after receiving the server response:
+The resolver applies `remainingOps` after receiving the server response.
+The remaining ops may contain `Unresolved` filter expressions that must
+be resolved before `applyOps()` can consume them. Resolution requires
+the column schema from the returned dataset.
+
+The existing `resolveOps()` function in `manager.ts` already performs
+this resolution — it maps filter ops through `resolveFilterTypes(expr,
+columns)` and passes group/sort ops through unchanged. Extract it to a
+shared utility (`ops-resolve.ts`) so both the manager and the resolver
+can use it:
+
+```typescript
+// ops-resolve.ts (extracted from manager.ts)
+export function resolveOps(
+  ops: readonly DataSetOp[],
+  columns: readonly Column[],
+): ResolvedDataSetOp[] {
+  return ops.map(op => {
+    if (op.type !== "filter") return op;
+    return {
+      type: "filter" as const,
+      expressions: op.expressions.map(expr => resolveFilterTypes(expr, columns)),
+    };
+  });
+}
+```
+
+The resolver then uses it with the returned dataset's columns:
 
 ```typescript
 if (def.serverQuery) {
@@ -354,7 +448,7 @@ if (def.serverQuery) {
     const effectiveLookup = lookup ?? { dataSetId: def.uuid, operations: [] };
     const { dataset, remainingOps } = await client.query(effectiveLookup);
     const final = remainingOps.length > 0
-        ? applyOps(dataset, resolveFilterOps(remainingOps, referenceDate))
+        ? applyOps(dataset, resolveOps(remainingOps, dataset.columns))
         : dataset;
     ctx.manager.apply(def.uuid, { type: "snapshot", dataset: final });
     return { dataset: final, inferredColumns: false, source: "serverQuery" };
@@ -410,8 +504,10 @@ as `remainingOps` and are applied client-side.
 **In scope for issue #22:**
 - `QueryResult` record in core SPI (Java + TypeScript)
 - `DataProvider.query()` return type change (Java)
+- `DataQueryException` and `DataQueryExceptionMapper` in core SPI (Java)
 - `TIME_FRAME` handling in `SqlQueryBuilder` (Java)
 - `PrometheusDataProvider` implementation (Java)
+- Extract `resolveOps` to shared `ops-resolve.ts` (TypeScript)
 - Updated `ServerQueryClient` and resolver for `remainingOps` (TypeScript)
 - Tests for all of the above
 
