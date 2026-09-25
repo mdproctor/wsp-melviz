@@ -28,9 +28,10 @@ etc.) without changing the query model or adding parallel paths.
    only on `data/` (core SPI) + its backend client library. Include the
    dependency → the provider appears. Don't → it doesn't exist.
 
-4. **Two input modes, one pipeline.** Declarative operations (from page YAML
-   or a visual builder) and native query strings (from a CodeMirror-based
-   query editor) both flow through `DataProvider.query()`.
+4. **Server translates, client completes.** The provider handles the ops it
+   can natively and returns the rest as `remainingOps`. The client applies
+   those via the existing `applyOps()` pipeline. No capability negotiation
+   needed — the provider is the single source of truth for what it can handle.
 
 ## Module Structure
 
@@ -41,7 +42,7 @@ backend/
   data-sql/                optional: SQL provider (exists)
                            depends on: data/ + Agroal
   data-prometheus/         optional: Prometheus provider (this issue)
-                           depends on: data/ + HTTP client (java.net.http or Vert.x)
+                           depends on: data/ + java.net.http
   data-influxdb/           optional: future
   data-elasticsearch/      optional: future
 ```
@@ -65,63 +66,22 @@ cherry-pick modules. CDI discovers whatever is on the classpath.
 
 ## Core SPI Changes (backend/data/)
 
-### TimeRangeOp
+### QueryResult
 
-New sealed variant of `DataSetOp`:
-
-```java
-public record TimeRangeOp(
-    String column,    // timestamp column name
-    String from,      // ISO-8601 or relative expression ("now-1h")
-    String to,        // ISO-8601 or relative expression ("now")
-    String step       // aggregation interval ("5m", "1h") — nullable
-) implements DataSetOp {}
-```
-
-The `@JsonSubTypes` annotation on `DataSetOp` gains a fourth entry:
+New record wrapping the data result plus any operations the provider
+could not handle natively:
 
 ```java
-@JsonSubTypes.Type(value = TimeRangeOp.class, name = "timeRange")
+public record QueryResult(DataSetResult result, List<DataSetOp> remainingOps) {
+    public static QueryResult complete(DataSetResult result) {
+        return new QueryResult(result, List.of());
+    }
+}
 ```
 
-Operation sequence becomes: `TimeRange? -> Filter* -> Group* -> Sort?`
-
-`TimeRangeOp` is first because it determines the scan window. A Prometheus
-provider maps it to `start`/`end`/`step` params. A SQL provider maps it to
-`WHERE <column> BETWEEN ? AND ?`. Providers that don't understand time ranges
-ignore it; the client falls through to a date-column FilterOp equivalent.
-
-**Relative time expressions:** `from` and `to` accept ISO-8601 timestamps or
-relative expressions anchored to `now`: `now`, `now-1h`, `now-7d`,
-`now-30m`. The provider resolves these at query time. The syntax follows
-Grafana/Prometheus conventions.
-
-### nativeQuery on DataSetLookup
-
-```java
-public record DataSetLookup(
-    String dataSetId,
-    List<DataSetOp> operations,
-    Integer refreshTimeSeconds,
-    String nativeQuery          // raw PromQL, SQL, etc. — nullable
-) {}
-```
-
-When `nativeQuery` is non-null, the provider executes it verbatim and returns
-the result. The `operations` list may still contain ops for client-side
-post-processing (Sort, additional Filter). Providers that don't support
-native queries throw `UnsupportedOperationException`.
-
-### ProviderCapability
-
-```java
-public record ProviderCapability(
-    String type,                    // "prometheus", "sql", etc.
-    List<String> supportedOps,      // ["timeRange", "filter", "group", "sort"]
-    String nativeQueryLanguage,     // "promql", "sql", null
-    boolean supportsStreaming
-) {}
-```
+Providers that handle all operations (e.g. `SqlDataProvider`) use the
+`complete()` factory. Providers with partial translation (e.g. Prometheus)
+construct with the ops they couldn't translate.
 
 ### DataProvider interface
 
@@ -129,38 +89,58 @@ public record ProviderCapability(
 public interface DataProvider {
     String type();
     boolean canHandle(String dataSetId);
-    DataSetResult query(DataSetLookup lookup);
-
-    default ProviderCapability capability() {
-        return new ProviderCapability(type(), List.of(), null, false);
-    }
+    QueryResult query(DataSetLookup lookup);
 }
 ```
 
-The `capability()` default returns an empty capability set — existing
-providers (NoOpDataProvider) don't need to change. New providers override
-to declare what they support.
+The return type changes from `DataSetResult` to `QueryResult`. Existing
+implementations (`SqlDataProvider`, `NoOpDataProvider`) wrap their result
+with `QueryResult.complete(result)`.
 
-### ServiceCapabilities
+### TIME_FRAME filter handling
 
-```java
-public record ServiceCapabilities(
-    boolean serverSideQuery,
-    List<String> dataProviders,
-    boolean dataProxy,
-    boolean serverSideCache,
-    Map<String, ProviderCapability> providerCapabilities
-) {}
+Time-range constraints use the existing `FilterOp` + `DateLeaf` +
+`TIME_FRAME` mechanism (see `packages/pages-data/src/dataset/filter.ts`
+and `packages/pages-data/src/dataset/timeframe.ts`). No new operation
+type is needed.
+
+In YAML (unresolved form):
+
+```yaml
+operations:
+  - type: filter
+    column: timestamp
+    function: TIME_FRAME
+    args: ["now-1HOUR till now"]
 ```
 
-`DataResource.capabilities()` populates `providerCapabilities` by iterating
-all discovered `DataProvider` beans and calling `capability()`.
+The backend provider resolves this using the existing `TimeFrame` model
+(parsed via `parseTimeFrame()`). Each provider maps the resolved from/to
+dates to its native time constraint:
 
-**Migration:** Adding a field to a Java record changes all positional
-constructor call sites. Existing tests (`DataResourceQueryTest`) construct
-`ServiceCapabilities` with 4 args. These must be updated to include the
-new `providerCapabilities` map. Use `Map.of()` for tests that don't care
-about capabilities.
+- **SQL**: `WHERE <column> BETWEEN ? AND ?` with bind parameters
+- **Prometheus**: `start=<from>&end=<to>` query parameters
+
+`SqlQueryBuilder.appendLeafFilter()` gains a `TIME_FRAME` case that parses
+the time-frame expression from `args`, resolves it against the server's
+current time, and generates a `BETWEEN` clause with bind parameters.
+
+### Migration
+
+**DataProvider.query() return type**: Changes from `DataSetResult` to
+`QueryResult`. All implementations and test call sites must update:
+
+| Call site | Change |
+|---|---|
+| `NoOpDataProvider.query()` | Return `QueryResult.complete(emptyResult)` |
+| `SqlDataProvider.query()` | Return `QueryResult.complete(result)` |
+| `DataResourceQueryTest` (mock provider) | Return `QueryResult` |
+| `NoOpDataProviderTest` | Assert on `QueryResult` |
+| `SqlDataProviderTest` | Assert on `QueryResult` |
+| `DataCacheService.queryCached()` | Generic type: `DataSetResult` → `QueryResult` |
+
+**DataResource.query()**: Return type changes to `QueryResult`. The endpoint
+serializes both the result and `remainingOps` in the response.
 
 ## Prometheus Provider (backend/data-prometheus/)
 
@@ -170,27 +150,109 @@ about capabilities.
 # Global Prometheus endpoint
 casehub.pages.data.prometheus.endpoint=http://prometheus:9090
 
+# Authentication (default: none)
+casehub.pages.data.prometheus.auth.type=none
+# For type=bearer:
+casehub.pages.data.prometheus.auth.token=<token>
+# For type=basic:
+casehub.pages.data.prometheus.auth.username=<user>
+casehub.pages.data.prometheus.auth.password=<pass>
+
+# HTTP timeouts
+casehub.pages.data.prometheus.timeout.connect=5s
+casehub.pages.data.prometheus.timeout.read=30s
+
+# Cardinality protection — max samples in response
+casehub.pages.data.prometheus.max-samples=10000
+
 # Per-dataset metric mapping
 casehub.pages.data.prometheus.datasets.cpu-metrics.metric=node_cpu_seconds_total
+casehub.pages.data.prometheus.datasets.cpu-metrics.step=5m
 casehub.pages.data.prometheus.datasets.memory-usage.metric=node_memory_MemAvailable_bytes
+casehub.pages.data.prometheus.datasets.memory-usage.step=1m
 ```
+
+`step` is a per-dataset configuration property controlling the Prometheus
+aggregation interval. It is not an operation because it controls query
+resolution, not data transformation.
 
 ### Query Translation
 
-The provider translates `DataSetLookup` operations into a Prometheus HTTP API
-request:
+The provider receives a `DataSetLookup` containing the full operation
+pipeline. It translates what it can natively and returns the rest as
+`remainingOps` in the `QueryResult`.
 
-| DataSetOp | PromQL translation |
-|---|---|
-| `TimeRangeOp(col, from, to, step)` | `start=<from>&end=<to>&step=<step>` query params |
-| `FilterOp` with `EQUALS_TO` on a label column | Label matcher: `{<column>="<value>"}` |
-| `FilterOp` with `NOT_EQUALS_TO` | Label matcher: `{<column>!="<value>"}` |
-| `FilterOp` with `LIKE_TO` | Regex matcher: `{<column>=~"<value>"}` |
-| `GroupOp` with aggregation function | `<fn> by (<column>) (metric{...})` |
-| `SortOp` | Not translatable — falls through to client-side |
+#### FilterOp translation
 
-When `nativeQuery` is present, the provider sends it as the `query` param
-directly, using `TimeRangeOp` values for `start`/`end`/`step` if present.
+The provider walks the `FilterExpression` tree. The actual `FilterOp`
+contains `List<FilterExpression>` where `FilterExpression` is a sealed
+interface with 7 variants: `And`, `Or`, `Not`, `Unresolved`, `Numeric`,
+`StringLeaf`, `DateLeaf`.
+
+| FilterExpression variant | Translatable? | PromQL translation |
+|---|---|---|
+| `StringLeaf(col, {fn: EQUALS_TO, value: v})` | Yes | `{col="v"}` |
+| `StringLeaf(col, {fn: NOT_EQUALS_TO, value: v})` | Yes | `{col!="v"}` |
+| `StringLeaf(col, {fn: LIKE_TO, pattern: p})` | Yes | `{col=~"<regex>"}` — see conversion below |
+| `And(children)` where ALL children translatable | Yes | Merged label matchers in `{}` |
+| `DateLeaf(col, {fn: TIME_FRAME, ...})` | Special | Resolved to `start`/`end` query params |
+| `Or(...)` | No | → `remainingOps` |
+| `Not(...)` | No | → `remainingOps` |
+| `Numeric(...)` | No | → `remainingOps` (Prometheus labels are strings) |
+| `DateLeaf` (non-TIME_FRAME) | No | → `remainingOps` |
+| `Unresolved` (non-TIME_FRAME) | No | → `remainingOps` |
+| `Unresolved(col, "TIME_FRAME", args)` | Special | Resolved to `start`/`end` query params |
+
+When an `And` node contains a mix of translatable and untranslatable
+children, the provider extracts the translatable children as label matchers
+and returns a new `FilterOp` containing only the untranslatable children
+as `remainingOps`.
+
+**LIKE_TO → PromQL regex conversion:**
+
+SQL `LIKE_TO` patterns use `%` (any string) and `_` (single character).
+PromQL `=~` uses RE2 regex syntax. The conversion:
+
+1. Escape RE2 metacharacters in the pattern: `.` `*` `+` `?` `(` `)` `[` `]` `{` `}` `^` `$` `|` `\` → prefix with `\`
+2. Replace `%` → `.*`
+3. Replace `_` → `.`
+4. Anchor the result: `^<pattern>$`
+
+Example: `prod%` → `^prod.*$`; `node_cpu_%_total` → `^node_cpu_.*_total$`
+
+#### GroupOp translation
+
+The actual `GroupOp` record has four fields: `GroupingKey groupingKey`,
+`List<ResultColumn> columns`, `List<String> selectedIntervals`,
+`Boolean join`. `GroupingKey` carries a `GroupStrategy` with four modes:
+`Distinct`, `FixedCalendar`, `DynamicRange`, `Dynamic`.
+
+| GroupOp configuration | Translatable? | PromQL translation |
+|---|---|---|
+| `GroupStrategy.Distinct` | Yes | `by (<labels>)` |
+| `ResultColumn.Aggregate` with COUNT | Yes | `count by (...) (metric{...})` |
+| `ResultColumn.Aggregate` with SUM | Yes | `sum by (...) (metric{...})` |
+| `ResultColumn.Aggregate` with AVERAGE | Yes | `avg by (...) (metric{...})` |
+| `ResultColumn.Aggregate` with MIN | Yes | `min by (...) (metric{...})` |
+| `ResultColumn.Aggregate` with MAX | Yes | `max by (...) (metric{...})` |
+| `GroupStrategy.FixedCalendar` | No | → `remainingOps` |
+| `GroupStrategy.DynamicRange` | No | → `remainingOps` |
+| `GroupStrategy.Dynamic` | No | → `remainingOps` |
+| `ResultColumn.Select` | No | → `remainingOps` (no PromQL equivalent) |
+| `ResultColumn.Key` beyond group labels | No | → `remainingOps` |
+| `selectedIntervals` (non-empty) | No | → `remainingOps` |
+| `join` flag (true) | No | → `remainingOps` |
+| Aggregation: DISTINCT, JOIN, DISTINCTJOIN, MEDIAN | No | → `remainingOps` |
+
+When a `GroupOp` is only partially translatable (e.g. a translatable
+aggregation function with an untranslatable `GroupStrategy`), the entire
+`GroupOp` goes to `remainingOps`. Partial group translation would produce
+incorrect intermediate results.
+
+#### SortOp translation
+
+Not translatable — PromQL does not sort time series. Always returned as
+`remainingOps`. The client applies `SortOp` via `applySort()`.
 
 ### Response Mapping
 
@@ -199,115 +261,129 @@ Prometheus range query returns a matrix (list of time series, each with
 
 | Column | Type | Source |
 |---|---|---|
-| `timestamp` | NUMBER | Sample timestamp (epoch seconds) |
+| `timestamp` | DATE | Sample timestamp — epoch seconds converted to ISO-8601 |
 | `value` | NUMBER | Sample value |
 | One column per label | TEXT | Label values from the series |
 
-### Capability Declaration
+Timestamps are mapped to `DATE` type (not `NUMBER`). The provider converts
+epoch seconds to ISO-8601 strings during response flattening, preserving
+type fidelity for time-series visualization components that expect `DATE`-
+typed columns for axis formatting.
 
-```java
-@Override
-public ProviderCapability capability() {
-    return new ProviderCapability(
-        "prometheus",
-        List.of("timeRange", "filter", "group"),
-        "promql",
-        false
-    );
-}
-```
+Prometheus instant query returns a vector (single value per series). The
+provider maps this to:
 
-Sort is absent — PromQL doesn't sort time series. The client applies
-`SortOp` on the returned `DataSetResult`.
+| Column | Type | Source |
+|---|---|---|
+| `value` | NUMBER | Instant value |
+| One column per label | TEXT | Label values from the series |
+
+No `timestamp` column for instant queries — the query time is implicit.
+
+### Instant vs Range Queries
+
+The provider selects the Prometheus API endpoint based on whether a time-
+range filter is present in the operations:
+
+| Condition | API endpoint | Response type |
+|---|---|---|
+| `DateLeaf` with `TIME_FRAME` present | `/api/v1/query_range` | Matrix |
+| No time-range filter | `/api/v1/query` | Vector |
+
+For range queries, `step` comes from the dataset configuration
+(`casehub.pages.data.prometheus.datasets.<id>.step`). If no step is
+configured, the provider uses a default of `60s`.
+
+### Error Handling
+
+| Prometheus response | Mapped to |
+|---|---|
+| HTTP 422 (invalid PromQL) | `DataSetError("INVALID_QUERY", response.error)` |
+| HTTP 503 (overloaded) | `DataSetError("FETCH_FAILED", "Prometheus unavailable")` |
+| HTTP 4xx/5xx (other) | `DataSetError("FETCH_FAILED", "HTTP <status>: <error>")` |
+| Sample count > `max-samples` | Truncate result, log warning |
+| Connect timeout | `DataSetError("FETCH_FAILED", "Connection timed out")` |
+| Read timeout | `DataSetError("FETCH_FAILED", "Read timed out")` |
+
+Error responses follow the same pattern as the SQL provider, which wraps
+`SQLException` in `IllegalStateException`. The Prometheus provider wraps
+HTTP/transport errors in `DataSetError` using category codes consistent
+with the client-side `DataSetError` taxonomy.
 
 ## TypeScript Changes (packages/pages-data/)
 
-### TimeRangeOp type
+### QueryResult type
 
 ```typescript
-export interface TimeRangeOp {
-  readonly type: 'timeRange';
-  readonly column: ColumnId;
-  readonly from: string;
-  readonly to: string;
-  readonly step?: string;
-}
-
-export type DataSetOp = FilterOp | GroupOp | SortOp | TimeRangeOp;
-```
-
-Update `validateOpOrder` to accept the new sequence:
-`/^T?F*G*S?$/` where T = timeRange.
-
-### nativeQuery on DataSetLookup
-
-```typescript
-export interface DataSetLookup {
-  readonly dataSetId: DataSetId;
-  readonly operations: readonly DataSetOp[];
-  readonly nativeQuery?: string;
-  readonly refreshTimeSeconds?: number;
+export interface QueryResult {
+  readonly result: ServerQueryResponse;
+  readonly remainingOps: readonly DataSetOp[];
 }
 ```
 
-### Extended ServiceCapabilities
+### ServerQueryClient
+
+Updated to return `QueryResult`. The response JSON now includes
+`remainingOps` alongside the data result:
 
 ```typescript
-export interface ProviderCapability {
-  readonly type: string;
-  readonly supportedOps: readonly string[];
-  readonly nativeQueryLanguage?: string;
-  readonly supportsStreaming: boolean;
-}
-
-export interface ServiceCapabilities {
-  readonly serverSideQuery: boolean;
-  readonly dataProviders: readonly string[];
-  readonly dataProxy: boolean;
-  readonly serverSideCache: boolean;
-  readonly providerCapabilities?: Readonly<Record<string, ProviderCapability>>;
+async query(lookup: DataSetLookup): Promise<{ dataset: TypedDataSet; remainingOps: DataSetOp[] }> {
+    // ... fetch as before ...
+    const body = await response.json() as {
+        result: ServerQueryResponse;
+        remainingOps: DataSetOp[];
+    };
+    return {
+        dataset: toTypedDataSet(toDataSet(body.result)),
+        remainingOps: body.remainingOps ?? [],
+    };
 }
 ```
 
-### Operation Splitting in the Resolver
+The `remainingOps ?? []` fallback provides backward compatibility: if the
+server returns no `remainingOps` field (e.g. older backend), all ops are
+assumed handled.
 
-When the resolver knows the provider's capabilities (from cached
-`ServiceCapabilities`), it splits the operation pipeline before sending
-to the server:
+### Resolver serverQuery path
+
+The resolver applies `remainingOps` after receiving the server response:
 
 ```typescript
-function splitOps(
-  ops: readonly DataSetOp[],
-  supported: readonly string[],
-): { server: DataSetOp[]; client: DataSetOp[] } {
-  const server: DataSetOp[] = [];
-  const client: DataSetOp[] = [];
-  for (const op of ops) {
-    (supported.includes(op.type) ? server : client).push(op);
-  }
-  return { server, client };
+if (def.serverQuery) {
+    // ... setup client as before ...
+    const effectiveLookup = lookup ?? { dataSetId: def.uuid, operations: [] };
+    const { dataset, remainingOps } = await client.query(effectiveLookup);
+    const final = remainingOps.length > 0
+        ? applyOps(dataset, resolveFilterOps(remainingOps, referenceDate))
+        : dataset;
+    ctx.manager.apply(def.uuid, { type: "snapshot", dataset: final });
+    return { dataset: final, inferredColumns: false, source: "serverQuery" };
 }
 ```
 
-The resolver sends a `DataSetLookup` with `server` ops to the backend,
-receives a `TypedDataSet`, then applies `client` ops via the existing
-`applyOps()` function.
+### No changes to existing types
+
+- `DataSetOp` union stays `FilterOp | GroupOp | SortOp` (no TimeRangeOp)
+- `DataSetLookup` stays unchanged (no nativeQuery)
+- `ServiceCapabilities` stays unchanged (no providerCapabilities)
+- `validateOpOrder` regex stays `/^F*G*S?$/`
+- `applyOps` unchanged — handles filter/group/sort as before
 
 ## Page YAML Integration
 
 No new YAML syntax is needed. The existing `serverQuery: true` flag routes
-the query to the server. The `TimeRangeOp` is a standard operation:
+the query to the server. Time-range constraints use the existing filter
+model with the `TIME_FRAME` function:
 
 ```yaml
 datasets:
   - uuid: cpu-metrics
     serverQuery: true
     operations:
-      - type: timeRange
+      - type: filter
         column: timestamp
-        from: now-1h
-        to: now
-        step: 5m
+        function: TIME_FRAME
+        args: ["now-1HOUR till now"]
       - type: filter
         column: mode
         function: EQUALS_TO
@@ -318,27 +394,32 @@ datasets:
 ```
 
 The server resolves `cpu-metrics` to the Prometheus provider via config.
-The provider translates the operations into:
+The provider translates the translatable operations into:
 
 ```
 avg by (instance) (node_cpu_seconds_total{mode="idle"})
 ```
 
-with `start=<now-1h>&end=<now>&step=300`.
+with `start=<resolved-from>&end=<resolved-to>&step=300`.
+
+The `SortOp` (if any) and untranslatable filter/group operations return
+as `remainingOps` and are applied client-side.
 
 ## Scope Boundary
 
 **In scope for issue #22:**
-- `TimeRangeOp` in core (Java + TypeScript)
-- `nativeQuery` on `DataSetLookup` (Java + TypeScript)
-- `ProviderCapability` and extended `ServiceCapabilities` (Java + TypeScript)
+- `QueryResult` record in core SPI (Java + TypeScript)
+- `DataProvider.query()` return type change (Java)
+- `TIME_FRAME` handling in `SqlQueryBuilder` (Java)
 - `PrometheusDataProvider` implementation (Java)
-- Operation splitting in the TypeScript resolver
+- Updated `ServerQueryClient` and resolver for `remainingOps` (TypeScript)
 - Tests for all of the above
 
 **Out of scope (future issues):**
+- Native query editor — separate endpoint with its own authorization model
+- `ProviderCapability` for UI/query builder consumption
+- Dynamic `step` configuration (runtime-adjustable aggregation interval)
 - InfluxDB, Elasticsearch, or other provider implementations
-- Query editor component (CodeMirror-based PromQL/SQL editor)
 - Visual query builder that generates `DataSetOp` lists
 - Streaming / push-based time-series subscriptions
 - Cross-provider joins (combining Prometheus + SQL results)
@@ -347,12 +428,15 @@ with `start=<now-1h>&end=<now>&step=300`.
 ## References
 
 - `backend/data/src/main/java/io/casehub/pages/data/DataProvider.java` — existing SPI
-- `backend/data/src/main/java/io/casehub/pages/data/DataSetOp.java` — sealed interface to extend
+- `backend/data/src/main/java/io/casehub/pages/data/DataSetOp.java` — sealed interface (unchanged)
 - `backend/data/src/main/java/io/casehub/pages/data/DataResource.java` — REST endpoint with CDI routing
-- `backend/data-sql/src/main/java/io/casehub/pages/data/sql/SqlDataProvider.java` — reference implementation
+- `backend/data/src/main/java/io/casehub/pages/data/FilterExpression.java` — sealed filter tree
+- `backend/data-sql/src/main/java/io/casehub/pages/data/sql/SqlQueryBuilder.java` — reference implementation
 - `packages/pages-data/src/dataset/ops.ts` — TypeScript DataSetOp union
-- `packages/pages-data/src/dataset/external/resolver.ts` — client-side resolver (operation splitting target)
+- `packages/pages-data/src/dataset/filter.ts` — TypeScript filter model with TIME_FRAME
+- `packages/pages-data/src/dataset/timeframe.ts` — TimeFrame/TimeInstant infrastructure
+- `packages/pages-data/src/dataset/external/resolver.ts` — client-side resolver
 - `packages/pages-data/src/dataset/external/providers/server-query.ts` — ServerQueryClient
 - Grafana datasource plugin SDK — backend-specific queries, unified data frame output
-- Metabase MBQL — abstract IR with central translation, `database-supports?` capability negotiation
+- Metabase MBQL — abstract IR with central translation
 - Cube.js semantic layer — measures/dimensions defined once, translated per-driver
