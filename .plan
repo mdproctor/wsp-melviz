@@ -1,0 +1,15 @@
+# Work Plan — issue-469-prometheus-showcase
+
+## State
+branch: issue-469-prometheus-showcase
+state: scaffolded
+project-sha: cc81edcf
+date: 2026-09-25
+issue-repo: casehubio/casehub-pages
+covers: 469
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#469 — Issue #469 ← active
