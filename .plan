@@ -13,3 +13,9 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#468 — Issue #468 ← active
+  - [ ] Batch 1: Layout pipeline hooks
+    - [ ] Task 1: Add LayoutResult type and _computeLayout hook
+    - [ ] Task 2: Add _postLayout hook
+  - [ ] Batch 2: Composable template methods
+    - [ ] Task 3: Add _handleCanvasEvent and _handleEdgeClick
+    - [ ] Task 4: Add _renderCanvas and _renderDialogs
