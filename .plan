@@ -1,0 +1,15 @@
+# Work Plan — issue-468-diagram-mixin-render-layout
+
+## State
+branch: issue-468-diagram-mixin-render-layout
+state: scaffolded
+project-sha: eef36c860eaa26f3db7faaeebde26be7285905ef
+date: 2026-09-26
+issue-repo: casehubio/casehub-pages
+covers: 468,467
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#468 — Issue #468 ← active
