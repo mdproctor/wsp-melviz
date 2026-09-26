@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-468-diagram-mixin-render-layout
-state: active
+state: closing:promoted
 project-sha: eef36c860eaa26f3db7faaeebde26be7285905ef
 date: 2026-09-26
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo: workspace
 design-section-hashes: 
 flyway-next-v: none
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#468 — Issue #468 ← active
   - [x] Batch 1: Layout pipeline hooks
