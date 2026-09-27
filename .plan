@@ -1,0 +1,15 @@
+# Work Plan — issue-473-migrate-radial-layout
+
+## State
+branch: issue-473-migrate-radial-layout
+state: scaffolded
+project-sha: 3fe575ea5647c8417842fe0cf7e9e46ba9732c3e
+date: 2026-09-27
+issue-repo: casehubio/casehub-pages
+covers: 473
+design-repo: workspace
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#473 — Issue #473 ← active
