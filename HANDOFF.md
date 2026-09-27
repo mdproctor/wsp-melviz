@@ -21,6 +21,10 @@ Run `work continue` — the plan is at `plans/2026-09-25-server-data-providers.m
 - Commit `6ac41cd0` on main: `feat(yaml-core): rename when → if/condition in TypeScript`
   - Mirrors casehubio/platform#449 vocabulary split across 8 files in `packages/yaml-core/src/`
   - 275 tests pass
+- Commit `f2522e55` on main: `feat(yaml-core): MatchPattern types + matches() function`
+  - TS parity with Java MatchPattern sealed interface (casehubio/platform#457)
+  - ValuePattern, StructuralPattern, DefaultPattern + factory functions + matches() predicate
+  - 283 tests pass
 
 ## References
 
