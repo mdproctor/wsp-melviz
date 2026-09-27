@@ -16,6 +16,12 @@ Execute Batch 1 of the implementation plan: `QueryResult` record +
 `DataProvider` return type change + `DataQueryException` + `ExceptionMapper`.
 Run `work continue` — the plan is at `plans/2026-09-25-server-data-providers.md`.
 
+## Cross-Repo Commits (from casehub-platform session, 2026-09-27)
+
+- Commit `6ac41cd0` on main: `feat(yaml-core): rename when → if/condition in TypeScript`
+  - Mirrors casehubio/platform#449 vocabulary split across 8 files in `packages/yaml-core/src/`
+  - 275 tests pass
+
 ## References
 
 - `specs/issue-22-server-data-providers/2026-09-25-server-data-providers-design.md`
