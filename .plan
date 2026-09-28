@@ -1,0 +1,15 @@
+# Work Plan — issue-501-step-catalog-browser
+
+## State
+branch: issue-501-step-catalog-browser
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: casehubio/casehub-pages#501
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#501 — Issue #501 ← active

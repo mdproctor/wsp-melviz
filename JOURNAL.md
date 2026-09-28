@@ -1,1 +1,1 @@
-# Design Journal — issue-505-multi-primitive-concurrency
+# Design Journal — issue-501-step-catalog-browser
