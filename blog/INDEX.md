@@ -18,3 +18,4 @@
 | [2026-09-14-mdp03-package-sync-that-wasnt.md](2026-09-14-mdp03-package-sync-that-wasnt.md) | 2026-09-14 | Three LSP issues resolved — .casehub-packages are symlinks not copies, ported plugin fixes, domain formats already done |
 | [2026-09-14-mdp04-teaching-by-typing.md](2026-09-14-mdp04-teaching-by-typing.md) | 2026-09-14 | Pivoted tutorial delivery from custom yaml-editor to scenario-driven: ScenarioEditableText SPI, CodeMirror bridge, 7 new ARIA editor actions |
 | [2026-09-17-mdp01-zod-v4-migration.md](2026-09-17-mdp01-zod-v4-migration.md) | 2026-09-17 | Zod v4 migration — undocumented field mapping, .default().optional() behavioral change, dist staleness debugging |
+| [2026-09-28-mdp01-invoke-bindings-concurrency.md](2026-09-28-mdp01-invoke-bindings-concurrency.md) | 2026-09-28 | Invoke bindings and concurrent coordination gallery examples — mock executors, parallel primitives, deferred runtime handlers |
