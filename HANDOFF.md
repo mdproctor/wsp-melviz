@@ -2,33 +2,29 @@
 
 ## Last Session
 
-Closed #464 (orchestration showcase — landed on main with type safety fix).
-Started #22 (server-side data providers). Ran parallel internet research on
-Grafana, Metabase, Superset, Cube.js datasource models. First-principles
-synthesis produced a design: extend `DataProvider.query()` to return
-`QueryResult` (data + `remainingOps`), reuse existing `FilterOp` + `TIME_FRAME`
-for time ranges, add `DataQueryException` for structured errors. Spec passed
-3-round standard review (14 issues resolved). Implementation plan written.
+Closed #503 (mock invoke test helpers) and #504 (evaluateInvoke wiring).
+Landed as 40341801 on main. Branch `issue-503-mock-invoke-executors` stamped.
+
+- Extracted `MockRestInvokeHandler`, `MockMcpInvokeHandler`, etc. into
+  `packages/yaml-core/src/step/invoke/test-helpers.ts` with factory functions
+  and realistic response fixtures from the gallery examples.
+- Wired `StructuralStepEvaluator.evaluateInvoke` to parse invoke specs into
+  bindings, find a matching handler, and execute it. Code review caught a bug:
+  was passing raw spec as params to action.execute(), fixed to pass `{}`.
+- 328 step tests pass, zero regressions.
 
 ## Immediate Next Step
 
-Execute Batch 1 of the implementation plan: `QueryResult` record +
-`DataProvider` return type change + `DataQueryException` + `ExceptionMapper`.
-Run `work continue` — the plan is at `plans/2026-09-25-server-data-providers.md`.
+Issue #505 — Add combined multi-primitive concurrency scenario to gallery.
+Composes semaphore, channel, deadline, spawned task, orc-map, and correlation
+scope into a rate-limited pipeline demo. Start a new branch.
 
-## Cross-Repo Commits (from casehub-platform session, 2026-09-27)
+## Plan Queue
 
-- Commit `6ac41cd0` on main: `feat(yaml-core): rename when → if/condition in TypeScript`
-  - Mirrors casehubio/platform#449 vocabulary split across 8 files in `packages/yaml-core/src/`
-  - 275 tests pass
-- Commit `f2522e55` on main: `feat(yaml-core): MatchPattern types + matches() function`
-  - TS parity with Java MatchPattern sealed interface (casehubio/platform#457)
-  - ValuePattern, StructuralPattern, DefaultPattern + factory functions + matches() predicate
-  - 283 tests pass
+Position 4/5 — one remaining issue (#505).
 
 ## References
 
-- `specs/issue-22-server-data-providers/2026-09-25-server-data-providers-design.md`
-- `specs/issue-22-server-data-providers/decisions.md`
-- `plans/2026-09-25-server-data-providers.md`
-- `JOURNAL.md`
+- `packages/yaml-core/src/step/invoke/test-helpers.ts` — mock handlers
+- `packages/yaml-core/src/step/structural-evaluator.ts` — evaluateInvoke wiring
+- `examples/samples/Scenarios/Concurrency Patterns.ts` — existing isolated examples
