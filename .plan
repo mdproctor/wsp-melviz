@@ -10,11 +10,14 @@ covers: 496,497
 design-repo: project
 design-section-hashes: 
 flyway-next-v: none
-
 evidence-era: true
+
 ## Queue
 - [x] casehubio/casehub-pages#496 — Issue #496
 - [x] casehubio/casehub-pages#497 — Add concurrent orchestration primitive examples to gallery
 - [ ] casehubio/casehub-pages#503 — Extract reusable mock invoke executors for testing ← active
 - [ ] casehubio/casehub-pages#504 — Implement runtime invoke handlers for binding execution
 - [ ] casehubio/casehub-pages#505 — Add combined multi-primitive concurrency scenario to gallery
+
+## Deferred
+- [ ] Add combined multi-primitive concurrency scenario to gallery (M / Med) []
