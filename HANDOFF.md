@@ -2,24 +2,24 @@
 
 ## Last Session
 
-Completed the full gallery examples queue (5 issues):
+Scheduled work from fsitrading Epic C13 (casehubio/fsitrading#50) cross-repo
+dependencies into the casehub-pages .plan. Four generic scenario/playbook
+infrastructure issues, ordered by dependency chain:
 
-- **#496** — Invoke Bindings gallery examples (landed earlier)
-- **#497** — Concurrent orchestration primitive examples (landed earlier)
-- **#503** — Extracted mock invoke test helpers into `test-helpers.ts` with
-  factory functions and realistic response fixtures for all 6 binding types.
-  Landed as `40341801`.
-- **#504** — Wired `StructuralStepEvaluator.evaluateInvoke` to parse invoke
-  specs into bindings, find matching handlers, and execute them. Code review
-  caught a params contamination bug (raw spec passed as params to
-  action.execute). Landed as `40341801`.
-- **#505** — Added "Combined Pipeline" gallery example composing semaphore,
-  channel, spawned task, concurrent map, and deadline into a rate-limited
-  producer-consumer pipeline. New `pipeline-consume` executor genuinely
-  composes channel receive, semaphore gating, and map accumulation in a
-  single handler. Landed as `8c0edcc6`.
+1. **#501** — Step catalog browser (S / Low, independent)
+2. **#498** — Scenario lifecycle state (M / Med, independent)
+3. **#499** — Event-triggered scenario activation (M / Med, depends on #498)
+4. **#500** — Scenario outcome tracking + CBR linkage (M / High, blocked on engine#1190)
 
-Queue drained. Plan complete.
+### Ordering rationale
+- #501 first: independent, smallest, quick win
+- #498 before #499: lifecycle state is a prerequisite for event triggers
+- #500 last: blocked on engine's generic CBR outcome recording bridge (engine#1190)
+
+### Cross-repo context
+- Parent epic: casehubio/fsitrading#50 (Trading YAML Playbooks)
+- Engine issues: engine#1190, #1191, #1192 (generic CBR integration)
+- casehub-pages#502 is the local epic grouping these four issues
 
 ## References
 
