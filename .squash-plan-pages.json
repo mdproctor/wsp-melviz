@@ -1,17 +1,13 @@
 {
   "repo": "pages",
-  "repo_path": "/Users/mdproctor/claude/casehub/slots/190/pages",
+  "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
-  "branch": "issue-437-lsp4ij-completions",
+  "branch": "issue-496-497-gallery-examples",
   "commits": [
-    { "sha": "67658905", "message": "fix(intellij): stale bundle cache, missing dash.yaml pattern, add LSP logging", "action": "squash" },
-    { "sha": "61f67ff8", "message": "fix(pages-lsp): update bundle test for sibling-filtered completions", "action": "squash" },
-    { "sha": "be87dd97", "message": "fix(pages-lsp): use TextDocumentSyncOptions object form for LSP4IJ compat", "action": "squash" },
-    { "sha": "5bf6d6ca", "message": "test(pages-lsp): add LSP4IJ compatibility test for initialize response", "action": "squash" },
-    { "sha": "133e0591", "message": "chore(intellij): bump LSP4IJ dependency to 0.21.0", "action": "squash" },
-    { "sha": "740108a3", "message": "feat(intellij): CompletionWeigher deprioritizes YAML structural items", "action": "squash" },
-    { "sha": "fde294c3", "message": "docs(work-end): project-promote artifacts from workspace", "action": "squash" }
+    { "sha": "1cd47c5c", "message": "wip: add Invoke Bindings and Concurrency Patterns gallery examples", "action": "squash" },
+    { "sha": "5ed6cef7", "message": "docs: sync contributor guide — gallery sample count and new demos", "action": "squash" },
+    { "sha": "8fcd9d2f", "message": "docs(blog): promote diary — teaching the step system to talk to the outside world", "action": "squash" }
   ],
   "verified": true,
-  "squash_message": "fix(intellij): LSP4IJ completion delivery — stale cache, TextDocumentSync, CompletionWeigher\n\nRoot causes: extractServer() cached the server bundle with no version\ncheck (stale bundles persisted across plugin updates), textDocumentSync\nused the bare number form which LSP4IJ may not parse (no didOpen sent),\nand the fileNamePatternMapping missed *.dash.yaml transition support.\n\nAdditional fixes: CompletionWeigher deprioritizes YAML {} items without\nbreaking LSP4IJ's async channel, stderr logging for debugging, serverInfo\nin initialize response, LSP4IJ dependency bumped to 0.21.0.\n\nCloses #437\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "feat(gallery): add Invoke Bindings and Concurrency Patterns examples\n\nInvoke Bindings: interactive gallery example with mock executors for\nall six binding types (REST, MCP, GraphQL, Script, Agent, Process).\nEach sub-example shows the YAML invoke syntax and a simulated\nexecution trace with realistic responses.\n\nConcurrency Patterns: interactive gallery example demonstrating\nsemaphore, channel, concurrent map, spawned task, correlation scope,\nand deadline context using parallel structural steps.\n\nExports DefaultCorrelationScope from yaml-core orchestration index\nand casehub-entry bundle. Syncs contributor guide sample count.\n\nCloses #496, #497\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }
