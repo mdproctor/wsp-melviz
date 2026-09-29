@@ -16,9 +16,9 @@ flyway-next-v:
   - [x] Batch 1: Foundation
     - [x] Task 1: Portability type and Definition field
     - [x] Task 2: Parser inference and registry defaults
-  - [ ] Batch 2: DataSources
-    - [ ] Task 3: CatalogDataSource and RegistryCatalogSource
-    - [ ] Task 4: REST catalog list handler
+  - [x] Batch 2: DataSources
+    - [x] Task 3: CatalogDataSource and RegistryCatalogSource
+    - [x] Task 4: REST catalog list handler
   - [ ] Batch 3: Component
     - [ ] Task 5: Multi-source merge and portability badges
   - [ ] Batch 4: Validation
