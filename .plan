@@ -2,7 +2,7 @@
 
 ## State
 branch: feat/506-unified-step-catalog
-state: closing:promoted
+state: closing:pushed
 project-sha: 
 date: 2026-09-29
 issue-repo: casehubio/casehub-pages
