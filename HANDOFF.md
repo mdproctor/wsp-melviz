@@ -2,46 +2,75 @@
 
 ## Last Session (2026-09-29)
 
-**Completed:** #501 — Step catalog browser. Landed on main as 3 squashed commits (096bf861..54bdeb65).
+**Branch:** `feat/506-unified-step-catalog`
+**Issue:** #506 — unified step catalog — portability model and cross-runtime discovery
+**Status:** Batches 1-2 complete (4/6 tasks). Batches 3-4 remain.
 
-**What was built:**
-- Java `@McpDomain("step-catalog")` resolver — `StepCatalogService` parses YAML step definition files, `StepCatalogResolver` exposes via GraphQL/MCP
-- TS `catalog-execute-handler` — REST endpoint for live step execution via `StructuralStepEvaluator`
-- `<pages-step-catalog>` Lit component — search, source filter chips, detail view with schema tables, try-it execution panel, YAML template generation (CustomEvent + clipboard)
-- Integrated into `PagesScenarioController` as `'catalog'` view mode alongside `'outline'` and `'library'`
-- Gallery demo sample (Step Catalog)
+### What was built (7 commits)
 
-**Filed during design discussion:**
-- **platform#483** — Unified step runtime API with Java/TS parity. Key decisions:
-  - `registry.register()` is the API — `@StepPlugin` + CDI scanning is sugar
-  - APT demoted to optional validation — CDI runtime scanner replaces code generation
-  - Portability model: universal (protocol-based invoke) / java / ts / both
-  - Script portability = most restrictive step. Executor validates all-or-nothing.
-- **pages#506** — Unified step catalog with portability model and cross-runtime discovery (depends on platform#483)
+**Batch 0 — TS rename and ParameterType unification (front-loaded, independent of platform#483):**
+- Unified `ParameterType` — deleted `StepParameterType`, merged `LIST` → `ARRAY`, deleted converter functions (`stepParamToParameterType`, `parameterTypeToStepParam`), renamed utility functions (`parseStepParameterType` → `parseParameterType`, etc.)
+- Dropped `Step` prefix from all types/classes in `step/` module — 43 files, 20+ type/class renames (`StepDefinition` → `Definition`, `StepWalker` → `Walker`, `StepPluginRegistry` → `PluginRegistry`, etc.)
+- Dropped `step-` prefix from all filenames — 18 files renamed (`step-walker.ts` → `walker.ts`, etc.), all import paths updated with `.js` extensions
+- Component renamed: `<pages-step-catalog>` → `<pages-action-catalog>`, `PagesStepCatalog` → `PagesActionCatalog`
 
-**Next session:** `work start #506` — but front-load TS-only work (portability field, REST endpoint, catalog badges). Java integration waits for platform#483.
+**Batch 1 — Portability foundation (yaml-core):**
+- `Portability` type (`universal | java | ts | both`) and `validatePortability()` function in new `portability.ts`
+- `inferPortability()` derives from invoke binding kind: rest/graphql/process → universal, else → ts
+- `Definition` interface gains optional `portability` field
+- `DefinitionParser.parseAction()` reads explicit `portability:` from YAML or infers from invoke binding
+- `PluginRegistry.createSource()` defaults produced definitions to `portability: 'ts'`
 
-### Remaining epic #502 queue
-- **#498** — Scenario lifecycle state (M / Med, independent)
-- **#499** — Event-triggered scenario activation (M / Med, depends on #498)
-- **#500** — Scenario outcome tracking + CBR linkage (M / High, blocked on engine#1190)
+**Batch 2 — Catalog data sources (pages-aria):**
+- `CatalogDataSource` interface: `fetchSummaries()`, `fetchDetail()`, `priority`
+- `RegistryCatalogSource` — wraps `PluginRegistry` directly (standalone browser mode)
+- `RestCatalogSource` — fetches from TS REST endpoint
+- `GraphqlCatalogSource` — fetches from Java `@McpDomain` GraphQL endpoint
+- `CatalogListHandler` — serves `PluginRegistry` contents as JSON summaries/details
+- `CatalogActionSummary` and `CatalogActionDetail` interfaces gain `portability` field
+
+### What remains (Batches 3-4)
+
+**Batch 3 — Component evolution:**
+- Wire `CatalogDataSource[]` into `<pages-action-catalog>` component
+- Client-side multi-source merge with priority-based deduplication
+- Portability badge rendering (colored chips: universal=green, java=orange, ts=blue, both=purple)
+- Portability filter chips alongside existing source filter chips
+- Update `PagesScenarioController` to wire `RegistryCatalogSource`
+
+**Batch 4 — Pre-flight validation:**
+- Update `createCatalogExecuteHandler` with portability check before execution
+- Wire portability validation into the "Try it" panel
+- Show violations inline instead of executing incompatible actions
+
+### Resume command
+
+```
+work continue
+```
+
+Plan: `/Users/mdproctor/claude/public/casehub/pages/plans/2026-09-29-unified-catalog-portability.md`
+Spec: `/Users/mdproctor/claude/public/casehub/pages/specs/feat-506-unified-step-catalog/2026-09-29-unified-catalog-portability-design.md`
+
+### Test state
+
+598/598 yaml-core + pages-aria tests pass. No regressions.
 
 ### Known issues
-- Gallery sample fetch mock conflict: the gallery's `galleryFetch` wrapper runs after the sample's `window.fetch` override, preventing the mock from intercepting `/graphql` calls. The `customElements.whenDefined` fix and lowercase variable naming fix are committed. A gallery infrastructure fix is needed to let sample scripts override fetch reliably.
-- Pre-existing Java compilation errors in `backend/scenario-runtime` test classes (`SequencePartitionerTest`, `ScriptRegistryTest`, etc.) — unrelated to #501 work.
+- IntelliJ heap pressure: file rename operations via `ide_refactor_rename(targetType=file)` can time out when many projects are open. Cleared by dismissing any modal dialogs.
+- Gallery sample fetch mock conflict (pre-existing from #501)
+- Pre-existing Java compilation errors in `backend/scenario-runtime` test classes
 
 ### Cross-repo context
+- platform#483 landed — Java API contract is stable
 - Parent epic: casehubio/fsitrading#50 (Trading YAML Playbooks)
 - casehub-pages#502 is the local epic grouping scenario infrastructure issues
 
 ## References
 
-- `packages/yaml-core/src/step/` — StepCatalog, StepDefinition, StepPluginRegistry, invoke handlers
-- `packages/pages-aria/src/controller/step-catalog.ts` — catalog browser component
-- `packages/pages-aria/src/controller/scenario-controller.ts` — controller integration (catalog view mode)
-- `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler
-- `backend/scenario-runtime/src/main/java/.../StepCatalogService.java` — Java catalog service
-- `backend/mcp/src/main/java/.../StepCatalogResolver.java` — @McpDomain resolver
-- `platform/yaml-plugin-api/` — @StepPlugin annotation
-- `platform/yaml-plugin-processor/` — APT processor (to be demoted per platform#483)
-- `docs/specs/issue-501-step-catalog-browser/` — design spec and decisions
+- `packages/yaml-core/src/step/` — types.ts, portability.ts, definition-parser.ts, plugin-registry.ts, walker.ts, catalog.ts, index.ts
+- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog component
+- `packages/pages-aria/src/controller/catalog-data-source.ts` — CatalogDataSource + 3 implementations
+- `packages/pages-aria/src/server/catalog-list-handler.ts` — REST list handler
+- `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler (to be updated in Batch 4)
+- `packages/pages-aria/src/controller/scenario-controller.ts` — controller wiring (to be updated in Batch 3)
