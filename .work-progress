@@ -1,6 +1,6 @@
 loose_ends=done
 epic_hygiene_attempt=1
-last_yielded=branch_name
+last_yielded=load_context
 epic_hygiene=done
 wrap_sweep_config_attempt=1
 wrap_sweep_config=done
@@ -71,3 +71,9 @@ branch_name=done
 branch_name_produced=feat/506-unified-step-catalog
 flyway_scan=done
 create_branches_mechanical_attempt=2
+auto_resolve_transient=done
+lifecycle_continue=done
+health_check=done
+load_specs=done
+load_context_attempt=1
+load_context=done
