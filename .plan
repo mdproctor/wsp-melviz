@@ -13,9 +13,9 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#506 — Issue #506 ← active
-  - [ ] Batch 1: Foundation
-    - [ ] Task 1: Portability type and Definition field
-    - [ ] Task 2: Parser inference and registry defaults
+  - [x] Batch 1: Foundation
+    - [x] Task 1: Portability type and Definition field
+    - [x] Task 2: Parser inference and registry defaults
   - [ ] Batch 2: DataSources
     - [ ] Task 3: CatalogDataSource and RegistryCatalogSource
     - [ ] Task 4: REST catalog list handler
