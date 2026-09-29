@@ -16,7 +16,7 @@ Both are gallery examples, not runtime implementations. That's a deliberate choi
 
 ## Invoke bindings — six ways out
 
-The six binding types map to the `InvokeBinding` union in `step-types.ts`: REST, MCP, GraphQL, Script, Agent, and Process. Each gets a sub-example with a picker, YAML in the code editor, and a simulated execution trace with realistic responses. The REST mock returns `200 [{id:1, name:"Alice"}, ...]` for a GET and `201 {orderId:"ORD-4782"}` for a POST. The Agent mock simulates dispatching to `claude-sonnet-5` and getting back structured output. The point isn't fidelity — it's showing what the integration surface looks like when the real handlers arrive.
+The six binding types map to the `InvokeBinding` union in `types.ts`: REST, MCP, GraphQL, Script, Agent, and Process. Each gets a sub-example with a picker, YAML in the code editor, and a simulated execution trace with realistic responses. The REST mock returns `200 [{id:1, name:"Alice"}, ...]` for a GET and `201 {orderId:"ORD-4782"}` for a POST. The Agent mock simulates dispatching to `claude-sonnet-5` and getting back structured output. The point isn't fidelity — it's showing what the integration surface looks like when the real handlers arrive.
 
 The mock executor approach is simple: register plugins with `createStepRunner` that simulate what each binding type would do. The YAML in the editor shows the invoke syntax; the JavaScript steps array uses plugin equivalents. This is the same pattern the existing Step Workflows and Coordination Primitives examples use.
 
