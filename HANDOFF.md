@@ -4,9 +4,9 @@
 
 **Branch:** `feat/506-unified-step-catalog`
 **Issue:** #506 — unified step catalog — portability model and cross-runtime discovery
-**Status:** Batches 1-2 complete (4/6 tasks). Batches 3-4 remain.
+**Status:** All 6 tasks complete (Batches 1-4). Ready for work-end.
 
-### What was built (7 commits)
+### What was built (9 commits)
 
 **Batch 0 — TS rename and ParameterType unification (front-loaded, independent of platform#483):**
 - Unified `ParameterType` — deleted `StepParameterType`, merged `LIST` → `ARRAY`, deleted converter functions (`stepParamToParameterType`, `parameterTypeToStepParam`), renamed utility functions (`parseStepParameterType` → `parseParameterType`, etc.)
@@ -29,24 +29,25 @@
 - `CatalogListHandler` — serves `PluginRegistry` contents as JSON summaries/details
 - `CatalogActionSummary` and `CatalogActionDetail` interfaces gain `portability` field
 
-### What remains (Batches 3-4)
-
-**Batch 3 — Component evolution:**
-- Wire `CatalogDataSource[]` into `<pages-action-catalog>` component
-- Client-side multi-source merge with priority-based deduplication
+**Batch 3 — Component evolution (pages-aria):**
+- `sources` property on `PagesActionCatalog` accepts `CatalogDataSource[]`
+- Client-side multi-source merge with priority-based deduplication (lower priority wins)
 - Portability badge rendering (colored chips: universal=green, java=orange, ts=blue, both=purple)
-- Portability filter chips alongside existing source filter chips
-- Update `PagesScenarioController` to wire `RegistryCatalogSource`
+- Portability filter chips alongside existing source filter chips (AND logic with source filters)
+- Detail fetch uses source map when available, falls back to GraphQL path
+- `_sourceMap` tracks which CatalogDataSource provided each action
 
-**Batch 4 — Pre-flight validation:**
-- Update `createCatalogExecuteHandler` with portability check before execution
-- Wire portability validation into the "Try it" panel
-- Show violations inline instead of executing incompatible actions
+**Batch 4 — Pre-flight validation (pages-aria):**
+- `createCatalogExecuteHandler` gains `runtime` parameter with portability gate
+- Incompatible actions fail before reaching execute path with clear error message
+- `runtime` property on `PagesActionCatalog` component (default: `'ts'`)
+- Try It panel shows inline violation warning for incompatible actions
+- Execute button disabled when action portability doesn't match component runtime
 
 ### Resume command
 
 ```
-work continue
+work end
 ```
 
 Plan: `/Users/mdproctor/claude/public/casehub/pages/plans/2026-09-29-unified-catalog-portability.md`
@@ -54,7 +55,7 @@ Spec: `/Users/mdproctor/claude/public/casehub/pages/specs/feat-506-unified-step-
 
 ### Test state
 
-598/598 yaml-core + pages-aria tests pass. No regressions.
+632/632 yaml-core tests pass. 344/344 pages-aria tests pass. No regressions.
 
 ### Known issues
 - IntelliJ heap pressure: file rename operations via `ide_refactor_rename(targetType=file)` can time out when many projects are open. Cleared by dismissing any modal dialogs.
@@ -69,8 +70,8 @@ Spec: `/Users/mdproctor/claude/public/casehub/pages/specs/feat-506-unified-step-
 ## References
 
 - `packages/yaml-core/src/step/` — types.ts, portability.ts, definition-parser.ts, plugin-registry.ts, walker.ts, catalog.ts, index.ts
-- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog component
+- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog component (multi-source, badges, portability pre-check)
 - `packages/pages-aria/src/controller/catalog-data-source.ts` — CatalogDataSource + 3 implementations
 - `packages/pages-aria/src/server/catalog-list-handler.ts` — REST list handler
-- `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler (to be updated in Batch 4)
-- `packages/pages-aria/src/controller/scenario-controller.ts` — controller wiring (to be updated in Batch 3)
+- `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler with portability validation
+- `packages/pages-aria/src/controller/scenario-controller.ts` — controller wiring (unchanged — retains GraphQL path)
