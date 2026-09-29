@@ -2,7 +2,7 @@
 
 ## State
 branch: feat/506-unified-step-catalog
-state: active
+state: closing:review
 project-sha: 
 date: 2026-09-29
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo:
 design-section-hashes: 
 flyway-next-v: 
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#506 — Issue #506 ← active
   - [x] Batch 1: Foundation
