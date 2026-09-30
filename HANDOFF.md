@@ -1,77 +1,88 @@
 # HANDOFF — casehub-pages
 
-## Last Session (2026-09-29)
+## Last Session (2026-09-30)
 
-**Branch:** `feat/506-unified-step-catalog`
-**Issue:** #506 — unified step catalog — portability model and cross-runtime discovery
-**Status:** All 6 tasks complete (Batches 1-4). Ready for work-end.
+**Branch:** on main (two branches landed this session)
+**Next issue:** #507 — unify scenario execution with platform yaml-core declaration model
+**Status:** Both #506 and fix/gallery-catalog-rename landed. Ready to start #507.
 
-### What was built (9 commits)
+### What was done
 
-**Batch 0 — TS rename and ParameterType unification (front-loaded, independent of platform#483):**
-- Unified `ParameterType` — deleted `StepParameterType`, merged `LIST` → `ARRAY`, deleted converter functions (`stepParamToParameterType`, `parameterTypeToStepParam`), renamed utility functions (`parseStepParameterType` → `parseParameterType`, etc.)
-- Dropped `Step` prefix from all types/classes in `step/` module — 43 files, 20+ type/class renames (`StepDefinition` → `Definition`, `StepWalker` → `Walker`, `StepPluginRegistry` → `PluginRegistry`, etc.)
-- Dropped `step-` prefix from all filenames — 18 files renamed (`step-walker.ts` → `walker.ts`, etc.), all import paths updated with `.js` extensions
-- Component renamed: `<pages-step-catalog>` → `<pages-action-catalog>`, `PagesStepCatalog` → `PagesActionCatalog`
+**#506 work-end (feat/506-unified-step-catalog):**
+- Completed Batches 3-4 (multi-source catalog merge, portability badges/filters, pre-flight validation)
+- Full work-end: code review clean, 4-dimension audit clean, squashed 12→8 commits
+- Landed on main, #506 closed, 976/976 tests pass
 
-**Batch 1 — Portability foundation (yaml-core):**
-- `Portability` type (`universal | java | ts | both`) and `validatePortability()` function in new `portability.ts`
-- `inferPortability()` derives from invoke binding kind: rest/graphql/process → universal, else → ts
-- `Definition` interface gains optional `portability` field
-- `DefinitionParser.parseAction()` reads explicit `portability:` from YAML or infers from invoke binding
-- `PluginRegistry.createSource()` defaults produced definitions to `portability: 'ts'`
+**fix/gallery-catalog-rename (ceremony elimination):**
+- Gallery catalog sample: renamed `<pages-step-catalog>` → `<pages-action-catalog>`, added portability mock data
+- Webpack: fixed sideEffects field that was silently tree-shaking all customElements.define calls
+- Walker: `steps` and `do` now rejected with fail-fast error
+- Walker: select branches and match cases use inline sibling keys — no wrapper ceremony
+- Gallery: removed all `steps:` and `do:` ceremony from 7 sample files
+- Import schema: renamed `steps` → `actions` field across type, schema, expanders, tests
+- casehub-entry.ts: fixed remaining Step-prefixed type exports
 
-**Batch 2 — Catalog data sources (pages-aria):**
-- `CatalogDataSource` interface: `fetchSummaries()`, `fetchDetail()`, `priority`
-- `RegistryCatalogSource` — wraps `PluginRegistry` directly (standalone browser mode)
-- `RestCatalogSource` — fetches from TS REST endpoint
-- `GraphqlCatalogSource` — fetches from Java `@McpDomain` GraphQL endpoint
-- `CatalogListHandler` — serves `PluginRegistry` contents as JSON summaries/details
-- `CatalogActionSummary` and `CatalogActionDetail` interfaces gain `portability` field
+### Pending work across repos
 
-**Batch 3 — Component evolution (pages-aria):**
-- `sources` property on `PagesActionCatalog` accepts `CatalogDataSource[]`
-- Client-side multi-source merge with priority-based deduplication (lower priority wins)
-- Portability badge rendering (colored chips: universal=green, java=orange, ts=blue, both=purple)
-- Portability filter chips alongside existing source filter chips (AND logic with source filters)
-- Detail fetch uses source map when available, falls back to GraphQL path
-- `_sourceMap` tracks which CatalogDataSource provided each action
+**casehubio/casehub-pages#508 — comprehensive unification drift epic:**
+- Scenario document `steps:` (22 occurrences in 5 gallery files) — blocked on front matter format
+- Front matter format: YAML `---` separator for scenario metadata/actions (design decided, not implemented)
+- Spec docs: 2 historical files with old names (annotate or update)
 
-**Batch 4 — Pre-flight validation (pages-aria):**
-- `createCatalogExecuteHandler` gains `runtime` parameter with portability gate
-- Incompatible actions fail before reaching execute path with clear error message
-- `runtime` property on `PagesActionCatalog` component (default: `'ts'`)
-- Try It panel shows inline violation warning for incompatible actions
-- Execute button disabled when action portability doesn't match component runtime
+**casehubio/platform#496 — Java StepWalker alignment (BLOCKED — platform busy):**
+- Inline action resolution in `resolveMatchCases()` and `resolveSelectBranches()` (strip config keys, resolve rest)
+- Reject both `steps` and `do` as keys
+- Type rename: `StepWalker` → `Walker`, `StepDefinitionParser` → `DefinitionParser`, `YamlStepDefinitionSource` → `YamlDefinitionSource`
+- Note: `work.progress.StepDefinition` is a different domain — assess separately
+
+**casehubio/casehub-pages#507 — next up:**
+- Unify `ScenarioStep`/`ScenarioParser`/`ScenarioExecutor` with yaml-core's `Declaration`/`Walker`/`StructuralEvaluator`
+- Pages scenarios gain control flow (if/match/forEach/loop/parallel/block) for free
+- Only legitimate runtime differences: Aria binding (browser-only), MCP binding (Java-only)
+
+### Design decisions made this session
+
+- `then:`/`else:`/`catch:`/`finally:`/`cases:` are semantic branch labels — they stay
+- `block:`/`parallel:`/`try:` take bare arrays — no wrapper needed
+- `wait:`/`subscribe:`/`pattern:`/`when:` — actions are inline sibling keys; multiple actions use `block:`
+- Standalone action lists are bare arrays — no top-level wrapper
+- Scenario documents can use YAML front matter (`---`) to separate metadata from actions (not yet implemented)
+- Scenario vs playbook: same format and runtime, different intent (demo vs production workflow)
+- YAML mappings can have multiple keys — a `wait:` branch's child action is a sibling key, not nested under a wrapper
 
 ### Resume command
 
 ```
-work end
+work start #507
 ```
-
-Plan: `/Users/mdproctor/claude/public/casehub/pages/plans/2026-09-29-unified-catalog-portability.md`
-Spec: `/Users/mdproctor/claude/public/casehub/pages/specs/feat-506-unified-step-catalog/2026-09-29-unified-catalog-portability-design.md`
 
 ### Test state
 
-632/632 yaml-core tests pass. 344/344 pages-aria tests pass. No regressions.
+639/639 yaml-core tests pass. 344/344 pages-aria tests pass.
 
 ### Known issues
-- IntelliJ heap pressure: file rename operations via `ide_refactor_rename(targetType=file)` can time out when many projects are open. Cleared by dismissing any modal dialogs.
+- IntelliJ heap pressure: file rename operations can time out with many projects open
 - Gallery sample fetch mock conflict (pre-existing from #501)
 - Pre-existing Java compilation errors in `backend/scenario-runtime` test classes
+- Platform #496 blocked until platform repo is free
 
 ### Cross-repo context
 - platform#483 landed — Java API contract is stable
+- platform#496 filed — Java Walker alignment (blocked, waiting for platform availability)
+- casehub-pages#508 — unification drift tracking epic
 - Parent epic: casehubio/fsitrading#50 (Trading YAML Playbooks)
-- casehub-pages#502 is the local epic grouping scenario infrastructure issues
+- casehub-pages#502 — local epic grouping scenario infrastructure issues
+
+### Garden entries captured
+- `GE-20260930-1cdc32` — webpack sideEffects silently kills customElements.define
+- `GE-20260930-b8ebec` — YAML sibling keys eliminate wrapper ceremony
 
 ## References
 
-- `packages/yaml-core/src/step/` — types.ts, portability.ts, definition-parser.ts, plugin-registry.ts, walker.ts, catalog.ts, index.ts
-- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog component (multi-source, badges, portability pre-check)
+- `packages/yaml-core/src/step/walker.ts` — Walker with inline action resolution, REMOVED_KEYS fail-fast
+- `packages/yaml-core/src/step/` — types.ts, portability.ts, definition-parser.ts, plugin-registry.ts, catalog.ts
+- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog (multi-source, badges, portability pre-check)
 - `packages/pages-aria/src/controller/catalog-data-source.ts` — CatalogDataSource + 3 implementations
-- `packages/pages-aria/src/server/catalog-list-handler.ts` — REST list handler
 - `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler with portability validation
-- `packages/pages-aria/src/controller/scenario-controller.ts` — controller wiring (unchanged — retains GraphQL path)
+- `examples/samples/Scenarios/` — gallery samples (ceremony removed)
+- `examples/src/casehub-entry.ts` — gallery entry point (all types renamed)
