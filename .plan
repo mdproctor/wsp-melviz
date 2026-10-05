@@ -1,8 +1,8 @@
 # Work Plan — main
 
 ## State
-branch: main
-state: scaffolded
+branch: issue-524-fix-unmerged-rescue-content
+state: closing:stamped
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -11,5 +11,6 @@ design-repo:
 design-section-hashes: 
 flyway-next-v: 
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#524 — Issue #524 ← active
