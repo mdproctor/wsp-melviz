@@ -4,7 +4,7 @@
 
 **Branch:** `issue-530-milkdown-editor`
 **Issue:** #530 — Milkdown rich markdown editor with MCP tools, overlays, and edit sessions
-**Status:** Batches 1-4 of 5 complete. Resume at Batch 5.
+**Status:** All 5 batches complete. Ready for work-end.
 
 ### What was done
 
@@ -13,34 +13,28 @@
 - `pages-markdown-editor`: PagesMarkdownEditor LIT/Milkdown component, MarkdownEditorBridge, EditorToolbar, AnnotationRenderer
 - CodeEditorBridge refactored to extend EditableTextBridge
 
-**This session — Batch 4 (Dual Mode + MCP):**
-- Dual-mode toggle: `setMode('wysiwyg'|'source'|'split')` with dynamic import of `pages-code-editor`, EDITABLE_TEXT bridge swap, graceful fallback on import failure with `mode-changed` event
-- Split mode: side-by-side WYSIWYG + source with 150ms debounced bidirectional edit sync, double-rAF guard against infinite loops, draggable divider CSS
-- Scroll sync engine: `buildScrollAnchors()` pairs headings between views, `interpolateScroll()` provides position-aware linear interpolation between anchors
-- MCP tool adapter: `McpToolAdapter` maps 16 editor tool calls to `EditableText` methods — content (get/set/line), search (find_text, find_heading with ambiguity reporting), editing (replace_range, insert_text), cursor, decorations (highlight, annotate, clear_overlays), sessions (begin/end with contention error handling)
-- `MCP_TOOL_DEFINITIONS`: JSON Schema definitions for all 16 tools
-- Protected `_importSourceEditor()` method for testable dynamic import
+**Prior session — Batch 4 (Dual Mode + MCP):**
+- Dual-mode toggle, split mode with scroll sync, MCP tool adapter (16 tools)
 
-### Resume command
-
-```
-work continue
-```
-
-Next: Batch 5 — document-diff extraction (PagesDocumentDiff from blocks-ui, DrafthouseDocumentDiff subclass).
+**This session — Batch 5 (document-diff extraction):**
+- `pages-document-diff`: New package — PagesDocumentDiff base class (1063 lines) extracted from blocks-ui with generic LCS diff, word highlights, canvas minimap, scroll sync, split/unified views, heading navigation, panel management
+- blocks-ui: DocumentDiff reduced to 162-line subclass (DrafthouseDocumentDiff) keeping thread/timeline/selection domain logic. Branch: `issue-530-document-diff-extraction` in blocks-ui repo.
 
 ### Test state
 
-204 tests pass (48 editor-core + 84 code-editor + 72 markdown-editor). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
+215 tests pass (48 editor-core + 84 code-editor + 72 markdown-editor + 11 document-diff). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
 
 ### Commits this session
 
-- `60968195` feat(#530): dual-mode toggle with dynamic import and bridge swap
-- `21c52149` feat(#530): split mode with scroll sync and debounced edit synchronization
-- `cd54430a` feat(#530): MCP tool adapter mapping 16 editor tools to EditableText interface
+- `80accd36` feat(#530): extract PagesDocumentDiff from blocks-ui with generic diff infrastructure
+
+### Cross-repo changes
+
+- blocks-ui branch `issue-530-document-diff-extraction` commit `1b8f92b` — DocumentDiff extends PagesDocumentDiff. Depends on pages-document-diff being published.
 
 ## References
 
 - `packages/pages-editor-core/` — shared interface + compliance suite + session rollback
 - `packages/pages-markdown-editor/` — Milkdown editor + toolbar + overlay
+- `packages/pages-document-diff/` — generic diff infrastructure (extracted from blocks-ui)
 - `packages/pages-code-editor/src/code-editor-bridge.ts` — refactored bridge
