@@ -13,3 +13,22 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#530 — Issue #530 ← active
+  - [x] Batch 1: Foundation
+    - [x] Task 1: Scaffold pages-editor-core with EditableText interface
+    - [x] Task 2: EditableTextBridge abstract base class
+    - [x] Task 3: Refactor CodeEditorBridge to extend EditableTextBridge
+  - [ ] Batch 2: Milkdown Core
+    - [ ] Task 4: Scaffold pages-markdown-editor and mount Milkdown
+    - [ ] Task 5: MarkdownEditorBridge with position index
+    - [ ] Task 6: Custom Lit toolbar
+  - [ ] Batch 3: Overlays and Sessions
+    - [ ] Task 7: Highlight system for both bridges
+    - [ ] Task 8: Floating annotations overlay
+    - [ ] Task 9: Edit sessions with lock and rollback
+  - [ ] Batch 4: Dual Mode and MCP
+    - [ ] Task 10: Dual-mode toggle WYSIWYG to source
+    - [ ] Task 11: Split mode with scroll sync
+    - [ ] Task 12: MCP tool adapter
+  - [ ] Batch 5: Document Diff
+    - [ ] Task 13: Extract PagesDocumentDiff to pages
+    - [ ] Task 14: DrafthouseDocumentDiff subclass
