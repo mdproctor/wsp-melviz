@@ -1,88 +1,42 @@
 # HANDOFF — casehub-pages
 
-## Last Session (2026-09-30)
+## Last Session (2026-10-07)
 
-**Branch:** on main (two branches landed this session)
-**Next issue:** #507 — unify scenario execution with platform yaml-core declaration model
-**Status:** Both #506 and fix/gallery-catalog-rename landed. Ready to start #507.
+**Branch:** `issue-530-milkdown-editor`
+**Issue:** #530 — Milkdown rich markdown editor with MCP tools, overlays, and edit sessions
+**Status:** Batch 1 of 5 complete. Design and foundation shipped. Resume at Batch 2.
 
 ### What was done
 
-**#506 work-end (feat/506-unified-step-catalog):**
-- Completed Batches 3-4 (multi-source catalog merge, portability badges/filters, pre-flight validation)
-- Full work-end: code review clean, 4-dimension audit clean, squashed 12→8 commits
-- Landed on main, #506 closed, 976/976 tests pass
+**Design phase:** Brainstormed through 10 decisions (D0-D9). Both decision review (standard, 3 rounds) and spec review (standard, 3 rounds) completed. Decision review caught a factual error (`@milkdown/lit` doesn't exist) and corrected the engine selection rationale. Spec review added position index caching, undo/redo behavior, session contention, and import failure fallback.
 
-**fix/gallery-catalog-rename (ceremony elimination):**
-- Gallery catalog sample: renamed `<pages-step-catalog>` → `<pages-action-catalog>`, added portability mock data
-- Webpack: fixed sideEffects field that was silently tree-shaking all customElements.define calls
-- Walker: `steps` and `do` now rejected with fail-fast error
-- Walker: select branches and match cases use inline sibling keys — no wrapper ceremony
-- Gallery: removed all `steps:` and `do:` ceremony from 7 sample files
-- Import schema: renamed `steps` → `actions` field across type, schema, expanders, tests
-- casehub-entry.ts: fixed remaining Step-prefixed type exports
-
-### Pending work across repos
-
-**casehubio/casehub-pages#508 — comprehensive unification drift epic:**
-- Scenario document `steps:` (22 occurrences in 5 gallery files) — blocked on front matter format
-- Front matter format: YAML `---` separator for scenario metadata/actions (design decided, not implemented)
-- Spec docs: 2 historical files with old names (annotate or update)
-
-**casehubio/platform#496 — Java StepWalker alignment (BLOCKED — platform busy):**
-- Inline action resolution in `resolveMatchCases()` and `resolveSelectBranches()` (strip config keys, resolve rest)
-- Reject both `steps` and `do` as keys
-- Type rename: `StepWalker` → `Walker`, `StepDefinitionParser` → `DefinitionParser`, `YamlStepDefinitionSource` → `YamlDefinitionSource`
-- Note: `work.progress.StepDefinition` is a different domain — assess separately
-
-**casehubio/casehub-pages#507 — next up:**
-- Unify `ScenarioStep`/`ScenarioParser`/`ScenarioExecutor` with yaml-core's `Declaration`/`Walker`/`StructuralEvaluator`
-- Pages scenarios gain control flow (if/match/forEach/loop/parallel/block) for free
-- Only legitimate runtime differences: Aria binding (browser-only), MCP binding (Java-only)
-
-### Design decisions made this session
-
-- `then:`/`else:`/`catch:`/`finally:`/`cases:` are semantic branch labels — they stay
-- `block:`/`parallel:`/`try:` take bare arrays — no wrapper needed
-- `wait:`/`subscribe:`/`pattern:`/`when:` — actions are inline sibling keys; multiple actions use `block:`
-- Standalone action lists are bare arrays — no top-level wrapper
-- Scenario documents can use YAML front matter (`---`) to separate metadata from actions (not yet implemented)
-- Scenario vs playbook: same format and runtime, different intent (demo vs production workflow)
-- YAML mappings can have multiple keys — a `wait:` branch's child action is a sibling key, not nested under a wrapper
+**Batch 1 — Foundation:**
+- `pages-editor-core` package: `EditableText` interface, `EditableTextBridge` abstract base, discovery functions, `EditSessionActiveError`
+- `CodeEditorBridge` refactored to extend `EditableTextBridge` with 0-based positions, ID-tracked highlights, `getLine()`, `findText()`, `removeHighlight()`
+- `pages-aria` re-exports from core with `ScenarioEditableText` as deprecated alias
+- Symbol changed from `scenario-editable-text` to `editable-text`
 
 ### Resume command
 
 ```
-work start #507
+work continue
 ```
+
+Next: Batch 2 — scaffold `pages-markdown-editor`, mount Milkdown in LIT, implement `MarkdownEditorBridge`, build custom Lit toolbar.
 
 ### Test state
 
-639/639 yaml-core tests pass. 344/344 pages-aria tests pass.
+89 tests pass (19 core + 70 code-editor). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
 
-### Known issues
-- IntelliJ heap pressure: file rename operations can time out with many projects open
-- Gallery sample fetch mock conflict (pre-existing from #501)
-- Pre-existing Java compilation errors in `backend/scenario-runtime` test classes
-- Platform #496 blocked until platform repo is free
+### Artifacts
 
-### Cross-repo context
-- platform#483 landed — Java API contract is stable
-- platform#496 filed — Java Walker alignment (blocked, waiting for platform availability)
-- casehub-pages#508 — unification drift tracking epic
-- Parent epic: casehubio/fsitrading#50 (Trading YAML Playbooks)
-- casehub-pages#502 — local epic grouping scenario infrastructure issues
-
-### Garden entries captured
-- `GE-20260930-1cdc32` — webpack sideEffects silently kills customElements.define
-- `GE-20260930-b8ebec` — YAML sibling keys eliminate wrapper ceremony
+- Design spec: `specs/milkdown-editor/2026-10-07-milkdown-editor-design.md`
+- Decisions: `specs/milkdown-editor/decisions.md` (D0-D9)
+- Implementation plan: `plans/2026-10-07-milkdown-editor.md` (5 batches, 14 tasks)
+- Journal: `JOURNAL.md`
 
 ## References
 
-- `packages/yaml-core/src/step/walker.ts` — Walker with inline action resolution, REMOVED_KEYS fail-fast
-- `packages/yaml-core/src/step/` — types.ts, portability.ts, definition-parser.ts, plugin-registry.ts, catalog.ts
-- `packages/pages-aria/src/controller/step-catalog.ts` — PagesActionCatalog (multi-source, badges, portability pre-check)
-- `packages/pages-aria/src/controller/catalog-data-source.ts` — CatalogDataSource + 3 implementations
-- `packages/pages-aria/src/server/catalog-execute-handler.ts` — execution handler with portability validation
-- `examples/samples/Scenarios/` — gallery samples (ceremony removed)
-- `examples/src/casehub-entry.ts` — gallery entry point (all types renamed)
+- `packages/pages-editor-core/` — new shared interface package
+- `packages/pages-code-editor/src/code-editor-bridge.ts` — refactored bridge
+- `packages/pages-aria/src/executor/editable-text.ts` — re-exports from core
