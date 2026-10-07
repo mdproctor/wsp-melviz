@@ -4,15 +4,16 @@
 
 **Choice:** Milkdown as the WYSIWYG markdown engine
 **Alternatives:**
-- Tiptap — most widely adopted ProseMirror wrapper (MIT since v2). Large plugin ecosystem, first-party collaboration support. React-centric tooling and ecosystem; Lit integration requires third-party adapters. npm dominance (~500K weekly) driven by React projects — not an advantage for a Lit-based platform.
+- Tiptap — most widely adopted ProseMirror wrapper (MIT since v2). Large plugin ecosystem (~500K weekly npm downloads), first-party collaboration support. Has React, Vue, and vanilla JS bindings — no Lit binding (same as Milkdown). Ecosystem advantage is real but driven by React projects. Tiptap is a general-purpose rich text editor that CAN handle markdown but isn't designed around it — markdown support requires extension configuration.
 - BlockNote — purpose-built Notion-like block editor with built-in slash commands and drag handles. Too opinionated for our needs: we require deep extensibility for scenario engine integration, MCP tool overlays, and custom annotation layers.
 - ProseMirror directly — maximum control, no framework overhead. But we'd reimplement markdown↔ProseMirror conversion, plugin lifecycle, and toolbar infrastructure that Milkdown provides. "Thin wrapper" means thin over Milkdown's infrastructure, not thin over raw ProseMirror.
-- Lexical (Meta) — lighter weight, framework-agnostic. Younger ecosystem with fewer markdown-oriented plugins. No first-party Lit integration. ProseMirror's markdown ecosystem is substantially more mature.
-**Rationale:** Milkdown was selected as a user requirement for this spec. The rationale is sound: Milkdown is ProseMirror-based (proven editing model), provides headless architecture with official `@milkdown/lit` binding (matching our Lit-based UI primitives in pages-primitives), handles markdown↔ProseMirror conversion via remark/mdast, and offers a composable plugin system. Its smaller community (vs Tiptap) is offset by direct ProseMirror access when Milkdown's abstractions don't reach — we're not locked in.
-**Trade-offs:** Smaller community than Tiptap means less ecosystem support for edge cases. Mitigated by ProseMirror escape hatch.
-**Sources:** milkdown.dev, user requirement for this spec
+- Lexical (Meta) — lighter weight, framework-agnostic. Younger ecosystem with fewer markdown-oriented plugins. ProseMirror's markdown ecosystem is substantially more mature.
+**Rationale:** Milkdown was selected as a user requirement for this spec. The rationale is sound: Milkdown is **markdown-first** — its ProseMirror schema is derived from the markdown spec via remark/mdast, meaning the editor's document model IS the markdown structure. For a markdown editor with MCP tool integration, this architectural alignment is the decisive factor. Milkdown's `@milkdown/kit` package provides a framework-agnostic core that can be mounted to any DOM element (including inside a Lit component's shadow DOM) without requiring React, Vue, or any framework binding. Neither Milkdown nor Tiptap offers a Lit binding — both require custom integration with a Lit component. With equal integration effort, Milkdown's markdown-first design wins for a markdown editor. Its smaller community (vs Tiptap) is offset by direct ProseMirror access when Milkdown's abstractions don't reach — we're not locked in.
+**Framework integration note:** Milkdown's official framework integrations are `@milkdown/react`, `@milkdown/vue`, and `@milkdown/integrations/solidjs`. There is no `@milkdown/lit` package. Milkdown's UI component layer (`@milkdown/components`) and pre-configured editor (`@milkdown/crepe`) use Vue 3 internally. Our integration uses `@milkdown/kit` (framework-agnostic core) directly, with a custom Lit toolbar — see D6.
+**Trade-offs:** Smaller community than Tiptap means less ecosystem support for edge cases. Mitigated by ProseMirror escape hatch. Custom Lit toolbar required (no pre-built Lit-compatible toolbar from either Milkdown or Tiptap).
+**Sources:** milkdown.dev, npmjs.com/@milkdown/kit, user requirement for this spec
 **Exploration:** user-requirement (surfaced by R1-02 review)
-**Status:** captured
+**Status:** revised (R2-01: corrected factual error — removed non-existent @milkdown/lit reference, revised rationale from framework binding to markdown-first design as key differentiator)
 
 ## D1: Component Architecture
 
@@ -86,17 +87,19 @@
 
 ## D6: Toolbar and Formatting Icons
 
-**Choice:** Full Milkdown toolbar with all formatting icons, rendered via Milkdown's headless plugin system with Lit integration
+**Choice:** Custom Lit toolbar dispatching Milkdown commands via `@milkdown/kit`
 **Alternatives:**
-- Wrap React toolbar in Lit — adds React as a runtime dependency in pages component packages, which currently have no React dependency (React is only in `graph-renderer` for React Flow).
-- Rewrite toolbar in Lit from scratch — significant effort, must track Milkdown upstream changes.
-- Use ProseMirror's `prosemirror-menu` directly — bypasses Milkdown's toolbar, simpler Lit integration but loses Milkdown plugin coordination.
-**Rationale:** Milkdown's architecture is headless — the core editor and plugins are framework-agnostic, with framework-specific bindings (`@milkdown/lit`, `@milkdown/react`, etc.) handling rendering. The toolbar plugin creates commands and keybindings; the UI rendering is handled by the framework binding. With `@milkdown/lit`, toolbar buttons are rendered as Lit-managed DOM elements that can be styled with pages design tokens. No React dependency needed. The LIT wrapper renders the complete toolbar: bold, italic, headings, lists, code blocks, links, tables, math (KaTeX), diagrams (Mermaid), task lists, strikethrough, images.
+- Use `@milkdown/crepe` (pre-built toolbar with Vue 3 internally) — batteries-included, minimal setup. But `@milkdown/crepe` bundles Vue 3 as an internal dependency (~30–40KB gz additional). Adding Vue as a third framework (alongside Lit and React/React Flow) increases hidden complexity. The pre-built Vue toolbar cannot be styled with pages design tokens without overriding Vue component internals.
+- Wrap `@milkdown/components` Vue toolbar in Lit — `@milkdown/components` is Vue 3-based. This requires Vue as a runtime dependency and creates an awkward Vue-inside-Lit layering. Same design token integration problem as Crepe.
+- Use ProseMirror's `prosemirror-menu` directly — bypasses Milkdown's command system, simpler Lit integration but loses Milkdown plugin coordination (plugin commands are registered with Milkdown's context, not ProseMirror's menu directly).
+**Rationale:** Milkdown's core (`@milkdown/kit`) is framework-agnostic — it exposes ProseMirror commands for every formatting action (`toggleBoldCommand`, `wrapInHeadingCommand`, `insertTableCommand`, etc.) through its plugin context. The editor view mounts to any DOM element. A custom Lit toolbar builds on this foundation: each toolbar button is a Lit component styled with pages design tokens that calls the corresponding Milkdown command via `ctx.get(commandsCtx).call(commandName)`. This approach gives native design token integration (toolbar buttons are pages Lit components), zero framework overhead (no Vue/React runtime), and full control over toolbar layout and interaction patterns. The toolbar renders: bold, italic, headings, lists, code blocks, links, tables, math (KaTeX), diagrams (Mermaid), task lists, strikethrough, images.
+**Implementation effort:** Building the Lit toolbar requires creating ~15–20 button components and a toolbar container. Each button is a thin wrapper: icon + click handler that dispatches a Milkdown command. The commands already exist in Milkdown's plugin system — we're building the UI, not the logic. Comparable effort to other pages-ui-components (badge, button, checkbox, etc.).
+**Fallback:** If custom toolbar proves too costly, `@milkdown/crepe` can be used as a self-contained editor with Vue 3 bundled internally. Crepe works with vanilla JS (`new Crepe({ root: element })`), so it mounts inside Lit components without a framework binding. The trade-off is ~30–40KB additional gzipped weight and reduced design token control.
 **Lazy loading:** KaTeX (~130KB gz) and Mermaid (~400KB gz) must NOT be eagerly loaded. They are loaded on demand — KaTeX when content contains `$$` or `$` math delimiters, Mermaid when content contains ` ```mermaid ` fenced code blocks. Toolbar buttons for math/diagram trigger the respective lazy import before inserting the block.
-**Trade-offs:** Dependency on Milkdown's framework binding quality. If `@milkdown/lit` proves insufficient, fallback is option 3 (prosemirror-menu).
-**Sources:** milkdown.dev/playground, @milkdown/lit documentation
+**Trade-offs:** More upfront implementation work than using Crepe's pre-built toolbar. Offset by native design token integration, zero hidden framework dependencies, and full toolbar customization for MCP tool integration (e.g. "AI editing" indicator from D3).
+**Sources:** milkdown.dev, npmjs.com/@milkdown/kit, npmjs.com/@milkdown/crepe
 **Exploration:** quick
-**Status:** revised (R1-12: addressed Lit integration approach via headless architecture and @milkdown/lit binding, added lazy loading strategy for KaTeX/Mermaid, added toolbar alternatives)
+**Status:** revised (R1-12: added lazy loading strategy for KaTeX/Mermaid; R2-01: corrected factual error — removed non-existent @milkdown/lit, replaced with custom Lit toolbar + @milkdown/kit commands, documented @milkdown/crepe as fallback)
 
 ## D7: Extract generic diff infrastructure from document-diff
 
