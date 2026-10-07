@@ -4,6 +4,8 @@
 
 Add a rich markdown editor to the CaseHub Pages platform, powered by Milkdown (ProseMirror-based, markdown-first). The editor serves dual purposes: **content authoring** within pages, and **LLM conversation rendering/editing** where an LLM writes markdown and a human reads/edits it.
 
+**Tracking:** GitHub issues must be created before implementation begins — an epic for the overall milkdown editor work, with child issues for each package (`pages-editor-core`, `pages-markdown-editor`, `pages-document-diff`), the refactoring work, and ARC42STORIES.MD chapter update. The prior code-editor spec (issue #372) and scenario tutorials spec (issue #443) established the `ScenarioEditableText` SPI and `CodeEditorBridge` pattern that this spec evolves.
+
 The design introduces three new packages and refactors two existing ones:
 
 | Package | Role | Status |
@@ -23,16 +25,17 @@ pages-editor-core
 ├── EditableText interface
 ├── EditableTextBridge (abstract base)
 ├── MCP tool adapter
-└── (future: scroll sync, overlay renderer, split view, edit sessions)
+├── Overlay renderer (highlight + annotation lifecycle)
+└── Edit session management (lock, snapshot, rollback)
 
 pages-code-editor ──depends-on──> pages-editor-core
 ├── PagesCodeEditor (LIT component)
 └── CodeEditorBridge extends EditableTextBridge
 
-pages-markdown-editor ──depends-on──> pages-editor-core, pages-code-editor
+pages-markdown-editor ──depends-on──> pages-editor-core
 ├── PagesMarkdownEditor (LIT component)
 ├── MarkdownEditorBridge extends EditableTextBridge
-└── Dual-mode toggle (WYSIWYG ↔ source via pages-code-editor)
+└── Dual-mode toggle (WYSIWYG ↔ source via dynamic import of pages-code-editor)
 
 pages-document-diff ──depends-on──> pages-editor-core
 ├── PagesDocumentDiff (LIT component, generic)
@@ -94,8 +97,12 @@ export interface EditSession {
 export interface EditableText {
   // Content
   getText(): string;
+  getLine(line: number): string;
   getLineCount(): number;
   setContent(text: string): void;
+
+  // Search
+  findText(query: string): Position[];
 
   // Editing
   insertText(text: string): void;
@@ -163,6 +170,12 @@ Engine-specific decoration rendering (CodeMirror StateEffect/StateField vs Prose
 
 Maps MCP tool calls to `EditableText` methods. Provides the MCP tool definitions and handles ambiguity reporting for semantic helpers.
 
+**Relationship to command-executor:** The MCP tool adapter and the scenario command-executor (`command-executor.ts`) are two separate entry points to the same `EditableText` interface, serving different audiences:
+- **Command-executor:** dispatches pre-authored scenario steps via the `aria` delivery channel. Supports progressive typing animation, spotlight integration, and speed control. Used for tutorial/demo playback.
+- **MCP tool adapter:** direct, immediate LLM agent interaction. No animation — all operations execute instantly. Used for interactive editing sessions.
+
+Both call through `EditableText`. They should NOT be consolidated — their behavioral requirements differ fundamentally (animated vs. instant). Shared logic (position validation, error formatting) lives in `EditableTextBridge`.
+
 **Core tools (positional):**
 
 | Tool | EditableText method | Returns |
@@ -183,11 +196,13 @@ Maps MCP tool calls to `EditableText` methods. Provides the MCP tool definitions
 
 **Resolution helpers (semantic → positional):**
 
-| Tool | Returns | On ambiguity |
-|------|---------|-------------|
-| `editor_find_text` | `{ matches: Position[] }` | Multiple matches returned; LLM picks |
-| `editor_find_heading` | `{ position: Position, endPosition: Position }` | Reports "no match" or "multiple: [list]" |
-| `editor_get_line` | `{ text: string }` at line N | Out-of-range error |
+| Tool | EditableText method | Returns | On ambiguity |
+|------|-------------------|---------|-------------|
+| `editor_find_text` | `findText(query)` | `{ matches: Position[] }` | Multiple matches returned; LLM picks |
+| `editor_find_heading` | _(adapter utility)_ | `{ position, endPosition }` | Reports "no match" or "multiple: [list]" |
+| `editor_get_line` | `getLine(line)` | `{ text: string }` at line N | Out-of-range error |
+
+`editor_find_text` and `editor_get_line` map directly to `EditableText` methods — each engine provides an efficient implementation (CodeMirror: built-in search/line access; ProseMirror: document tree walk, no serialization needed). `editor_find_heading` is an adapter-level utility that calls `getText()` and parses heading structure — heading semantics are markdown-level, not a core text operation.
 
 ## 2. pages-markdown-editor
 
@@ -220,17 +235,33 @@ Wraps Milkdown using `@milkdown/kit` (framework-agnostic core). Mounts ProseMirr
 **Public API:**
 
 - `get editorView()` — underlying ProseMirror EditorView (WYSIWYG) or CodeMirror EditorView (source)
-- `applyChangesSilently(changes)` — dispatch changes without triggering `input` event
+- `applyChangesSilently(tr: Transaction)` — dispatch a ProseMirror `Transaction` without triggering `input` event. In source mode, the method serializes the transaction's effect to a CodeMirror `ChangeSpec` and applies it to the CodeMirror view. The type is `Transaction` (ProseMirror), not `ChangeSpec` (CodeMirror) — ProseMirror is the canonical editor engine; source mode is a secondary view.
 
 ### MarkdownEditorBridge
 
 Extends `EditableTextBridge`. Translates between `EditableText`'s line/column positions and ProseMirror's internal offset model.
 
+#### Position Mapping — Cached Position Index
+
+The bridge maintains a **bidirectional position index** between markdown line/col coordinates and ProseMirror document offsets. This avoids full serialization on every position operation.
+
+**Index construction:** When Milkdown parses markdown into a ProseMirror document (on initial load and on source→WYSIWYG toggle), the parser emits source-position metadata via remark's `sourcePositions` plugin. The bridge captures this into a sorted array mapping `{line, col}` → `docOffset` for each block-level node boundary.
+
+**Index update:** On each ProseMirror transaction, the bridge applies ProseMirror's `Mapping` to shift all cached offsets. Block-level structural edits (adding/removing headings, splitting paragraphs) trigger a local re-index of the affected region only — not a full document re-serialization.
+
+**Lookup:**
+- `toOffset(pos: Position): number` — binary search the cached index for the nearest block boundary at or before `pos.line`, then walk ProseMirror nodes within that block to resolve `pos.col` to a precise doc offset.
+- `toPosition(offset: number): Position` — reverse binary search: find the block boundary, compute line/col from the node's source position metadata.
+
+**Fidelity constraints:** For inline content within simple paragraphs, headings, and list items, the mapping is exact. For complex structures (tables, deeply nested lists), the mapping resolves to the nearest valid position within the containing cell/item. The bridge logs a warning when a position falls in an ambiguous region. MCP tool operations on ambiguous positions return an error with the nearest valid alternatives.
+
+**Key distinction:** "Approximate" cursor preservation during WYSIWYG↔source toggle is a UX convenience (best-effort cursor placement after a structural re-parse). MCP tool position operations use the cached index and are precise — an LLM edit will land at the correct position or the tool returns an error.
+
 Key implementation details:
-- `toOffset(pos: Position): number` — serializes ProseMirror doc to markdown, converts line/col to character offset, maps back to ProseMirror doc offset via `remark`
-- `toPosition(offset: number): Position` — reverse mapping
 - `highlight()` — creates a ProseMirror `Decoration.inline` via a plugin's DecorationSet
 - `addAnnotation()` — creates a positioned DOM element in the overlay layer, repositioned on scroll/resize via `requestAnimationFrame`
+- `findText(query)` — walks ProseMirror document tree node-by-node, matching text content without serialization
+- `getLine(line)` — uses the position index to locate the block at the given line, extracts text from ProseMirror nodes
 
 ### Toolbar
 
@@ -257,23 +288,39 @@ Custom Lit toolbar using `@milkdown/kit` commands:
 
 Each button: `ctx.get(commandsCtx).call(toggleBoldCommand.key)` etc.
 
+**Keyboard shortcuts:** Milkdown's `@milkdown/kit` provides standard ProseMirror keybindings. The editor uses these defaults:
+
+| Shortcut | Action |
+|----------|--------|
+| `Mod+B` | Toggle bold |
+| `Mod+I` | Toggle italic |
+| `Mod+Shift+X` | Toggle strikethrough |
+| `Mod+E` | Toggle inline code |
+| `Mod+Shift+7` | Toggle ordered list |
+| `Mod+Shift+8` | Toggle bullet list |
+| `Mod+K` | Insert/edit link |
+
+(`Mod` = Ctrl on Windows/Linux, Cmd on macOS.) Toolbar buttons display their shortcut in the tooltip via `title` attribute. The keyboard shortcuts are discoverable via ARIA — each toolbar button has `aria-keyshortcuts` set to the binding.
+
 Styled with pages design tokens (`--pages-neutral-*`, `--pages-accent-*`).
 
 ### Dual-Mode Toggle
 
+Source mode uses a **dynamic import** of `@casehubio/pages-code-editor` — no compile-time TypeScript dependency. The `pages-markdown-editor` package depends only on `pages-editor-core`. The `<pages-code-editor>` element is discovered by tag name after dynamic import, and the bridge swap uses the `EDITABLE_TEXT` symbol (already runtime-discovered via `Symbol.for`). This keeps the packages independent and the CodeMirror dependency truly lazy.
+
 **WYSIWYG → Source:**
 1. Serialize ProseMirror doc to markdown via Milkdown's serializer
-2. Lazy-load `pages-code-editor` (dynamic import, ~60KB)
-3. Create `CodeEditorBridge`, swap `EDITABLE_TEXT` symbol
+2. `await import('@casehubio/pages-code-editor')` (first toggle only, ~60KB)
+3. Create `<pages-code-editor>` element, discover `CodeEditorBridge` via `EDITABLE_TEXT` symbol, swap
 4. Show CodeMirror with markdown content, line numbers
 
 **Source → WYSIWYG:**
 1. Get markdown text from CodeMirror
-2. Parse markdown back to ProseMirror doc via Milkdown's parser
+2. Parse markdown back to ProseMirror doc via Milkdown's parser, rebuild position index
 3. Swap `EDITABLE_TEXT` symbol back to `MarkdownEditorBridge`
 4. Show Milkdown
 
-**Cursor position preservation:** Map cursor through markdown text — the line/column in source corresponds to a character offset in the markdown, which maps to a ProseMirror node position. Approximate, not pixel-perfect.
+**Cursor position preservation:** Best-effort UX convenience during mode toggle. The bridge maps cursor position through the markdown text — the line/column in source corresponds to a character offset, which maps to the nearest ProseMirror node position via the cached position index. This is approximate for complex structures (tables, nested lists) but exact for simple content.
 
 ### Split Mode
 
@@ -282,7 +329,14 @@ Both views visible side-by-side with synchronized scrolling:
 - Heading-based anchor pairing (reuse `document-diff` pattern)
 - Position-aware interpolation (not linear) — WYSIWYG heights differ from source heights
 - Bidirectional sync with `_syncing` guard flag (double-rAF release)
-- Edits in either view update the other via serialize/parse
+
+**Edit synchronization (not O(n) per keystroke):**
+
+Content sync between views is **debounced at 150ms** — keystrokes within the debounce window are batched into a single sync.
+
+- **WYSIWYG → Source:** The ProseMirror transaction's `changes` describe what was modified. The bridge serializes only the affected block(s) and applies a targeted text replacement in CodeMirror via `applyChangesSilently`, rather than re-serializing the entire document.
+- **Source → WYSIWYG:** On debounce fire, diff old markdown against new using `computeMinimalChanges` (existing utility in `pages-builder/src/shell/diff-patch.ts`). Apply only the changed blocks as ProseMirror transactions.
+- **Fallback:** If the targeted sync fails (e.g., structural change that crosses block boundaries like converting a paragraph to a table), fall back to a full re-parse of the changed view. This is the slow path and expected to be rare.
 
 ## 3. Overlay System
 
@@ -292,6 +346,8 @@ Both views visible side-by-side with synchronized scrolling:
 - Move with text on edits (tied to document positions)
 - Invalidated when underlying text is deleted
 - CSS classes: `editor-highlight-pulse`, `editor-highlight-underline`, `editor-highlight-glow`, `editor-highlight-box`
+
+Note: These CSS classes are internal to the editor shadow DOM and replace the `scenario-highlight-*` classes used in `CodeEditorBridge` (R1-13). The `visual-feedback.ts` system in `pages-aria` is a separate concern — it highlights DOM elements (buttons, inputs, panels) during scenario playback using `outline` CSS. The editor decoration system highlights text ranges within the editor using engine-native decoration APIs. These are orthogonal: element-level spotlight vs. text-range decoration.
 
 ### Floating Annotations (Position-Relative)
 
@@ -304,9 +360,30 @@ Both views visible side-by-side with synchronized scrolling:
   - **marker** — numbered circle at anchor position
   - **numbered** — numbered label inline with an arrow to the range
 
+#### Coordinate System
+
+Annotations are positioned using a two-step coordinate transform:
+
+1. **Position → pixel coords:** `EditorView.coordsAtPos(docOffset)` (ProseMirror) or `view.coordsAtPos(offset)` (CodeMirror) returns `{left, top, right, bottom}` in viewport-relative pixels. These APIs account for scroll position internally.
+2. **Viewport → overlay-relative:** Subtract the overlay div's `getBoundingClientRect()` origin to get CSS `left`/`top` values for the annotation element.
+
+On scroll/resize, the `requestAnimationFrame` loop re-executes step 1 (the editor's `coordsAtPos` result changes as content scrolls) and step 2 (the overlay div may have moved). Shadow DOM is transparent to this — `coordsAtPos` returns viewport-relative coordinates regardless of shadow boundary.
+
 ### Overlay Targeting in Dual Mode
 
-When in split mode, overlays target whichever view contains the anchor position. In WYSIWYG-only or source-only mode, overlays target the active view. Inline decorations render in both views when the same content range is visible in both. Floating annotations render once, anchored to the view where the position is most meaningful (WYSIWYG for rendered elements, source for line-level).
+When in split mode, overlays target whichever view contains the anchor position. In WYSIWYG-only or source-only mode, overlays target the active view. Inline decorations render in both views when the same content range is visible in both. Floating annotations render once, anchored to the WYSIWYG view by default (where rendered elements have meaningful visual positions), unless the annotation's `Position` falls within a code block or raw HTML region, in which case it anchors to the source view.
+
+### Annotation Lifecycle Across Mode Switches
+
+On mode switch (WYSIWYG↔source), annotations are **re-anchored**:
+
+1. All annotations store their anchor as a canonical `Position` (line/col in markdown text). The markdown text is the same in both modes — it is the canonical representation.
+2. The overlay layer is cleared (all annotation DOM elements removed).
+3. Each annotation's position is recomputed against the new editor view using the active bridge's `toOffset()` + the new view's `coordsAtPos()`.
+4. Annotations are re-rendered in the new coordinate space.
+5. If an annotation's anchor falls in a region that has no visual representation in the new mode (e.g., a collapsed section in WYSIWYG), the annotation is hidden until the anchor becomes visible.
+
+Inline decorations (highlights) are similarly re-created: the `EditableTextBridge` base class tracks active highlight ranges by ID. On bridge swap, all highlights are re-applied to the new editor's decoration system.
 
 ## 4. Concurrent Editing
 
@@ -326,7 +403,13 @@ LLM: endEditSession(session)
   → Indicator removed
 ```
 
-**Cancel semantics:** Human clicks cancel → session rolls back to the snapshot taken at `beginEditSession()`. All partial edits are discarded. The bridge restores ProseMirror doc state from the snapshot.
+**Cancel semantics:** Human clicks cancel → the session performs a **comprehensive rollback** of all side effects:
+
+1. **Document state:** Restore ProseMirror `EditorState` (or CodeMirror state if in source mode) from the snapshot taken at `beginEditSession()`.
+2. **Decorations:** Clear all highlights created during the session. The `EditSession` tracks highlight IDs created after session start; rollback calls `removeHighlight(id)` for each, then restores the pre-session DecorationSet.
+3. **Annotations:** Remove all annotations created during the session. The `EditSession` tracks annotation IDs; rollback calls `removeAnnotation(id)` for each, removing the DOM elements from the overlay layer.
+4. **Bridge state:** If the user switched editor modes during the session (WYSIWYG↔source), restore the `EDITABLE_TEXT` symbol to the pre-session bridge and re-activate the pre-session view mode.
+5. **Position index:** Rebuild the cached position index from the restored document state.
 
 **Future path:** Collaborative mode (`mode: 'collaborative'`) is a new capability, not a silent upgrade. Callers must explicitly request it and handle conflict resolution. The `EditSession` interface gains a `mode` discriminant.
 
@@ -346,27 +429,37 @@ Milkdown plugins are grouped by tier:
 
 ## 6. document-diff Extraction (D7)
 
-Extract generic infrastructure from `blocks-ui/components/document-workbench/src/document-diff.ts` into `pages-document-diff`:
+Extract generic infrastructure from `blocks-ui/components/document-workbench/src/document-diff.ts` (1217 lines total) into `pages-document-diff`:
 
-**Moves to pages (~660 lines):**
-- LCS line diff engine (`_lineDiff`)
-- Word-level diff and highlights (`_wordDiff`, `_applyWordHighlights`, `_annotateWordDiffs`)
-- Canvas minimap (`_drawDiffMap`)
-- Heading-based scroll sync (`_buildScrollAnchors`, `_setupScrollSync`, `_interp`)
-- Divider drag (`_setupDividerDrag`)
-- Drop zones (`_setupDropZone`)
-- Markdown rendering (`_renderMarkdown`, `_syncPanelContent`)
-- Diff navigation (`nextDiff`, `prevDiff`, `scrollToChunk`)
-- View modes (`split`/`unified`, `_renderUnified`)
-- Heading search (`_findHeading`, `_normalizeLocation`, `scrollToLocation`)
-- Section highlight (`highlightSection`, `clearHighlight`)
+**Moves to pages (~1025 lines):**
+- CSS styles (~240 lines, all non-thread styles)
+- HTML template (`createRenderRoot`, ~35 lines)
+- Interfaces/types (`DiffChunk`, `PanelState`, `ScrollAnchor`, ~18 lines)
+- Class infrastructure, generic fields, `configure()` (~40 lines)
+- LCS line diff engine (`_lineDiff`, ~37 lines)
+- Word-level diff and highlights (`_wordDiff`, `_applyWordHighlights`, `_annotateWordDiffs`, ~85 lines)
+- Canvas minimap (`_drawDiffMap`, ~25 lines)
+- Diff annotation and orchestration (`_annotateRendered`, `_updateDiffMap`, ~56 lines)
+- Heading-based scroll sync (`_buildScrollAnchors`, `_setupScrollSync`, `_interp`, `_scrollPercent`, ~69 lines)
+- Divider drag (`_setupDividerDrag`, ~19 lines)
+- Drop zones (`_setupDropZone`, ~20 lines)
+- Diff map click handler (`_onDiffMapClick`, ~15 lines)
+- Markdown rendering (`_renderMarkdown`, `_syncPanelContent`, `_syncPanelMeta`, `_fetchFile`, ~40 lines)
+- File operations (`selectFile`, `currentPath`, `loadFile`, `loadContent`, ~60 lines)
+- Diff navigation (`nextDiff`, `prevDiff`, `_scrollToChunk`, `_nonEqIndices`, `_chunkOutOfView`, ~72 lines)
+- View modes (`setViewMode`, `_renderUnified`, `swapPanels`, `getDiffSummary`, ~65 lines)
+- Heading search (`_findHeading`, `_normalizeLocation`, `_normHead`, `scrollToLocation`, ~80 lines)
+- Section highlight (`highlightSection`, `clearHighlight`, ~25 lines)
+- Lifecycle (`connectedCallback` generic wiring, `disconnectedCallback`, `toggleSync`, ~45 lines)
 
-**Stays in blocks-ui (~130 lines):**
-- Thread management (`_threadAnchors`, `thread-created`/`thread-resolved`/`thread-focused` listeners, `_renderThreadGutterMarkers`)
-- Timeline snapshot fetching (`timeline-comparison-changed` → `/api/debate/{sessionId}/snapshot/{index}`)
-- Selection-to-thread bridge (`selection-changed` events with `side: A/B`)
+**Stays in blocks-ui (~125 lines of logic, as `DrafthouseDocumentDiff extends PagesDocumentDiff`):**
+- `_threadAnchors` field and thread-specific CSS (~13 lines)
+- Thread event wiring: `thread-created`, `thread-resolved`, `thread-focused` listeners (~37 lines)
+- `_renderThreadGutterMarkers()` (~26 lines)
+- Timeline snapshot fetching: `timeline-comparison-changed` → `/api/debate/{sessionId}/snapshot/{index}` (~15 lines)
+- Selection-to-thread bridge: `mouseup` → `selection-changed` events with `side: A/B` (~34 lines)
 
-Blocks-ui keeps a `DrafthouseDocumentDiff` that extends `PagesDocumentDiff` with domain-specific review features.
+Note: The thread/timeline/selection logic is currently interleaved in `connectedCallback`. The extraction requires refactoring `connectedCallback` into a base method (generic setup) with a subclass override (DraftHouse-specific event wiring). The subclass calls `super.connectedCallback()` and adds its domain-specific listeners.
 
 ## 7. Refactoring Existing Code
 
@@ -380,26 +473,49 @@ Blocks-ui keeps a `DrafthouseDocumentDiff` that extends `PagesDocumentDiff` with
 6. Update `code-editor-bridge.ts` to remove local interface copy
 7. Update `command-executor.ts` and all consumers
 
+**Cross-repo impact analysis for `Symbol.for` key change:**
+The string key `'scenario-editable-text'` appears in exactly two source files:
+- `pages-code-editor/src/pages-code-editor.ts` line 14 (local `const`)
+- `pages-aria/src/executor/editable-text.ts` line 21 (exported `const`)
+
+In `blocks-ui`, the key appears only in vendored copies under `.casehub-packages/` — these are synced from the pages packages on publish and update automatically. No blocks-ui application code uses the raw string key directly; all consumers use the imported `EDITABLE_TEXT` constant. The rename is safe: update both source files atomically, publish the packages, and vendored copies sync on the next `casehub-packages` update.
+
+Prior spec docs and a blog post reference the old key (`2026-09-14-scenario-driven-tutorials-design.md`, `2026-09-14-mdp04-teaching-by-typing.md`) — these are documentation, not runtime code. No update needed, but a note can be added for clarity.
+
+### Breaking Interface Changes
+
+The following changes to `EditableText` are **intentionally breaking**:
+
+| Change | Impact | Migration |
+|--------|--------|-----------|
+| `highlight()` return `void` → `string` | Callers that type-narrow on `void` return will get a TypeScript error. Existing callers (`command-executor.ts` line 193) ignore the return value — no runtime breakage. | Mechanical: fix any type errors at call sites. |
+| New methods: `removeHighlight(id)`, `addAnnotation(...)`, `removeAnnotation(id)`, `clearAnnotations()`, `beginEditSession(owner)`, `endEditSession(session)`, `findText(query)`, `getLine(line)` | All `EditableText` implementors must provide these. Currently one implementor: `CodeEditorBridge`. | Implement the new methods in `CodeEditorBridge`. |
+| Style type `'pulse' \| 'underline' \| 'glow'` → `HighlightStyle` (adds `'box'`) | Union expansion — existing callers are unaffected. | None. |
+| CSS class `scenario-highlight-*` → `editor-highlight-*` | Internal to shadow DOM. No external CSS can target these. | None — rename is transparent to consumers. |
+
 ### CodeEditorBridge Refactor
 
 - Extract shared logic to `EditableTextBridge` in `pages-editor-core`
 - `CodeEditorBridge extends EditableTextBridge`
 - Engine-specific: CodeMirror `StateEffect`/`StateField`/`Decoration.mark` stays
-- Shared: ID generation, session management, event emission moves to base
+- Shared: ID generation, highlight/annotation tracking, session management, event emission moves to base
 
 ## 8. Testing Strategy
 
 ### Unit Tests
 - `EditableText` interface compliance tests — shared test suite that both `CodeEditorBridge` and `MarkdownEditorBridge` must pass
+- Position index tests — verify `toOffset`/`toPosition` round-trip for paragraphs, headings, lists, tables, code blocks
 - MCP tool adapter tests — mock EditableText, verify tool call → method mapping
 - Scroll sync engine tests — verify anchor pairing and interpolation
 - Diff engine tests — verify LCS, word-level diff (existing `document-diff.test.ts`)
 
 ### Integration Tests
 - Milkdown mount/unmount lifecycle in LIT shadow DOM
-- WYSIWYG ↔ source round-trip (markdown → ProseMirror → markdown)
+- WYSIWYG ↔ source round-trip (markdown → ProseMirror → markdown):
+  - **Acceptance criterion:** semantic equivalence (same remark AST structure after normalizing whitespace). Not string equality — known accepted divergences: trailing whitespace stripping, list indentation normalization (2-space vs 4-space), ATX heading whitespace, table column alignment padding. These are cosmetic and do not affect document meaning.
+  - Position mapping fidelity: after round-trip, `toOffset({line: N, col: M})` must resolve to the same document content (not necessarily the same byte offset — structural changes from normalization are allowed).
 - Overlay rendering (highlights visible, annotations positioned)
-- Edit session lock/unlock/cancel with rollback verification
+- Edit session lock/unlock/cancel with comprehensive rollback verification (document, decorations, annotations, bridge state)
 
 ### Visual Tests (Playwright)
 - Toolbar renders all icons
