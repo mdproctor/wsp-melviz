@@ -4,23 +4,20 @@
 
 **Branch:** `issue-530-milkdown-editor`
 **Issue:** #530 — Milkdown rich markdown editor with MCP tools, overlays, and edit sessions
-**Status:** Batches 1 and 2 of 5 complete. Resume at Batch 3.
+**Status:** Batches 1-3 of 5 complete. Resume at Batch 4.
 
 ### What was done
 
-**Prior session — Batch 1 (Foundation):**
-- `pages-editor-core` package: `EditableText` interface, `EditableTextBridge` abstract base, discovery functions, `EditSessionActiveError`
-- `CodeEditorBridge` refactored to extend `EditableTextBridge`
-- Symbol changed from `scenario-editable-text` to `editable-text`
+**Prior sessions — Batch 1 (Foundation) + Batch 2 (Milkdown Core):**
+- `pages-editor-core`: EditableText interface, EditableTextBridge base, discovery, EditSessionActiveError
+- `pages-markdown-editor`: PagesMarkdownEditor LIT/Milkdown component, MarkdownEditorBridge with position index, EditorToolbar with 12 commands
+- CodeEditorBridge refactored to extend EditableTextBridge
 
-**This session — Batch 2 (Milkdown Core):**
-- `pages-markdown-editor` package scaffolded with Milkdown mounted in Lit shadow DOM
-- `PagesMarkdownEditor` LIT component wrapping `@milkdown/kit` with commonmark + GFM + history plugins
-- `MarkdownEditorBridge` extending `EditableTextBridge` with cached line-offset position index for line/col to ProseMirror offset conversion; implements all `EditableText` content methods
-- Bridge attached to component via `EDITABLE_TEXT` symbol using `editorViewCtx` and `serializerCtx`
-- `EditorToolbar` and `ToolbarButton` Lit components with 12 formatting actions dispatching Milkdown commands via string-based `callCommand`
-- Key finding: Milkdown `$Command.key` is only set after plugin execution inside an Editor, so toolbar uses string-based command keys (`'ToggleStrong'`, `'ToggleEmphasis'`, etc.) for reliable dispatch
-- Key finding: Lit decorator tests need `experimentalDecorators: true` and `useDefineForClassFields: false` in tsconfig, plus dynamic imports (not static) to match the code-editor test pattern
+**This session — Batch 3 (Overlays + Edit Sessions):**
+- Shared `editableTextComplianceTests()` suite (14 tests) exported from pages-editor-core, run by both bridge packages
+- AnnotationRenderer: creates positioned DOM elements in overlay layer for callout/arrow/marker/numbered types, with coordsAt-based positioning and requestAnimationFrame tracking
+- Edit session snapshot/rollback: `beginEditSession` captures document text + highlight IDs + annotation IDs; `cancel()` restores document, removes session-created overlays, releases lock; `endEditSession` preserves edits and clears snapshot
+- Key finding: compliance tests require `pages-editor-core` to be built (`yarn workspace ... build`) before downstream packages can import the new export — workspace resolution goes through `dist/`
 
 ### Resume command
 
@@ -28,28 +25,20 @@
 work continue
 ```
 
-Next: Batch 3 — Highlight system for both bridges, floating annotations overlay, edit sessions with lock and rollback.
+Next: Batch 4 — Dual-mode toggle (WYSIWYG/source), split mode with scroll sync, MCP tool adapter.
 
 ### Test state
 
-117 tests pass (19 editor-core + 70 code-editor + 28 markdown-editor). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
-
-### Artifacts
-
-- Design spec: `specs/milkdown-editor/2026-10-07-milkdown-editor-design.md`
-- Decisions: `specs/milkdown-editor/decisions.md` (D0-D9)
-- Implementation plan: `plans/2026-10-07-milkdown-editor.md` (5 batches, 14 tasks)
-- Journal: `JOURNAL.md`
+162 tests pass (27 editor-core + 84 code-editor + 51 markdown-editor). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
 
 ### Commits this session
 
-- `d0f80d9c` feat(#530): scaffold pages-markdown-editor with Milkdown mounted in Lit shadow DOM
-- `f27f033b` feat(#530): MarkdownEditorBridge with position index and EditableText implementation
-- `5ea3ca6b` feat(#530): custom Lit toolbar dispatching Milkdown commands with keyboard shortcuts
+- `221787b6` feat(#530): shared EditableText compliance test suite for both bridges
+- `f900f178` feat(#530): floating annotation overlay renderer with type-specific elements
+- `b15d2648` feat(#530): edit sessions with snapshot and cancel rollback
 
 ## References
 
-- `packages/pages-editor-core/` — shared interface package
-- `packages/pages-markdown-editor/` — new Milkdown editor package
+- `packages/pages-editor-core/` — shared interface + compliance suite + session rollback
+- `packages/pages-markdown-editor/` — Milkdown editor + toolbar + overlay
 - `packages/pages-code-editor/src/code-editor-bridge.ts` — refactored bridge
-- `packages/pages-aria/src/executor/editable-text.ts` — re-exports from core
