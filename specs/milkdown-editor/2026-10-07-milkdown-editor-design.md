@@ -243,15 +243,19 @@ Extends `EditableTextBridge`. Translates between `EditableText`'s line/column po
 
 #### Position Mapping — Cached Position Index
 
-The bridge maintains a **bidirectional position index** between markdown line/col coordinates and ProseMirror document offsets. This avoids full serialization on every position operation.
+The bridge maintains a **bidirectional position index** between markdown line/col coordinates and ProseMirror document offsets. This avoids full document serialization on every position operation — block-level serialization may occur for structural edits and multi-line block access.
 
 **Index construction:** When Milkdown parses markdown into a ProseMirror document (on initial load and on source→WYSIWYG toggle), the parser emits source-position metadata via remark's `sourcePositions` plugin. The bridge captures this into a sorted array mapping `{line, col}` → `docOffset` for each block-level node boundary.
 
-**Index update:** On each ProseMirror transaction, the bridge applies ProseMirror's `Mapping` to shift all cached offsets. Block-level structural edits (adding/removing headings, splitting paragraphs) trigger a local re-index of the affected region only — not a full document re-serialization.
+**Index update — two-sided:**
+ProseMirror's `Mapping` shifts the `docOffset` side of the index (right side) on each transaction. But `Mapping` has no concept of markdown line numbers — it operates on document positions, not serialized text coordinates. The `{line, col}` side (left side) requires knowing how many markdown lines the inserted/deleted content spans.
+
+For inline edits within a block (typing text, adding bold markers), line counts don't change — only `docOffset` shifts via `Mapping`. For structural edits (adding a paragraph, inserting a table, splitting a heading), the bridge serializes the affected ProseMirror node(s) to markdown, counts lines, and adjusts all subsequent index entries' line numbers. This is partial serialization — one or a few blocks, not the full document.
 
 **Lookup:**
 - `toOffset(pos: Position): number` — binary search the cached index for the nearest block boundary at or before `pos.line`, then walk ProseMirror nodes within that block to resolve `pos.col` to a precise doc offset.
 - `toPosition(offset: number): Position` — reverse binary search: find the block boundary, compute line/col from the node's source position metadata.
+- `getLine(line)` — locates the containing block via the index. For single-line blocks (paragraphs, headings), extracts text directly from ProseMirror nodes. For multi-line blocks (tables, code blocks), serializes that block to markdown and splits by newline to access the requested line. This is block-level serialization, not document-level.
 
 **Fidelity constraints:** For inline content within simple paragraphs, headings, and list items, the mapping is exact. For complex structures (tables, deeply nested lists), the mapping resolves to the nearest valid position within the containing cell/item. The bridge logs a warning when a position falls in an ambiguous region. MCP tool operations on ambiguous positions return an error with the nearest valid alternatives.
 
@@ -261,7 +265,7 @@ Key implementation details:
 - `highlight()` — creates a ProseMirror `Decoration.inline` via a plugin's DecorationSet
 - `addAnnotation()` — creates a positioned DOM element in the overlay layer, repositioned on scroll/resize via `requestAnimationFrame`
 - `findText(query)` — walks ProseMirror document tree node-by-node, matching text content without serialization
-- `getLine(line)` — uses the position index to locate the block at the given line, extracts text from ProseMirror nodes
+- `getLine(line)` — uses the position index to locate the containing block; single-line blocks return text directly, multi-line blocks serialize the block and split by newline
 
 ### Toolbar
 
@@ -313,6 +317,8 @@ Source mode uses a **dynamic import** of `@casehubio/pages-code-editor` — no c
 2. `await import('@casehubio/pages-code-editor')` (first toggle only, ~60KB)
 3. Create `<pages-code-editor>` element, discover `CodeEditorBridge` via `EDITABLE_TEXT` symbol, swap
 4. Show CodeMirror with markdown content, line numbers
+
+**Import failure:** If the dynamic import in step 2 fails (network error, module not found), the toggle reverts to WYSIWYG mode — the ProseMirror view remains active, no bridge swap occurs. The component emits a `mode-changed` event with `{ mode: 'wysiwyg', error: 'source-unavailable' }` so the host can surface a notification. The toggle button is not disabled — the user can retry.
 
 **Source → WYSIWYG:**
 1. Get markdown text from CodeMirror
@@ -402,6 +408,15 @@ LLM: endEditSession(session)
   → Editor returns to read-write
   → Indicator removed
 ```
+
+**Session contention:** `beginEditSession()` throws if a session is already active. The error includes the current lock holder and start time for diagnostics:
+
+```typescript
+throw new EditSessionActiveError(activeSession.owner, activeSession.startedAt);
+// → "Edit session already active (owner: 'claude', since: 2026-10-07T02:46:33Z)"
+```
+
+The MCP tool `editor_begin_session` translates this to a structured tool error response: `{ error: "session_active", owner: "claude", since: "2026-10-07T02:46:33Z" }`. The calling LLM can inspect the error and decide whether to wait and retry or proceed differently. No queue — v1 is a simple exclusive lock.
 
 **Cancel semantics:** Human clicks cancel → the session performs a **comprehensive rollback** of all side effects:
 
