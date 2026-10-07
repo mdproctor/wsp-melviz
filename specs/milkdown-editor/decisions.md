@@ -47,3 +47,26 @@
 **Sources:** Existing McpBinding pattern in packages/yaml-core/src/step/types.ts
 **Exploration:** quick
 **Status:** captured
+
+## D5: Dual Mode (WYSIWYG ↔ Source)
+
+**Choice:** Own toggle using pages-code-editor for source mode
+**Alternatives:**
+- @milkdown-lab/plugin-split-editing community plugin — demonstrated in the official playground but already shows limitations (e.g. no sync scrolling) that we've solved in our own editors. Low-activity (1 maintainer, year-old release).
+- WYSIWYG only for v1 — simpler but users expect source access.
+**Rationale:** Build the split/toggle ourselves, swapping between Milkdown (WYSIWYG) and pages-code-editor (source). We control both sides and can implement sync scrolling, cursor position preservation on toggle, and other polish the community plugin lacks. The EditableText bridge swaps from MarkdownEditorBridge to CodeEditorBridge on toggle — MCP tools continue working seamlessly. Can reference the community plugin's sync logic as prior art for the bidirectional ProseMirror↔markdown serialization.
+**Trade-offs:** Two editor engines loaded in the component. Sync logic between ProseMirror doc model and raw markdown on toggle (serialize/deserialize). Acceptable given we already own both components and have solved similar problems.
+**Depends on:** D1 (EditableText bridge makes the swap transparent to MCP tools)
+**Sources:** @milkdown-lab/plugin-split-editing (reference only), packages/pages-code-editor/
+**Exploration:** deep-analysis
+**Status:** captured
+
+## D6: Toolbar and Formatting Icons
+
+**Choice:** Full Milkdown toolbar with all formatting icons matching the official demo
+**Alternatives:** None considered — user requirement.
+**Rationale:** The LIT wrapper must render the complete Milkdown toolbar: bold, italic, headings, lists, code blocks, links, tables, math (KaTeX), diagrams (Mermaid), task lists, strikethrough, images. Match the visual quality of the official Milkdown demo.
+**Trade-offs:** None significant — Milkdown's plugin system makes this additive.
+**Sources:** milkdown.dev/playground
+**Exploration:** quick
+**Status:** captured
