@@ -56,8 +56,9 @@
 - WYSIWYG only for v1 — simpler but users expect source access.
 **Rationale:** Build the split/toggle ourselves, swapping between Milkdown (WYSIWYG) and pages-code-editor (source). We control both sides and can implement sync scrolling, cursor position preservation on toggle, and other polish the community plugin lacks. The EditableText bridge swaps from MarkdownEditorBridge to CodeEditorBridge on toggle — MCP tools continue working seamlessly. Can reference the community plugin's sync logic as prior art for the bidirectional ProseMirror↔markdown serialization.
 **Trade-offs:** Two editor engines loaded in the component. Sync logic between ProseMirror doc model and raw markdown on toggle (serialize/deserialize). Acceptable given we already own both components and have solved similar problems.
+**Scroll sync:** Reuse the heading-based anchor interpolation from `document-diff` in blocks-ui (`document-workbench`). It matches structural headings between panels, builds scroll anchor pairs, and interpolates scroll positions with a `_syncing` guard flag. Extract this as shared infrastructure for both `document-diff` and the new split editor view.
 **Depends on:** D1 (EditableText bridge makes the swap transparent to MCP tools)
-**Sources:** @milkdown-lab/plugin-split-editing (reference only), packages/pages-code-editor/
+**Sources:** @milkdown-lab/plugin-split-editing (reference only), packages/pages-code-editor/, blocks-ui/components/document-workbench/src/document-diff.ts (scroll sync prior art)
 **Exploration:** deep-analysis
 **Status:** captured
 
@@ -68,5 +69,15 @@
 **Rationale:** The LIT wrapper must render the complete Milkdown toolbar: bold, italic, headings, lists, code blocks, links, tables, math (KaTeX), diagrams (Mermaid), task lists, strikethrough, images. Match the visual quality of the official Milkdown demo.
 **Trade-offs:** None significant — Milkdown's plugin system makes this additive.
 **Sources:** milkdown.dev/playground
+**Exploration:** quick
+**Status:** captured
+
+## D7: Move document-diff into pages
+
+**Choice:** Move `document-diff` component from blocks-ui into pages
+**Alternatives:** None — it has no CaseHub-specific logic.
+**Rationale:** `document-diff` is a generic markdown diff viewer (LCS line diff, word-level highlights, canvas minimap, heading-based scroll sync). It belongs in `pages` as reusable infrastructure. Its scroll sync logic (heading-based anchor interpolation) should be extracted as shared code that both `document-diff` and the new `pages-markdown-editor` split view can use. This also avoids blocks-ui depending on pages for scroll sync while pages depends on blocks-ui for the component — cleaner dependency direction.
+**Trade-offs:** Requires coordinating the move with blocks-ui/drafthouse consumers. Drafthouse will need to update its import to the new pages package.
+**Sources:** blocks-ui/components/document-workbench/src/document-diff.ts
 **Exploration:** quick
 **Status:** captured
