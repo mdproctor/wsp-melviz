@@ -91,6 +91,7 @@ export interface AnnotationOptions {
 export interface EditSession {
   readonly owner: string;
   readonly mode: 'exclusive';
+  readonly startedAt: string; // ISO 8601
   cancel(): void;
 }
 
@@ -328,6 +329,19 @@ Source mode uses a **dynamic import** of `@casehubio/pages-code-editor` — no c
 
 **Cursor position preservation:** Best-effort UX convenience during mode toggle. The bridge maps cursor position through the markdown text — the line/column in source corresponds to a character offset, which maps to the nearest ProseMirror node position via the cached position index. This is approximate for complex structures (tables, nested lists) but exact for simple content.
 
+### Undo/Redo Behavior
+
+ProseMirror and CodeMirror each maintain independent undo stacks via their respective history plugins. The spec defines how these interact across mode switches, split mode sync, and edit sessions.
+
+**Mode switch:** Undo history does **not** survive mode switches. This is an accepted limitation. When the user switches from WYSIWYG to source, the CodeMirror view starts with a fresh undo stack (no knowledge of ProseMirror's history). When switching back, Source→WYSIWYG re-parses markdown into a fresh ProseMirror document (§2 step 2), which creates a new history plugin state. Cross-engine undo would require a custom history abstraction wrapping both engines — complexity that is not justified for an infrequent action. The mode toggle is a conceptual checkpoint, not a reversible operation.
+
+**Split mode:** Sync transactions are dispatched with `addToHistory: false` on the receiving side. In ProseMirror, this is the `addToHistory` transaction metadata. In CodeMirror, this is the `Transaction.addToHistory.of(false)` annotation. This means:
+- User types in source → CodeMirror records the edit in its undo stack → sync fires → ProseMirror receives the change with `addToHistory: false` → ProseMirror's undo stack is unaffected
+- User presses Ctrl+Z in source → CodeMirror undoes → sync fires → ProseMirror reflects the undo (also with `addToHistory: false`)
+- Only the view where the user is typing accumulates undo history. The other view is a passive follower.
+
+**Edit sessions:** See §4 "Undo/redo and edit sessions."
+
 ### Split Mode
 
 Both views visible side-by-side with synchronized scrolling:
@@ -425,6 +439,10 @@ The MCP tool `editor_begin_session` translates this to a structured tool error r
 3. **Annotations:** Remove all annotations created during the session. The `EditSession` tracks annotation IDs; rollback calls `removeAnnotation(id)` for each, removing the DOM elements from the overlay layer.
 4. **Bridge state:** If the user switched editor modes during the session (WYSIWYG↔source), restore the `EDITABLE_TEXT` symbol to the pre-session bridge and re-activate the pre-session view mode.
 5. **Position index:** Rebuild the cached position index from the restored document state.
+
+**Undo/redo and edit sessions:**
+- **Normal end (`endEditSession`):** The LLM's edits remain in the undo stack as individual transactions. The user can Ctrl+Z through them one at a time. This is correct — the session was accepted, and fine-grained undo gives the user control over the result.
+- **Cancel (rollback):** The snapshot taken at `beginEditSession()` is a full ProseMirror `EditorState` (or CodeMirror state), which includes the history plugin's state. Restoring the snapshot resets the undo stack to its pre-session contents. The LLM's edits are not in the restored history — the user cannot redo them after cancel. Cancel is a clean slate, not a reversible undo.
 
 **Future path:** Collaborative mode (`mode: 'collaborative'`) is a new capability, not a silent upgrade. Callers must explicitly request it and handle conflict resolution. The `EditSession` interface gains a `mode` discriminant.
 
