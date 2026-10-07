@@ -81,3 +81,25 @@
 **Sources:** blocks-ui/components/document-workbench/src/document-diff.ts
 **Exploration:** quick
 **Status:** captured
+
+## D8: Shared editor infrastructure in pages-editor-core
+
+**Choice:** New `pages-editor-core` package as the shared foundation for all editor components
+**Alternatives:**
+- Extend pages-primitives — keeps package count down but widens primitives' scope beyond UI primitives into editor-specific domain logic.
+- Expand pages-code-editor — name no longer matches scope, creates confusing dependency where Milkdown depends on a package called "code-editor."
+**Rationale:** Maximum consolidation and re-use across CodeMirror, Milkdown, and document-diff. The package provides:
+- `EditableText` interface (renamed from `ScenarioEditableText`) + `EDITABLE_TEXT` symbol + discovery functions
+- `EditableTextBridge` abstract base class — shared highlight ID management, annotation lifecycle, edit session state. `CodeEditorBridge` and `MarkdownEditorBridge` extend it.
+- Scroll sync engine — heading-based anchor interpolation extracted from document-diff, usable by any split-pane view
+- Overlay renderer — floating annotations (arrows, callouts, markers) as positioned DOM overlays, editor-engine-agnostic
+- Split view container — split pane with draggable divider, diff map canvas, view mode toggle. Currently monolithic in document-diff, extracted as a composable LIT component.
+- Edit session manager — lock/unlock state, visual "AI editing" indicator, cancel UX
+- MCP tool adapter — maps MCP tool calls to EditableText methods, handles ambiguity reporting for semantic helpers
+
+`pages-code-editor`, `pages-markdown-editor`, and the moved `document-diff` all depend on `pages-editor-core`. Each editor package is a thin wrapper providing the engine-specific bridge implementation.
+**Trade-offs:** Adds a new package to the monorepo. Requires refactoring `CodeEditorBridge` to extend the new base class. Worth it for the consolidation — three editors sharing one interface, one overlay system, one scroll sync engine.
+**Depends on:** D1 (bridge pattern), D2 (overlay in EditableText), D3 (edit sessions), D5 (scroll sync extraction), D7 (document-diff move)
+**Sources:** packages/pages-code-editor/src/code-editor-bridge.ts, packages/pages-aria/src/executor/editable-text.ts, blocks-ui/components/document-workbench/src/document-diff.ts
+**Exploration:** quick
+**Status:** captured
