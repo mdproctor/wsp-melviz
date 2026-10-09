@@ -1,45 +1,40 @@
 # HANDOFF — casehub-pages
 
-## Last Session (2026-10-09)
+## Last Session (2026-10-07)
 
 **Branch:** `issue-530-milkdown-editor`
-**Issue:** #530 — Milkdown rich markdown editor
-**Status:** All 5 batches complete. Showcase pages built. Paused for wrap.
+**Issue:** #530 — Milkdown rich markdown editor with MCP tools, overlays, and edit sessions
+**Status:** All 5 batches complete. Ready for work-end.
 
 ### What was done
 
-- **Batch 5:** Extracted `PagesDocumentDiff` (1063 lines) from blocks-ui into `pages-document-diff`. Blocks-ui reduced to 162-line subclass (branch `issue-530-document-diff-extraction`).
-- **Generic method invoker (#531):** Playbook executor fallback dispatches unrecognized step names as method calls on ARIA target elements. No per-method step definitions needed.
-- **Showcase pages:** Document Diff and Markdown Editor added to gallery with controls, playbooks, and scenario buttons.
-- **Bridge fixes:** `setContent`/`insertText` now parse markdown through ProseMirror parser. Highlight decorations implemented via `Decoration.inline` + `view.setProps`.
-- **`highlightLine`/`highlightBlock`/`highlightRange`:** Three semantic highlight helpers. `highlightLine` uses `Range.getClientRects()` + `posAtCoords` for visual line detection. `highlightBlock` uses `doc.resolve()` for full block node.
-- **Split mode fix:** Single template preserves Milkdown DOM across mode switches. Scroll sync wired. Focus outlines suppressed. Source pane uses `language='markdown'` not `'yaml'`.
-- **Table/typography CSS:** Milkdown WYSIWYG tables with grid lines and compact padding.
+**Prior sessions — Batches 1-3:**
+- `pages-editor-core`: EditableText interface, EditableTextBridge base, discovery, compliance suite, edit sessions
+- `pages-markdown-editor`: PagesMarkdownEditor LIT/Milkdown component, MarkdownEditorBridge, EditorToolbar, AnnotationRenderer
+- CodeEditorBridge refactored to extend EditableTextBridge
 
-### Issues filed
+**Prior session — Batch 4 (Dual Mode + MCP):**
+- Dual-mode toggle, split mode with scroll sync, MCP tool adapter (16 tools)
 
-- #531 — Inferred method-call dispatch (production: allowlists, Java parity)
-- #534 — Visual line highlight via Range.getClientRects (now implemented)
-- #535 — Rich highlight API: styling, semantic targeting, animated overlays, LLM reader
-
-### Cross-repo
-
-- blocks-ui branch `issue-530-document-diff-extraction` — depends on pages-document-diff being published
-
-### Resume command
-
-```
-work continue
-```
+**This session — Batch 5 (document-diff extraction):**
+- `pages-document-diff`: New package — PagesDocumentDiff base class (1063 lines) extracted from blocks-ui with generic LCS diff, word highlights, canvas minimap, scroll sync, split/unified views, heading navigation, panel management
+- blocks-ui: DocumentDiff reduced to 162-line subclass (DrafthouseDocumentDiff) keeping thread/timeline/selection domain logic. Branch: `issue-530-document-diff-extraction` in blocks-ui repo.
 
 ### Test state
 
-226 tests pass (48 editor-core + 84 code-editor + 75 markdown-editor + 11 document-diff + 24 aria executor — 5 new generic invoker). Pre-existing failures in pages-aria playbook/scheduler/tutorial.
+215 tests pass (48 editor-core + 84 code-editor + 72 markdown-editor + 11 document-diff). Pre-existing failures in pages-aria (playbook parser, tutorial host) are unrelated.
+
+### Commits this session
+
+- `80accd36` feat(#530): extract PagesDocumentDiff from blocks-ui with generic diff infrastructure
+
+### Cross-repo changes
+
+- blocks-ui branch `issue-530-document-diff-extraction` commit `1b8f92b` — DocumentDiff extends PagesDocumentDiff. Depends on pages-document-diff being published.
 
 ## References
 
-- `packages/pages-editor-core/` — EditableText interface, bridge base, highlights, MCP adapter
-- `packages/pages-markdown-editor/` — Milkdown editor, bridge, toolbar, scroll sync
-- `packages/pages-document-diff/` — generic diff infrastructure
-- `packages/pages-code-editor/` — CodeMirror editor, markdown language mode
-- `examples/samples/Custom Components/` — Document Diff + Markdown Editor showcases
+- `packages/pages-editor-core/` — shared interface + compliance suite + session rollback
+- `packages/pages-markdown-editor/` — Milkdown editor + toolbar + overlay
+- `packages/pages-document-diff/` — generic diff infrastructure (extracted from blocks-ui)
+- `packages/pages-code-editor/src/code-editor-bridge.ts` — refactored bridge
