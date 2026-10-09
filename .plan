@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-530-milkdown-editor
-state: closing:review
+state: closing:verified
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -10,9 +10,7 @@ covers: 530
 design-repo: 
 design-section-hashes: 
 flyway-next-v: 
-
 evidence-era: true
+
 ## Queue
-- [ ] casehubio/casehub-pages#530 — Issue #530 ← active
-  - [ ] Batch 1: Batch 2
-    - [ ] Task 1: Task 4: Scaffold pages-markdown-editor and mount Milkdown
+- [x] casehubio/casehub-pages#530 — Issue #530
