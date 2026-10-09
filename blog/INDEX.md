@@ -20,3 +20,4 @@
 | [2026-09-17-mdp01-zod-v4-migration.md](2026-09-17-mdp01-zod-v4-migration.md) | 2026-09-17 | Zod v4 migration — undocumented field mapping, .default().optional() behavioral change, dist staleness debugging |
 | [2026-09-28-mdp01-invoke-bindings-concurrency.md](2026-09-28-mdp01-invoke-bindings-concurrency.md) | 2026-09-28 | Invoke bindings and concurrent coordination gallery examples — mock executors, parallel primitives, deferred runtime handlers |
 | [2026-09-29-mdp01-portability-across-runtimes.md](2026-09-29-mdp01-portability-across-runtimes.md) | 2026-09-29 | Portability metadata for cross-runtime action discovery — type system, multi-source merge, pre-flight validation |
+| [2026-10-09-mdp01-teaching-two-editors-same-language.md](2026-10-09-mdp01-teaching-two-editors-same-language.md) | 2026-10-09 | Shared EditableText interface across ProseMirror and CodeMirror — bridge pattern, MCP tools, visual line highlights, document-diff extraction |
