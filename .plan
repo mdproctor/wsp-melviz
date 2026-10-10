@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-532-topology-drift-badge
-state: closing:promoted
+state: closing:pushed
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
