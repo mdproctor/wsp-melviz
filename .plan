@@ -1,0 +1,15 @@
+# Work Plan — issue-532-topology-drift-badge
+
+## State
+branch: issue-532-topology-drift-badge
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 532
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#532 — Issue #532 ← active
