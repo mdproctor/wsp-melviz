@@ -1,1 +1,1 @@
-# Design Journal — issue-532-topology-drift-badge
+# Design Journal — issue-536-ts-playbook-primitives
