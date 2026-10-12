@@ -13,3 +13,14 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#536 — Issue #536 ← active
+  - [x] Batch 1: Numeric foundation
+    - [x] Task 1: OrcNumericPrimitive + Counter + Accumulator
+    - [x] Task 2: ThresholdCondition parser
+    - [x] Task 3: Priority + PriorityOrcSemaphore
+  - [x] Batch 2: Resource + Scope
+    - [x] Task 4: ResourceDeclaration + ScenarioScope extensions
+  - [x] Batch 3: Decorator chain
+    - [x] Task 5: AtDecorator + resource priority in SemaphoreDecorator
+  - [x] Batch 4: OnCompleteExpander
+    - [x] Task 6: OnCompleteExpander + SourceLocationMap
+    - [x] Task 7: Full regression check
