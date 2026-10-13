@@ -16,8 +16,8 @@
 - AbortSignal on ScenarioScope — scope is shared across branches, context is per-evaluation-path. Wrong granularity.
 - Promise.race only (no cancel) — simplest but leaks resources, doesn't match platform cancel semantics.
 **Rationale:** Context is the per-step execution environment. AbortSignal is per-branch state in a race. AbortController is the standard Web API for cooperative cancellation, integrates with fetch/streams natively.
-**Trade-offs:** Existing decorators (wait, delay, timeout, semaphore) must be updated to check `signal.aborted` — adds a conditional to each but ensures clean cancellation.
-**Sources:** decorator-chain.ts Context interface, platform #603 race semantics
+**Trade-offs:** Existing decorators (wait, delay, timeout, semaphore) must be updated to check `signal.aborted`. Orchestration primitives (OrcSemaphore, OrcChannel, OrcSignal, OrcLatch) need AbortSignal-aware overloads. SpawnedTask needs an AbortController for scope-bounded cancellation. This is the largest single change in the epic — cross-cutting, not additive.
+**Sources:** decorator-chain.ts Context interface, platform #603 race semantics, orchestration/types.ts primitive interfaces
 **Exploration:** quick
 **Status:** captured
 **Depends on:** D1 (extends Context, which is part of the existing architecture)
@@ -52,7 +52,7 @@
 **Alternatives:**
 - Sentinel count value (`loop: 999999`) — fragile, doesn't express intent, platform has an explicit Continuous variant.
 **Rationale:** Matches platform's `LoopDirective.Continuous`. Clean discriminated union extension.
-**Trade-offs:** LoopDecorator must check AbortSignal on each iteration to avoid infinite loops when cancel/race aren't present. Safety cap of 100000 iterations for non-cancelled continuous loops prevents runaway.
+**Trade-offs:** LoopDecorator must check AbortSignal on each iteration. Parse-time validation rejects `loop: continuous` without `cancel:` or `timeout:` — no safety cap needed (structural fix, not band-aid).
 **Sources:** orchestration/directives.ts LoopDirective union, platform #563
 **Exploration:** quick
 **Depends on:** D1 (extends existing LoopDirective), D2 (uses AbortSignal for termination)
@@ -82,14 +82,15 @@
 **Depends on:** D2 (AbortSignal on Context), D1 (extends DecoratorChain)
 **Status:** captured
 
-## D8: from: hardening — ConsumerHandle lifecycle
+## D8: from: hardening — ConsumerHandle lifecycle (simplified)
 
-**Choice:** Named consumer as scope primitive — `from: { channel: events, name: enricher }` registers a ConsumerHandle in the scope. `stop: enricher` / `start: enricher` are new step-level actions (plugin steps registered in the catalog, not decorators). ConsumerHandle wraps an AbortController for stop, with a promise-based pause/resume mechanism.
+**Choice:** Named consumer as scope primitive with stop-only lifecycle. `from: { channel: events, name: enricher }` registers a ConsumerHandle. `stop: enricher` is a built-in catalog action. Pause/resume/start deferred — cancel: + new from: block achieves the same thing in browser context.
 **Alternatives:**
-- Decorator-level pause/resume — pause/resume as decorators on subsequent steps. Awkward because pause/resume are imperative actions, not step modifiers.
-**Rationale:** Matches platform's ConsumerHandle pattern. Stop/start/pause/resume are actions performed on a named consumer — they are imperative commands, not step decorations.
-**Trade-offs:** Requires catalog registration for stop/start/pause/resume actions. Small overhead but consistent with the invoke/plugin step model.
+- Full platform parity (stop/start/pause/resume) — over-engineered for browser runtime with ephemeral scopes. Platform needs it for distributed actors with persistent state.
+- Decorator-level lifecycle — awkward because stop is an imperative action, not a step modifier.
+**Rationale:** Minimal surface area. Stop is the essential operation (terminate a consumer). Restart is re-establishing a new from: block. The browser runtime doesn't have the long-running process lifecycle that makes pause/resume valuable.
+**Trade-offs:** Departs from platform parity on pause/resume API. If a future YAML scenario needs pause/resume, it must be added then. Acceptable because stop + restart is semantically equivalent.
 **Sources:** platform #602 named consumers, ScenarioScope primitive registry
-**Exploration:** quick
+**Exploration:** quick (revised after decision review R1-11)
 **Depends on:** D4 (from: decorator), D2 (AbortController for stop)
 **Status:** captured

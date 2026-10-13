@@ -15,6 +15,14 @@ evaluator, decorator chain, orchestration primitives, and schema composer.
 Playbooks land in `playbooks/`. No changes to packages/pages-runtime or
 packages/pages-aria.
 
+**Cross-cutting concern:** The AbortSignal-based cancellation system is not
+a simple additive extension — it threads through existing async decorators
+(WaitDecorator, DelayDecorator, SemaphoreDecorator, TimeoutDecorator) and
+requires AbortSignal-aware overloads on orchestration primitives
+(OrcSemaphore.acquire, OrcChannel.receive, OrcSignal.await, OrcLatch.await).
+This is acknowledged as the main risk area. See "Cancellation Architecture"
+section for full scope.
+
 ## Scope
 
 **In scope (6 child issues):**
@@ -104,6 +112,81 @@ Decorators that perform async waits check `signal?.aborted` before blocking:
 
 When `signal.aborted` is true, the decorator returns
 `stepFailure('Cancelled')` immediately.
+
+### Cancellation Architecture
+
+AbortSignal support is not limited to Context — the orchestration
+primitives themselves need AbortSignal-aware overloads to achieve
+cooperative cancellation of blocked waits:
+
+```typescript
+// OrcSemaphore — new overload
+acquire(signal?: AbortSignal): Promise<void>;
+
+// OrcChannel — new overload
+receive(signal?: AbortSignal): Promise<T | undefined>;
+
+// OrcSignal — new overload
+await(signal?: AbortSignal): Promise<void>;
+
+// OrcLatch — new overload
+await(signal?: AbortSignal): Promise<void>;
+```
+
+When the AbortSignal fires, the pending promise rejects with an
+`AbortError` (standard DOMException name). The decorator catches
+`AbortError` and converts it to `stepFailure('Cancelled')`.
+
+**SpawnedTask cancellation:** `DefaultSpawnedTask` gains an
+AbortController. The task function receives the controller's signal.
+`scope.close()` calls `controller.abort()` before `joinWithTimeout()`.
+
+```typescript
+class DefaultSpawnedTask {
+  private readonly controller = new AbortController();
+
+  constructor(taskName: string, task: (signal: AbortSignal) => Promise<void>) {
+    this.promise = task(this.controller.signal)
+      .then(() => { ... })
+      .catch((err: Error) => { ... });
+  }
+
+  cancel(): void { this.controller.abort(); }
+}
+```
+
+**Cancelled branch result semantics:** When a branch is cancelled (race
+loser, cancel: signal fired), the result is `stepFailure('Cancelled')`
+with `failureCategory: 'CANCELLED'`. The on-error and on-failure
+decorators receive this failure normally. YAML authors who want to
+distinguish cancellation from real failures can use conditional retry
+with `except: CANCELLED` (from D5's conditional retry). The result
+store records the step as failed with category CANCELLED — auditable
+but clearly distinguished from operational failures.
+
+**Scope lifecycle alternative (considered and rejected):**
+`childScope().close()` was considered as a cancellation mechanism
+(close losing scopes instead of aborting). This handles channel.receive
+and signal.await (which close/signal on scope.close) but does NOT
+unblock semaphore.acquire or latch.await. Since parallel extensions
+use semaphores for coordination, scope-close is insufficient.
+AbortSignal provides uniform cancellation across all primitive types.
+
+### race: vs parallel: policy relationship
+
+`race:` is a structural step type, distinct from `parallel:` with
+`advanceAfter: 1, cancelRemaining: true`. The distinction:
+
+- **`race:`** — first-to-complete over arbitrary step sequences
+  (blocks, nested structures). Branches are always unnamed. No
+  result collection from losing branches.
+- **`parallel: { advanceAfter: 1, cancelRemaining: true }`** —
+  race-as-policy on named branches. Supports partial result
+  collection before cancellation. Named branches allow the
+  discriminator to report which branch won.
+
+`race:` is syntactic sugar for the common case. Remove from
+`DECORATOR_KEYS` (it's structural only), keep in `RESERVED_KEYS`.
 
 ## Feature Designs
 
@@ -212,13 +295,28 @@ if (raw === 'continuous') return { type: 'continuous' };
 ```
 
 `LoopDecorator` handles continuous as infinite iteration with AbortSignal
-check and safety cap:
+check:
 
 ```typescript
-const maxIterations = directive.type === 'continuous' ? 100_000 : directive.count;
-for (let i = 0; i < maxIterations; i++) {
-  if (context.signal?.aborted) return stepFailure('Cancelled');
-  // ... existing loop body
+if (directive.type === 'continuous') {
+  while (true) {
+    if (context.signal?.aborted) return stepFailure('Cancelled');
+    lastResult = await this.next.execute(context);
+    if (lastResult.kind === 'failure') return lastResult;
+  }
+}
+```
+
+**Parse-time validation:** Walker rejects `loop: continuous` unless the
+step also has a `cancel:` decorator, a `timeout:` decorator, or is
+nested inside a block with a `timeout:`. This is statically verifiable
+because all decorators are visible at parse time:
+
+```typescript
+// In Walker.resolveOne(), after resolving decorators:
+if (decorators['loop'] === 'continuous'
+    && !decorators['cancel'] && !decorators['timeout']) {
+  throw new Error(`${stepPath}: loop: continuous requires cancel: or timeout:`);
 }
 ```
 
@@ -235,25 +333,30 @@ class CancelDecorator implements DecoratedExecution {
 
   async execute(context: Context): Promise<Result> {
     const controller = new AbortController();
-    const signal = context.scope.signal(this.signalName);
+    const orcSignal = context.scope.signal(this.signalName);
 
-    const onSignal = () => controller.abort();
     // If already signalled, abort immediately
-    if (signal.isSignalled()) {
+    if (orcSignal.isSignalled()) {
       return stepFailure('Cancelled');
     }
-    signal.await().then(onSignal);
+    orcSignal.await().then(() => controller.abort());
 
     const merged = mergeAbortSignals(context.signal, controller.signal);
     try {
       return await this.next.execute({ ...context, signal: merged });
     } finally {
-      // Cleanup: prevent the signal listener from firing after completion
-      controller.abort(); // no-op if already aborted
+      controller.abort(); // cleanup: prevent signal listener from firing after completion
     }
   }
 }
 ```
+
+**Signal/cancel interaction (deliberate):** `cancel:` uses OrcSignal
+intentionally — the same signal can both cancel one step's inner
+execution and unblock another step's `wait:`. This matches platform
+semantics where a "shutdown" signal might cancel a consumer loop AND
+trigger a cleanup step. YAML authors who want cancellation-only events
+should use a dedicated signal name (convention: `cancel-*` prefix).
 
 `mergeAbortSignals` creates a new AbortController that aborts when either
 input signal aborts:
@@ -406,17 +509,16 @@ try {
 
 #### Named consumers
 
-New `ConsumerHandle` primitive in `orchestration/`:
+**Simplified ConsumerHandle** — the browser runtime does not need the
+full platform consumer lifecycle (pause/resume/start/stop). The same
+behavior is achievable through `cancel:` + re-establishing a new `from:`.
+The TS implementation provides only stop:
 
 ```typescript
 interface ConsumerHandle {
   readonly name: string;
   stop(): void;
-  start(): void;
-  pause(): void;
-  resume(): Promise<void>;
   isStopped(): boolean;
-  isPaused(): boolean;
 }
 ```
 
@@ -432,16 +534,19 @@ consumer(name: string): ConsumerHandle;
 if (spec.name) {
   const consumer = context.scope.consumer(spec.name);
   // consumer.stop() aborts the from: loop via AbortController
-  // consumer.pause() suspends channel reads via promise gate
 }
 ```
 
-**Built-in actions:** `stop`, `start`, `pause`, `resume` — registered as
-built-in catalog entries (not plugin-provided) in the default catalog
-factory. Each takes a `name` param and calls the corresponding method on
-the consumer handle retrieved from scope. These follow the same pattern
-as any other action resolved by `catalog.resolve(key)` — the Walker sees
-them as plugin steps with known action keys.
+**Built-in action:** `stop` — registered as a built-in catalog entry.
+Takes a `name` param and calls `stop()` on the consumer handle retrieved
+from scope. `pause`/`resume`/`start` are deferred — if a YAML scenario
+needs them, the author can use `cancel: signal` + a new `from:` block
+to restart consumption.
+
+This departs from platform parity on the pause/resume API surface.
+The platform has distributed actors with long-running processes where
+pause/resume matters. The browser runtime has ephemeral scopes where
+stop + restart is equivalent and simpler.
 
 ### 4. race: Structural Step (#543)
 
