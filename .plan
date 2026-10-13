@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-540-playbook-showcase
-state: closing:stamped
+state: drained
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
