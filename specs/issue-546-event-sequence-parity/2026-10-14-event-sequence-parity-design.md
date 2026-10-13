@@ -325,11 +325,21 @@ type RetryDirective =
       backoff?: string; delayMs?: number };
 ```
 
+Extend `Result` failure variant with an optional `failureCategory`:
+
+```typescript
+| { kind: 'failure'; message: string; failureCategory?: string }
+```
+
+Standard categories: `TIMEOUT`, `TRANSIENT`, `RATE_LIMITED`, `PERMANENT`,
+`UNKNOWN`. Executors set the category when returning failure. If unset,
+defaults to `UNKNOWN`.
+
 `RetryDecorator` checks the failure category before retrying:
 
 ```typescript
 if (directive.type === 'conditional' && lastResult.kind === 'failure') {
-  const category = lastResult.executionMetadata?.failureCategory as string;
+  const category = lastResult.failureCategory ?? 'UNKNOWN';
   if (directive.on && !directive.on.includes(category)) break;
   if (directive.except && directive.except.includes(category)) break;
 }
@@ -426,9 +436,12 @@ if (spec.name) {
 }
 ```
 
-**New catalog actions:** `stop`, `start`, `pause`, `resume` — each takes
-a `name` param and calls the corresponding method on the consumer handle
-retrieved from scope.
+**Built-in actions:** `stop`, `start`, `pause`, `resume` — registered as
+built-in catalog entries (not plugin-provided) in the default catalog
+factory. Each takes a `name` param and calls the corresponding method on
+the consumer handle retrieved from scope. These follow the same pattern
+as any other action resolved by `catalog.resolve(key)` — the Walker sees
+them as plugin steps with known action keys.
 
 ### 4. race: Structural Step (#543)
 
@@ -495,7 +508,8 @@ different delays, first to complete wins.
 export interface ParallelStep {
   kind: 'parallel';
   name: string | null;
-  branches: NamedBranch[];         // changed from steps: ResolvedStep[]
+  steps: ResolvedStep[];           // preserved for backward compat (list form)
+  branches?: NamedBranch[];        // NEW — populated for map form only
   advanceAfter?: number;           // NEW — discriminator threshold
   cancelRemaining?: boolean;       // NEW — cancel after advancement
   collectionTimeout?: number;      // NEW — timeout for remaining (ms)
@@ -503,7 +517,7 @@ export interface ParallelStep {
 }
 
 export interface NamedBranch {
-  name: string | null;
+  name: string;
   steps: ResolvedStep[];
 }
 ```
@@ -532,15 +546,18 @@ if (structuralType === 'parallel') {
   let branches: NamedBranch[];
 
   if (Array.isArray(raw)) {
-    // List form: each element is a single unnamed branch step
+    // List form: preserve as steps (backward compat)
     const substeps = Walker.resolveAtDepth(raw, catalog, depth + 1, ...);
-    branches = substeps.map((s, i) => ({ name: s.name ?? null, steps: [s] }));
+    steps = substeps;
+    branches = undefined;
   } else if (typeof raw === 'object' && raw !== null) {
     // Map form: keys are branch names, values are step arrays
-    branches = Object.entries(raw).map(([name, steps]) => ({
+    const namedBranches = Object.entries(raw).map(([name, stepsRaw]) => ({
       name,
-      steps: Walker.resolveAtDepth(steps as Record<string, unknown>[], catalog, depth + 1, ...),
+      steps: Walker.resolveAtDepth(stepsRaw as Record<string, unknown>[], catalog, depth + 1, ...),
     }));
+    branches = namedBranches;
+    steps = namedBranches.flatMap(b => b.steps); // flat view for backward compat
   }
 
   const advanceAfter = step['advance-after'] as number | undefined;
@@ -550,7 +567,8 @@ if (structuralType === 'parallel') {
     ? parseDurationMs(collectionTimeoutRaw) : undefined;
 
   return {
-    kind: 'parallel', name: stepName, branches,
+    kind: 'parallel', name: stepName, steps,
+    ...(branches ? { branches } : {}),
     ...(advanceAfter !== undefined ? { advanceAfter } : {}),
     ...(cancelRemaining !== undefined ? { cancelRemaining } : {}),
     ...(collectionTimeout !== undefined ? { collectionTimeout } : {}),
