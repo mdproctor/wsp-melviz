@@ -1,0 +1,15 @@
+# Work Plan — issue-547-consumer-lifecycle-parity
+
+## State
+branch: issue-547-consumer-lifecycle-parity
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 547
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#547 — Issue #547 ← active
