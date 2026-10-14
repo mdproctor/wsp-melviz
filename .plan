@@ -1,8 +1,8 @@
-# Work Plan — issue-547-consumer-lifecycle-parity
+# Work Plan — issue-548-platform-playbook-ref
 
 ## State
 branch: issue-548-platform-playbook-ref
-state: active
+state: scaffolded
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -10,8 +10,6 @@ covers: 548
 design-repo: 
 design-section-hashes: 
 flyway-next-v: 
-evidence-era: true
 
 ## Queue
-- [x] casehubio/casehub-pages#547 — Issue #547
-- [ ] casehubio/casehub-pages#548 — Reference platform playbook examples instead of local copies
+- [ ] casehubio/casehub-pages#548 — Issue #548 ← active
