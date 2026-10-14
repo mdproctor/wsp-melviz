@@ -2,12 +2,14 @@
   "repo": "pages",
   "repo_path": "/Users/mdproctor/claude/casehub/pages",
   "base_branch": "main",
-  "branch": "issue-496-497-gallery-examples",
+  "branch": "issue-548-platform-playbook-ref",
   "commits": [
-    { "sha": "1cd47c5c", "message": "wip: add Invoke Bindings and Concurrency Patterns gallery examples", "action": "squash" },
-    { "sha": "5ed6cef7", "message": "docs: sync contributor guide — gallery sample count and new demos", "action": "squash" },
-    { "sha": "8fcd9d2f", "message": "docs(blog): promote diary — teaching the step system to talk to the outside world", "action": "squash" }
+    { "sha": "55af58ef", "message": "fix(#550): add pages-editor-core to build:packages chain", "action": "squash" },
+    { "sha": "7ebf92aa", "message": "feat(#548): add PlaybookResource serving platform catalog via classpath", "action": "squash" },
+    { "sha": "9ac5e610", "message": "feat(#548): update all consumers to fetch from /api/playbooks REST endpoint", "action": "squash" },
+    { "sha": "365d53da", "message": "feat(#548): remove local playbooks directory — platform catalog is canonical source", "action": "squash" },
+    { "sha": "52dc3314", "message": "fix(#548): close InputStream in PlaybookResource with try-with-resources", "action": "squash" }
   ],
   "verified": true,
-  "squash_message": "feat(gallery): add Invoke Bindings and Concurrency Patterns examples\n\nInvoke Bindings: interactive gallery example with mock executors for\nall six binding types (REST, MCP, GraphQL, Script, Agent, Process).\nEach sub-example shows the YAML invoke syntax and a simulated\nexecution trace with realistic responses.\n\nConcurrency Patterns: interactive gallery example demonstrating\nsemaphore, channel, concurrent map, spawned task, correlation scope,\nand deadline context using parallel structural steps.\n\nExports DefaultCorrelationScope from yaml-core orchestration index\nand casehub-entry bundle. Syncs contributor guide sample count.\n\nCloses #496, #497\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
+  "squash_message": "feat(#548): reference platform playbook examples instead of local copies\n\nReplace the local playbooks/ directory (57 YAML files + manifest) with a\nMaven dependency on casehub-platform-playbook-catalog. Add a thin REST\nendpoint at /api/playbooks that serves playbook content from the classpath.\nUpdate all browser consumers to fetch from the REST endpoint. Add Vite\nproxy for tutorials dev server.\n\nCloses #548\n\nCo-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 }

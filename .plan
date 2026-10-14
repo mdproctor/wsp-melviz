@@ -1,16 +1,22 @@
-# Work Plan — issue-547-consumer-lifecycle-parity
+# Work Plan — issue-548-platform-playbook-ref
 
 ## State
-branch: issue-547-consumer-lifecycle-parity
-state: drained
+branch: issue-548-platform-playbook-ref
+state: closing:promoted
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
-covers: 547
+covers: 548
 design-repo: 
 design-section-hashes: 
 flyway-next-v: 
 
 evidence-era: true
 ## Queue
-- [ ] casehubio/casehub-pages#547 — Issue #547 ← active
+- [ ] casehubio/casehub-pages#548 — Issue #548 ← active
+  - [x] Batch 1: REST endpoint
+    - [x] Task 1: Add dependency and create PlaybookResource
+  - [x] Batch 2: Update consumers
+    - [x] Task 2: Update TS fetch paths and Vite proxy
+  - [x] Batch 3: Cleanup
+    - [x] Task 3: Delete local playbooks and verify
