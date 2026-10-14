@@ -385,7 +385,7 @@ class CancelDecorator implements DecoratedExecution {
     if (orcSignal.isSignalled()) {
       return stepFailure('Cancelled');
     }
-    orcSignal.await().then(() => controller.abort());
+    orcSignal.await().then(() => controller.abort()).catch(() => {});
 
     const merged = mergeAbortSignals(context.signal, controller.signal);
     try {
@@ -457,10 +457,14 @@ Extend `ForEachDecorator` to check `spec['collect'] === 'all'`:
 ```typescript
 if (spec['collect'] === 'all') {
   const results: unknown[] = [];
-  for (const item of items) {
+  let failures = 0;
+  for (let i = 0; i < items.length; i++) {
+    const scoped = pushEachContext(ctx.resolver, as, items[i], i);
     const r = await this.next.execute(withResolver(ctx, scoped));
     if (r.kind === 'success') results.push(r.output);
+    else failures++;
   }
+  if (failures === items.length) return stepFailure('forEach collect: all items failed');
   return stepSuccess({ '__forEach.collected': results });
 }
 ```
