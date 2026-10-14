@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-546-event-sequence-parity
-state: closing:promoted
+state: closing:stamped
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
