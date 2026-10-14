@@ -221,30 +221,70 @@ class FromDecorator implements DecoratedExecution {
     if (context.signal?.aborted) return stepFailure('Cancelled');
 
     const spec = this.parseSpec();
-    const channel = this.resolveChannel(spec, context);
-    const item = await channel.receive();
+    let item: unknown;
 
-    if (item === undefined) {
-      // Channel closed — null sentinel
-      return stepSuccess({ '__from.closed': true });
+    try {
+      item = await this.receiveItem(spec, context);
+    } catch (e) {
+      if (e instanceof ChannelClosedError) {
+        return stepSuccess({ '__from.closed': true });
+      }
+      throw e;
     }
 
+    // Inject received data BEFORE filter evaluation
+    const alias = spec.as ?? 'from';
+    const scoped = pushFromContext(context.resolver, alias, item);
+    const scopedCtx = withResolver(context, scoped);
+
     if (spec.filter) {
-      const resolved = context.resolver.resolveString(spec.filter, 'from-filter');
+      const resolved = scoped.resolveString(spec.filter, 'from-filter');
       if (!isTruthy(resolved)) {
         return stepSuccess({}); // filtered out — skip
       }
     }
 
-    const alias = spec.as ?? 'from';
-    const scoped = pushFromContext(context.resolver, alias, item);
-    return this.next.execute(withResolver(context, scoped));
+    return this.next.execute(scopedCtx);
+  }
+
+  private async receiveItem(
+    spec: FromSpec, context: Context,
+  ): Promise<unknown> {
+    if (spec.channels) {
+      // Fan-in: race with cancellation of losers
+      return this.receiveFanIn(spec.channels, context);
+    }
+    return context.scope
+      .channel<unknown>(spec.channel)
+      .receive(context.signal);  // pass AbortSignal
+  }
+
+  private async receiveFanIn(
+    channelNames: string[], context: Context,
+  ): Promise<unknown> {
+    // Use per-channel AbortControllers to cancel losers
+    const controllers = channelNames.map(() => new AbortController());
+    const promises = channelNames.map((name, i) => {
+      const merged = mergeAbortSignals(context.signal, controllers[i]!.signal);
+      return context.scope.channel<unknown>(name)
+        .receive(merged)
+        .then(item => ({ index: i, item }));
+    });
+
+    const winner = await Promise.race(promises);
+    // Cancel losing channel receives
+    for (let i = 0; i < controllers.length; i++) {
+      if (i !== winner.index) controllers[i]!.abort();
+    }
+    return winner.item;
   }
 }
 ```
 
-For fan-in (`channels: [a, b]`), the decorator uses `Promise.race` across
-all channel receives — first channel with data wins.
+**Filter expressions:** Filters use truthiness checks via `isTruthy()`,
+not comparison operators. `${from.value}` resolves to the value; `isTruthy`
+checks if it's non-empty/non-zero. For comparison-based filtering, use
+the ConditionEvaluator (which wraps `isTruthy` + a pluggable delegate).
 
 Variable injection uses the same `ObjectVariableSource` pattern as
 `ForEachDecorator`:
@@ -307,16 +347,22 @@ if (directive.type === 'continuous') {
 }
 ```
 
-**Parse-time validation:** Walker rejects `loop: continuous` unless the
-step also has a `cancel:` decorator, a `timeout:` decorator, or is
-nested inside a block with a `timeout:`. This is statically verifiable
-because all decorators are visible at parse time:
+**Parse-time validation:** Walker rejects `loop: continuous` unless it
+has a termination guarantee — either on the same step or from a parent
+scope:
+
+- Same-step: `cancel:` or `timeout:` decorator present
+- Same-step: `background: true` (scope-bounded lifetime)
+- Parent scope: Walker tracks whether the current resolution depth is
+  inside a block/race/parallel with a timeout decorator (passed as a
+  `hasParentTimeout` flag through `resolveAtDepth`)
 
 ```typescript
 // In Walker.resolveOne(), after resolving decorators:
 if (decorators['loop'] === 'continuous'
-    && !decorators['cancel'] && !decorators['timeout']) {
-  throw new Error(`${stepPath}: loop: continuous requires cancel: or timeout:`);
+    && !decorators['cancel'] && !decorators['timeout']
+    && !decorators['background'] && !hasParentTimeout) {
+  throw new Error(`${stepPath}: loop: continuous requires cancel:, timeout:, or background:`);
 }
 ```
 
@@ -358,8 +404,8 @@ semantics where a "shutdown" signal might cancel a consumer loop AND
 trigger a cleanup step. YAML authors who want cancellation-only events
 should use a dedicated signal name (convention: `cancel-*` prefix).
 
-`mergeAbortSignals` creates a new AbortController that aborts when either
-input signal aborts:
+`mergeAbortSignals` uses `AbortSignal.any()` (available in Node 20+,
+all modern browsers) for correct lifecycle management:
 
 ```typescript
 function mergeAbortSignals(
@@ -367,10 +413,7 @@ function mergeAbortSignals(
   child: AbortSignal,
 ): AbortSignal {
   if (!parent) return child;
-  const merged = new AbortController();
-  parent.addEventListener('abort', () => merged.abort(), { once: true });
-  child.addEventListener('abort', () => merged.abort(), { once: true });
-  return merged.signal;
+  return AbortSignal.any([parent, child]);
 }
 ```
 
@@ -387,16 +430,22 @@ class BackgroundDecorator implements DecoratedExecution {
   ) {}
 
   async execute(context: Context): Promise<Result> {
-    const handle = context.scope.spawn(async (signal) => {
-      await this.next.execute({ ...context, signal });
-    });
-    return stepSuccess({ '__background.handle': handle.id });
+    const handle = context.scope.spawn(
+      context.stepName,
+      async (signal: AbortSignal) => {
+        await this.next.execute({ ...context, signal });
+      },
+    );
+    return stepSuccess({ '__background.handle': handle.name() });
   }
 }
 ```
 
-The spawned task receives an AbortSignal from `scope.spawn()`. On
-`scope.close()`, all spawned tasks are cancelled.
+**SpawnedTask interface changes:** `spawn()` signature changes from
+`(name: string, task: () => Promise<void>)` to
+`(name: string, task: (signal: AbortSignal) => Promise<void>)`.
+The `SpawnedTask` interface gains `cancel(): void`. These are
+breaking changes to the orchestration primitive API, scoped to this epic.
 
 **Walker changes:** Add `'background'` to `RESERVED_KEYS` and
 `DECORATOR_KEYS`.
@@ -435,12 +484,26 @@ Extend `Result` failure variant with an optional `failureCategory`:
 ```
 
 Standard categories: `TIMEOUT`, `TRANSIENT`, `RATE_LIMITED`, `PERMANENT`,
-`UNKNOWN`. Executors set the category when returning failure. If unset,
-defaults to `UNKNOWN`.
+`CANCELLED`, `UNKNOWN`. Executors set the category when returning failure.
+If unset, defaults to `UNKNOWN`.
 
-`RetryDecorator` checks the failure category before retrying:
+**Existing code paths that need category annotations:**
+- `TimeoutDecorator` → `TIMEOUT`
+- `SemaphoreDecorator` deadline failure → `TIMEOUT`
+- `WaitDecorator` deadline failure → `TIMEOUT`
+- AbortSignal cancellation path → `CANCELLED`
+
+`RetryDecorator` checks the failure category before retrying. CANCELLED
+is non-retryable by default — cancellation is a deliberate control flow
+decision, not a transient failure:
 
 ```typescript
+// All retry modes skip CANCELLED by default
+if (lastResult.kind === 'failure') {
+  const category = lastResult.failureCategory ?? 'UNKNOWN';
+  if (category === 'CANCELLED') break;
+}
+// Conditional retry adds further filtering
 if (directive.type === 'conditional' && lastResult.kind === 'failure') {
   const category = lastResult.failureCategory ?? 'UNKNOWN';
   if (directive.on && !directive.on.includes(category)) break;
@@ -586,9 +649,15 @@ private async evaluateRace(step: RaceStep, context: Context): Promise<Result> {
       ...context,
       signal: mergeAbortSignals(context.signal, controllers[i]!.signal),
     };
-    return this.evaluate(child, branchCtx).then(result => ({ index: i, result }));
+    return this.evaluate(child, branchCtx)
+      .then(result => ({ index: i, result }))
+      .catch(err => ({
+        index: i,
+        result: stepFailure(err instanceof Error ? err.message : String(err)),
+      }));
   });
 
+  // First branch to settle (success or failure) wins
   const winner = await Promise.race(promises);
 
   // Cancel all other branches
@@ -696,13 +765,15 @@ class ParallelCompletionTracker {
   private readonly controllers: AbortController[];
 
   constructor(
+    stepName: string,
     branchCount: number,
     advanceAfter: number,
     cancelRemaining: boolean,
     scope: ScenarioScope,
   ) {
-    this.advancementLatch = scope.latch('__parallel_advance', advanceAfter);
-    this.completionLatch = scope.latch('__parallel_complete', branchCount);
+    // Unique latch names per parallel step to support nesting
+    this.advancementLatch = scope.latch(`__parallel_advance_${stepName}`, advanceAfter);
+    this.completionLatch = scope.latch(`__parallel_complete_${stepName}`, branchCount);
     this.controllers = Array.from({ length: branchCount }, () => new AbortController());
   }
 }
@@ -730,6 +801,19 @@ race the completion latch against a timeout. Collect partial results.
 
 ### 6. Composition Playbooks (#545)
 
+### Playbooks from #542 (from: hardening)
+
+Four new playbooks:
+
+| Category | File | Title |
+|----------|------|-------|
+| flow-control | `flow-control/from-until.playbook.yaml` | From Until |
+| flow-control | `flow-control/from-channel-close.playbook.yaml` | From Channel Close |
+| flow-control | `flow-control/pause-resume.playbook.yaml` | Pause / Resume |
+| concurrency-patterns | `concurrency-patterns/named-consumer.playbook.yaml` | Named Consumer |
+
+### Playbooks from #545 (composition)
+
 Four new playbooks in `playbooks/composition/`:
 
 | File | Title | Pattern |
@@ -739,14 +823,28 @@ Four new playbooks in `playbooks/composition/`:
 | `heartbeat-monitor.playbook.yaml` | Heartbeat Monitor | loop: continuous + delay + from: with timeout |
 | `recursive-pattern.playbook.yaml` | Recursive Pattern | ((A then B) or (A then C))* via nested block/race/loop |
 
-All marked `runnable: false` initially (require runtime features from
-#538, #537, #542, #543 to execute).
+### Playbook from #543 (race)
 
-**Manifest updates:** Add all 4 to `playbooks/manifest.json` under the
-Composition category.
+| Category | File | Title |
+|----------|------|-------|
+| step-workflows | `step-workflows/race.playbook.yaml` | Race |
 
-**Scenario page updates:** Add temporal patterns to the Act 4 (Composition)
-dropdown picker in the scenario examples.
+### select.playbook.yaml update (#543)
+
+Already updated in prior work (#541) — description says "For
+first-to-complete over arbitrary concurrent blocks, use race: instead."
+No further changes needed.
+
+**Total: 9 new playbooks** (4 from #542, 4 from #545, 1 from #543).
+All marked `runnable: false` initially (require runtime features to
+execute).
+
+**Manifest updates:** Add all 9 to `playbooks/manifest.json` under
+their respective categories.
+
+**Scenario page updates:** Add playbooks to scenario page dropdowns —
+from: hardening playbooks to Act 2 (Step Modifiers), race to Act 3
+(Control Flow), temporal patterns to Act 4 (Composition).
 
 ## Implementation Order
 
@@ -787,7 +885,7 @@ Each feature gets tests alongside its implementation file:
 | RaceStep | structural-evaluator.test.ts | First wins, losers cancelled, nested race |
 | ParallelStep extensions | structural-evaluator.test.ts | Discriminator, race-as-policy, barrier (regression), map form |
 | ParallelCompletionTracker | parallel-completion-tracker.test.ts | Advance latch, cancel remaining, collection timeout |
-| ConsumerHandle | consumer-handle.test.ts | Stop, start, pause, resume lifecycle |
+| ConsumerHandle | consumer-handle.test.ts | Stop, isStopped, scope close cancels |
 | Playbooks | Validated by schema (non-runnable) | YAML parses without error |
 
 ## File Changes Summary
@@ -804,6 +902,10 @@ Each feature gets tests alongside its implementation file:
 - `playbooks/composition/heartbeat-monitor.playbook.yaml`
 - `playbooks/composition/recursive-pattern.playbook.yaml`
 - `playbooks/step-workflows/race.playbook.yaml`
+- `playbooks/flow-control/from-until.playbook.yaml`
+- `playbooks/flow-control/from-channel-close.playbook.yaml`
+- `playbooks/flow-control/pause-resume.playbook.yaml`
+- `playbooks/concurrency-patterns/named-consumer.playbook.yaml`
 
 ### Modified files
 - `packages/yaml-core/src/step/walker.ts` — RaceStep type, parallel map form, new reserved/decorator keys
@@ -812,7 +914,8 @@ Each feature gets tests alongside its implementation file:
 - `packages/yaml-core/src/orchestration/directives.ts` — continuous LoopDirective, conditional RetryDirective
 - `packages/yaml-core/src/orchestration/types.ts` — ConsumerHandle, consumer() on ScenarioScope
 - `packages/yaml-core/src/step/schema-composer.ts` — race:, from:, cancel:, background:, parallel policy schemas
-- `playbooks/manifest.json` — 5 new entries (4 composition + 1 race)
+- `packages/yaml-core/src/orchestration/types.ts` — SpawnedTask.cancel(), spawn() signature change
+- `playbooks/manifest.json` — 9 new entries (4 composition + 4 from-hardening + 1 race)
 
 ## References
 
