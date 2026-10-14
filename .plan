@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-547-consumer-lifecycle-parity
-state: closing:promoted
+state: drained
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
