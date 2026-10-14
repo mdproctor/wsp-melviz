@@ -1,33 +1,16 @@
-# Work Plan — issue-546-event-sequence-parity
+# Work Plan — issue-547-consumer-lifecycle-parity
 
 ## State
-branch: issue-546-event-sequence-parity
-state: drained
+branch: issue-547-consumer-lifecycle-parity
+state: closing:promoted
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
-covers: 546
+covers: 547
 design-repo: 
 design-section-hashes: 
 flyway-next-v: 
 
 evidence-era: true
 ## Queue
-- [ ] casehubio/casehub-pages#546 — Issue #546 ← active
-  - [x] Batch 1: AbortSignal Foundation
-    - [x] Task 1: Primitive overloads
-    - [x] Task 2: Context.signal + decorators
-    - [x] Task 3: Loop continuous + retry + failureCategory
-  - [x] Batch 2: New Decorators
-    - [x] Task 4: from: decorator
-    - [x] Task 5: cancel: + background: decorators
-    - [x] Task 6: forEach collect + primitive vars
-  - [x] Batch 3: Structural Steps
-    - [x] Task 7: race: structural step
-    - [x] Task 8: Parallel extensions
-  - [x] Batch 4: Hardening + Schema
-    - [x] Task 9: from: hardening
-    - [x] Task 10: Schema composer updates
-  - [x] Batch 5: Playbooks
-    - [x] Task 11: Playbook YAML + manifest
-    - [x] Task 12: Scenario pages + deferred issue
+- [ ] casehubio/casehub-pages#547 — Issue #547 ← active
