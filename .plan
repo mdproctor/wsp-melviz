@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-548-platform-playbook-ref
-state: closing:verified
+state: closing:promoted
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
