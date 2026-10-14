@@ -13,3 +13,9 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#548 — Issue #548 ← active
+  - [ ] Batch 1: REST endpoint
+    - [ ] Task 1: Add dependency and create PlaybookResource
+  - [ ] Batch 2: Update consumers
+    - [ ] Task 2: Update TS fetch paths and Vite proxy
+  - [ ] Batch 3: Cleanup
+    - [ ] Task 3: Delete local playbooks and verify
