@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-546-event-sequence-parity
-state: scaffolded
+state: active
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -13,3 +13,20 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#546 — Issue #546 ← active
+  - [ ] Batch 1: AbortSignal Foundation
+    - [ ] Task 1: Primitive overloads
+    - [ ] Task 2: Context.signal + decorators
+    - [ ] Task 3: Loop continuous + retry + failureCategory
+  - [ ] Batch 2: New Decorators
+    - [ ] Task 4: from: decorator
+    - [ ] Task 5: cancel: + background: decorators
+    - [ ] Task 6: forEach collect + primitive vars
+  - [ ] Batch 3: Structural Steps
+    - [ ] Task 7: race: structural step
+    - [ ] Task 8: Parallel extensions
+  - [ ] Batch 4: Hardening + Schema
+    - [ ] Task 9: from: hardening
+    - [ ] Task 10: Schema composer updates
+  - [ ] Batch 5: Playbooks
+    - [ ] Task 11: Playbook YAML + manifest
+    - [ ] Task 12: Scenario pages + deferred issue
