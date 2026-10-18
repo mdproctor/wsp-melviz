@@ -13,8 +13,8 @@ flyway-next-v: unknown
 
 ## Queue
 - [ ] casehubio/casehub-pages#571 — Issue #571 ← active
-  - [ ] Batch 1: pages-Walker+schema
-    - [ ] Task 1: TS Walker structural decorator support
-    - [ ] Task 2: Schema composer structural forms
-  - [ ] Batch 2: platform-Walker
-    - [ ] Task 3: Java Walker structural decorator support
+  - [x] Batch 1: pages-Walker+schema
+    - [x] Task 1: TS Walker structural decorator support
+    - [x] Task 2: Schema composer structural forms
+  - [x] Batch 2: platform-Walker
+    - [x] Task 3: Java Walker structural decorator support
