@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-571-decorator-structural-keys
-state: active
+state: closing:review
 project-sha: slot-creation
 date: 2026-10-18
 issue-repo: casehubio/casehub-pages
@@ -11,10 +11,6 @@ design-repo: project
 design-section-hashes: 
 flyway-next-v: unknown
 
+evidence-era: true
 ## Queue
-- [ ] casehubio/casehub-pages#571 — Issue #571 ← active
-  - [x] Batch 1: pages-Walker+schema
-    - [x] Task 1: TS Walker structural decorator support
-    - [x] Task 2: Schema composer structural forms
-  - [x] Batch 2: platform-Walker
-    - [x] Task 3: Java Walker structural decorator support
+- [x] casehubio/casehub-pages#571 — Issue #571
