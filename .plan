@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-571-decorator-structural-keys
-state: closing:verified
+state: closing:promoted
 project-sha: slot-creation
 date: 2026-10-18
 issue-repo: casehubio/casehub-pages
