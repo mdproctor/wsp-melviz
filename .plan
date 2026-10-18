@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-578-yaml-viz-showcases
-state: closing:review
+state: closing:verified
 project-sha: slot-creation
 date: 2026-10-18
 issue-repo: casehubio/casehub-pages
