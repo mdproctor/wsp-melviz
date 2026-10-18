@@ -1,0 +1,15 @@
+# Work Plan — issue-240-tree-filter-ancestors
+
+## State
+branch: issue-240-tree-filter-ancestors
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 240
+design-repo: 
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#240 — Issue #240 ← active
