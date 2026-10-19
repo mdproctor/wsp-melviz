@@ -2,14 +2,19 @@
 
 ## Last Session
 
-Closed 5 step-viewer issues and transferred 6 visualization issues to blocks-ui. Built barrier-bar (#585), signal arrows (#584), CSV data table (#586), and yaml-error-banner (#570) components. Also closed #559, #560, #561, #562 as already implemented. Epic #558 now has only #563 and #587 remaining.
+Closed #587 (race and select step kind rendering). Built two new Lit components:
+- `race-view.ts` — swim-lane grid columns with amber header and "first to complete wins" badge
+- `select-view.ts` — row-based dispatch table with purple subscribe / teal wait type badges
+
+Also exported `RaceStep` from yaml-core (was missing from public API), wired both into step-dispatch, and added gallery sections 31-32. Landed as e30aa813 on main.
 
 ## Immediate Next Step
 
-Pick up #587 (race/select step rendering) — needs mockup design first since no section exists. Then #563 (unified diff overlay) to close epic #558.
+Start #563 — Unified semantic diff overlay for step viewer (scale: L, complexity: High). This is the last remaining v1 child of epic #558. Some groundwork exists: `swim-lane-view` and `step-card` already have `diffState` props, and gallery section 21 demonstrates adding a 4th branch with diff overlays. The task is extending diff support uniformly across all components and adding semantic diff computation.
 
 ## References
 
 - `docs/mockups/step-review-viewer.html` — design mockup (sections 1-12 pages scope)
 - `docs/specs/2026-10-17-step-review-viewer-design.md` — design spec
-- `packages/pages-step-viewer/gallery.html` — component gallery (sections 24-30 are new)
+- `packages/pages-step-viewer/gallery.html` — component gallery (sections 24-32)
+- Epic #558 — only #563 remains open in v1 tier
