@@ -1,0 +1,15 @@
+# Work Plan — issue-587-race-select-step-render
+
+## State
+branch: issue-587-race-select-step-render
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 587
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#587 — Issue #587 ← active
