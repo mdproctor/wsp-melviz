@@ -13,3 +13,7 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#390 — Issue #390 ← active
+  - [x] Batch 1: Type extraction and field changes
+    - [x] Task 1: Extract dispatch types and apply refinements
+  - [x] Batch 2: REST action
+    - [x] Task 2: Add REST action definition
