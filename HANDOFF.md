@@ -2,19 +2,15 @@
 
 ## Last Session
 
-Closed #587 (race and select step kind rendering). Built two new Lit components:
-- `race-view.ts` — swim-lane grid columns with amber header and "first to complete wins" badge
-- `select-view.ts` — row-based dispatch table with purple subscribe / teal wait type badges
-
-Also exported `RaceStep` from yaml-core (was missing from public API), wired both into step-dispatch, and added gallery sections 31-32. Landed as e30aa813 on main.
+Completed #390 (scenario format refinements, TS side). Extracted dispatch protocol types from local interfaces in playbook-handler.ts to exported types in playbook/types.ts. Renamed CommandPayload.target to element, added DispatchStep.delay for per-step timing, made speed opt-in (default 0 = no delay), added REST action definition alongside GraphQL. Branch landed on main, issue closed.
 
 ## Immediate Next Step
 
-Start #563 — Unified semantic diff overlay for step viewer (scale: L, complexity: High). This is the last remaining v1 child of epic #558. Some groundwork exists: `swim-lane-view` and `step-card` already have `diffState` props, and gallery section 21 demonstrates adding a 4th branch with diff overlays. The task is extending diff support uniformly across all components and adding semantic diff computation.
+Recommended #531 (inferred method-call dispatch for playbook steps) — directly extends the executor framework just refined. Alternative: #499 (event-triggered scenarios, builds on #454 emit-event).
 
 ## References
 
-- `docs/mockups/step-review-viewer.html` — design mockup (sections 1-12 pages scope)
-- `docs/specs/2026-10-17-step-review-viewer-design.md` — design spec
-- `packages/pages-step-viewer/gallery.html` — component gallery (sections 24-32)
-- Epic #558 — only #563 remains open in v1 tier
+- `packages/pages-aria/src/playbook/types.ts` — dispatch protocol types (new canonical location)
+- `packages/pages-aria/src/playbook/invoke/definitions.ts` — action catalog (REST added)
+- `packages/pages-aria/src/server/playbook-handler.ts` — executor handler (simplified)
+- `plans/2026-10-20-scenario-format-refinements.md` — implementation plan
