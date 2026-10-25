@@ -1,0 +1,15 @@
+# Work Plan — issue-438-intellij-plugin-ci
+
+## State
+branch: issue-438-intellij-plugin-ci
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 438,513,534
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#438 — Issue #438 ← active
