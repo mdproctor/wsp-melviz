@@ -14,4 +14,4 @@ flyway-next-v: none
 ## Queue
 - [x] casehubio/casehub-pages#438 — Issue #438
 - [x] casehubio/casehub-pages#513 — Repair failing examples Playwright suite
-- [ ] casehubio/casehub-pages#534 — Visual line highlight via Range.getClientRects ← active
+- [x] casehubio/casehub-pages#534 — Visual line highlight via Range.getClientRects
