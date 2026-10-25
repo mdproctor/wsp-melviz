@@ -1,7 +1,7 @@
 # Work Plan — issue-438-intellij-plugin-ci
 
 ## State
-branch: issue-438-intellij-plugin-ci
+branch: 
 state: scaffolded
 project-sha: 
 date: 
@@ -12,6 +12,6 @@ design-section-hashes:
 flyway-next-v: none
 
 ## Queue
-- [ ] casehubio/casehub-pages#438 — Issue #438 ← active
-- [ ] casehubio/casehub-pages#513 — Repair failing examples Playwright suite
+- [x] casehubio/casehub-pages#438 — Issue #438
+- [ ] casehubio/casehub-pages#513 — Repair failing examples Playwright suite ← active
 - [ ] casehubio/casehub-pages#534 — Visual line highlight via Range.getClientRects
