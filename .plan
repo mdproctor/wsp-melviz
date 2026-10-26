@@ -11,13 +11,13 @@ date: 2026-10-26
 ## Queue
 - [x] casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence
 - [ ] casehubio/casehub-pages#498 — feat: scenario lifecycle state — draft/active/archived versioning with approval workflow ← active
-  - [ ] Batch 1: TS LifecycleEngine
-    - [ ] Task 1: LifecycleEngine + default YAML + tests + exports
-  - [ ] Batch 2: Java LifecycleEngine
-    - [ ] Task 2: Java LifecycleEngine + resources + tests
-  - [ ] Batch 3: ScriptDescriptor Migration
-    - [ ] Task 3: enum to String + extractor update
-  - [ ] Batch 4: Registry Wiring
-    - [ ] Task 4: UploadedScriptSource + ScriptRegistry + ScriptLifecycleTest
-  - [ ] Batch 5: Cross-Runtime
-    - [ ] Task 5: YAML consistency test
+  - [x] Batch 1: TS LifecycleEngine
+    - [x] Task 1: LifecycleEngine + default YAML + tests + exports
+  - [x] Batch 2: Java LifecycleEngine
+    - [x] Task 2: Java LifecycleEngine + resources + tests
+  - [x] Batch 3: ScriptDescriptor Migration
+    - [x] Task 3: enum to String + extractor update
+  - [x] Batch 4: Registry Wiring
+    - [x] Task 4: UploadedScriptSource + ScriptRegistry + ScriptLifecycleTest
+  - [x] Batch 5: Cross-Runtime
+    - [x] Task 5: YAML consistency test
