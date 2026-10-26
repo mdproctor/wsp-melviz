@@ -2,7 +2,7 @@
 
 ## State
 branch: 
-state: closing:review
+state: closing:verified
 issue-repo: casehubio/casehub-pages
 covers: casehubio/casehub-pages#418
 Current: casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence
