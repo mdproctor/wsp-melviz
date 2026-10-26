@@ -10,7 +10,7 @@ date: 2026-10-26
 
 ## Queue
 - [ ] casehubio/casehub-pages#500 — feat: scenario outcome tracking — post-execution analysis with CBR linkage ← active
-  - [ ] Batch 1: Outcome types and collector
-    - [ ] Task 1: Outcome data model and OutcomeCollector with tests
+  - [x] Batch 1: Outcome types and collector
+    - [x] Task 1: Outcome data model and OutcomeCollector with tests
   - [ ] Batch 2: Scheduler integration
     - [ ] Task 2: Wire OutcomeCollector into scheduler and emit scenario outcome
