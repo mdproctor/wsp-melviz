@@ -47,20 +47,24 @@ Mirrored: `backend/playbook/src/main/resources/lifecycle/default-lifecycle.yaml`
 name: script-lifecycle
 states:
   draft:
-    next: active
+    - next: active
   active:
-    events:
-      archive: { type: simple, target: archived }
-      revise: { type: simple, target: draft }
+    - on:
+        archive: archived
+        revise: draft
   archived:
-    events:
-      resurrect: { type: simple, target: draft }
-initial: draft
+    - on:
+        resurrect: draft
 ```
+
+The format matches `ScenarioParser`'s input: each state's value is an
+array of entries. `initialState` is determined by the first key in the
+`states` block (not an explicit field — that's how the parser works), so
+`draft` must be listed first.
 
 This defines the same three states as the current enum, with explicit
 transitions:
-- `draft` → `active` (via completion-driven transition)
+- `draft` → `active` (via completion-driven `next`)
 - `active` → `archived` (via `archive` event)
 - `active` → `draft` (via `revise` event)
 - `archived` → `draft` (via `resurrect` event)
@@ -196,9 +200,11 @@ public List<ScriptDescriptor> listByState(String state,
 
 The `updateMeta()` guard changes from hardcoded `state != DRAFT` to a
 configurable check. In the default lifecycle, only `draft` allows editing.
-This can be expressed as a property on the state definition in the lifecycle
-YAML (future extension) or as a convention (initial state allows editing).
-For now, the guard checks `current.equals(lifecycleEngine.initialState())`.
+For now, this is a hardcoded convention: only the initial state allows
+editing. The guard checks `current.equals(lifecycleEngine.initialState())`.
+When guard infrastructure lands (approval workflow issue), this convention
+should be replaced by an explicit `editable: true` property on state
+definitions in the lifecycle YAML.
 
 ### UploadedScriptSource
 
