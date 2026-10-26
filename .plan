@@ -1,7 +1,7 @@
 # Work Plan — issue-418-theme-resource
 
 ## State
-branch: issue-418-theme-resource
+branch: 
 state: active
 issue-repo: casehubio/casehub-pages
 covers: casehubio/casehub-pages#418
@@ -9,7 +9,5 @@ Current: casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for serv
 date: 2026-10-26
 
 ## Queue
-- [ ] casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence ← active
-  - [x] Batch 1: ThemeResource
-    - [x] Task 1: Implement ThemeResource with tests
-- [ ] casehubio/casehub-pages#498 — feat: scenario lifecycle state — draft/active/archived versioning with approval workflow
+- [x] casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence
+- [ ] casehubio/casehub-pages#498 — feat: scenario lifecycle state — draft/active/archived versioning with approval workflow ← active
