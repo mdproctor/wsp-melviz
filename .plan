@@ -2,12 +2,13 @@
 
 ## State
 branch: 
-state: active
+state: closing:review
 issue-repo: casehubio/casehub-pages
 covers: casehubio/casehub-pages#418
 Current: casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence
 date: 2026-10-26
 
+evidence-era: true
 ## Queue
 - [x] casehubio/casehub-pages#418 — ThemeResource Quarkus endpoint for server-side theme persistence
 - [ ] casehubio/casehub-pages#498 — feat: scenario lifecycle state — draft/active/archived versioning with approval workflow ← active
