@@ -169,24 +169,34 @@ collector.stepStarted(posKey, step.kind, queue.id);
 After result handling (success or failure):
 ```typescript
 const stepName = ('name' in step ? step.name : null) ?? posKey;
+const decoratorNames = 'decorators' in step
+  ? Object.keys((step as { decorators: Record<string, unknown> }).decorators)
+  : undefined;
 collector.stepCompleted(posKey, stepName, resultDisposition, errorDetail, decoratorNames);
 ```
 
 ### 3. Completion — three exit paths
 
-Each exit path emits the outcome event:
+Each exit path emits the outcome event. Journal entries must be collected
+*before* `simulationRuntime?.popAll()` — the normal completion path calls
+`popAll()` which clears the overlay stack, so `hasActiveOverlay()` would
+return `false` after that point.
 
 ```typescript
 function emitOutcome(finalState: 'completed' | 'failed' | 'deadlocked'): void {
-  const journal = simulationRuntime?.hasActiveOverlay()
+  const journal = simulationRuntime
     ? simulationRuntime.allEntries()
     : undefined;
-  const outcome = collector.finalize(finalState, journal);
+  const outcome = collector.finalize(finalState,
+    journal && journal.length > 0 ? journal : undefined);
   options.eventTarget.dispatchEvent(new CustomEvent('pages-event', {
     detail: { topic: 'scenario:outcome', payload: outcome },
   }));
 }
 ```
+
+On the normal completion path, `emitOutcome('completed')` must be called
+before `simulationRuntime?.popAll()`.
 
 Exit paths:
 - **Normal completion** (all queues done): `emitOutcome('completed')`
