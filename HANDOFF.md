@@ -1,28 +1,36 @@
 # HANDOFF — casehub-pages
 
-## Last Session
+## Active Branch
 
-Completed 5 issues across two branches:
+**Branch issue-508-complete-type-unification** — epic: complete type unification (#508)
 
-**Branch issue-453-simulation-yaml-block (closed):**
-- #453 — Scenario YAML simulation block (L/High, 14 tasks, 5 batches). SimulationRuntime gains overlay-scoped corpus resolution (sequential/key-lookup strategies), discriminated corpus format with per-entry realism. SimulationAwareInvokeHandler intercepts graphql-domain bindings. VerifySimulationHandler provides journal assertion semantics. SimulationDecorator in decorator chain. Standalone simulation steps. Landed as bdb7de17.
+### Completed this session (Pages scope)
 
-**Branch issue-438-intellij-plugin-ci (closed):**
-- #438 — IntelliJ plugin CI integration (S/Med). yarn build:plugin script, CI workflow with JDK 21, contributor guide docs.
-- #513 — Playwright suite repair (M/Med). HTML copy to dist + active class preservation across re-renders (162 to 0 failures).
-- #534 — Visual line highlight (S/Low). posAtCoords from getClientRects replaces coordsAtPos scanning.
-- Landed as 3c9066fd.
+1. **YamlImport.steps → .actions** — removed stale `steps` property from `YamlImport` interface, unified on `actions`. Removed migration filter in `ImportExpander`; action-based imports now expand like module imports. (5 files)
+2. **3-doc YAML parser support** — `splitMultiDoc` handles front matter + metadata + bare action array as a third YAML document. Enables ceremony-free playbook YAML.
+3. **Gallery YAML ceremony** — removed `steps:` wrapper from Concurrency Patterns gallery snippets (3 items).
 
-Also fixed 10 stale orphaned-content findings from prior #532 branch.
+### Cross-repo: platform
 
-## Immediate Next Step
+Commit `5820a96a` on branch `issue-661-playbook-protocol-bridge` in casehubio/platform — converts 26 playbook YAML source files from `steps:` ceremony to 3-doc bare array format. These are the source of truth for the gitignored `examples/dist/api/playbooks/` files in pages.
 
-Recommended #500 (scenario outcome tracking) — builds directly on #453's invocation journal infrastructure for post-execution analysis with CBR linkage. Alternative: #498 (scenario lifecycle state) or #499 (event-triggered scenario activation).
+### Already complete before this session
+
+- All TS type renames (`StepDefinitionParser` → `DefinitionParser`, `StepAction` → `Action`, `StepResult` → `Result`, `StepWalker` → `Walker`, `ValidatingStepAction` → `ValidatingAction`)
+- `examples/src/casehub-entry.ts` — already uses `Result` and `Action`
+- Spec docs — already have inline rename annotations
+- Schema (`importSchema`) — already used `actions`, not `steps`
+
+### Remaining (not in Pages scope — tracked in #508)
+
+- **Platform type renames** (~100+ refs): `StepWalker` → `Walker`, `StepDefinitionParser` → `DefinitionParser`, etc.
+- **Platform YAML ceremony**: `StepWalker.resolveMatchCases()` / `resolveSelectBranches()` — replace `caseMap.get("steps")` with inline resolution
+- **Platform front matter parser**: Java scenario parser support for 3-doc format
+- **Test YAML template literals** (53 occurrences in 7 pages-aria test files): these test the parser's `steps:` format which is still valid — no change needed unless we deprecate 2-doc format
 
 ## References
 
-- `packages/yaml-core/src/step/simulation-runtime.ts` — SimulationRuntime, overlay stack, corpus resolution
-- `packages/pages-aria/src/playbook/invoke/simulation-aware-handler.ts` — graphql-domain simulation interception
-- `packages/pages-aria/src/playbook/invoke/verify-simulation-handler.ts` — journal assertion action
-- `packages/pages-markdown-editor/src/markdown-editor-bridge.ts` — highlightLine with posAtCoords
-- `.github/workflows/ci.yml` — IntelliJ plugin build steps
+- `packages/yaml-core/src/types.ts` — `YamlImport` (steps property removed)
+- `packages/yaml-core/src/import-expander.ts` — migration filter removed
+- `packages/pages-aria/src/playbook/parser.ts` — 3-doc splitMultiDoc
+- `examples/samples/Scenarios/Concurrency Patterns.ts` — gallery YAML updated
