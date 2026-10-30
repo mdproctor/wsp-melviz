@@ -158,12 +158,11 @@ import java.util.Map;
 public class MutationExceptionMapper implements ExceptionMapper<MutationException> {
     @Override
     public Response toResponse(MutationException e) {
-        Response.Status status = switch (e.code()) {
-            case "VALIDATION_ERROR" -> Response.Status.fromStatusCode(422);
-            case "VERSION_CONFLICT", "SLUG_CONFLICT", "REF_DELETE_BLOCKED"
-                -> Response.Status.CONFLICT;
-            case "NOT_FOUND" -> Response.Status.NOT_FOUND;
-            default -> Response.Status.INTERNAL_SERVER_ERROR;
+        int status = switch (e.code()) {
+            case "VALIDATION_ERROR" -> 422;
+            case "VERSION_CONFLICT", "SLUG_CONFLICT", "REF_DELETE_BLOCKED" -> 409;
+            case "NOT_FOUND" -> 404;
+            default -> 500;
         };
         return Response.status(status)
             .entity(Map.of("error", e.getMessage(), "code", e.code()))
