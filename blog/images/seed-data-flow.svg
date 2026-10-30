@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 260" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Step boxes -->
+  <rect x="20" y="80" width="130" height="60" rx="6" fill="#f0f4f8" stroke="#6a8aac" stroke-width="1.5"/>
+  <text x="85" y="105" text-anchor="middle" font-size="12" font-weight="600" fill="#3a5a7a">ensureSeeded()</text>
+  <text x="85" y="122" text-anchor="middle" font-size="10" fill="#6a8aaa">first access</text>
+
+  <rect x="190" y="80" width="120" height="60" rx="6" fill="#fff8e0" stroke="#c0a030" stroke-width="1.5"/>
+  <text x="250" y="105" text-anchor="middle" font-size="12" font-weight="600" fill="#6a5a10">BEGIN</text>
+  <text x="250" y="122" text-anchor="middle" font-size="10" fill="#8a7a30">IMMEDIATE</text>
+
+  <rect x="350" y="80" width="120" height="60" rx="6" fill="#f0f4f8" stroke="#6a8aac" stroke-width="1.5"/>
+  <text x="410" y="105" text-anchor="middle" font-size="12" font-weight="600" fill="#3a5a7a">Re-check</text>
+  <text x="410" y="122" text-anchor="middle" font-size="10" fill="#6a8aaa">COUNT(*) = 0?</text>
+
+  <rect x="510" y="80" width="80" height="60" rx="6" fill="#e0f0e0" stroke="#6aac6a" stroke-width="1.5"/>
+  <text x="550" y="105" text-anchor="middle" font-size="12" font-weight="600" fill="#3a6a3a">INSERT</text>
+  <text x="550" y="122" text-anchor="middle" font-size="10" fill="#5a8a5a">seed rows</text>
+
+  <rect x="620" y="80" width="60" height="60" rx="6" fill="#e8e0f0" stroke="#8b7aac" stroke-width="1.5"/>
+  <text x="650" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#4a3a6a">COMMIT</text>
+
+  <!-- Arrows -->
+  <line x1="150" y1="110" x2="188" y2="110" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="310" y1="110" x2="348" y2="110" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="470" y1="110" x2="508" y2="110" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="590" y1="110" x2="618" y2="110" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- TOCTOU guard annotation -->
+  <rect x="270" y="170" width="200" height="40" rx="4" fill="#fff0f0" stroke="#cc6666" stroke-width="1"/>
+  <text x="370" y="190" text-anchor="middle" font-size="11" fill="#993333">TOCTOU guard: re-check inside</text>
+  <text x="370" y="203" text-anchor="middle" font-size="11" fill="#993333">write lock prevents races</text>
+  <line x1="370" y1="170" x2="410" y2="142" stroke="#cc6666" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Skip path -->
+  <rect x="350" y="10" width="120" height="35" rx="4" fill="#f8f0f0" stroke="#ac6a6a" stroke-width="1"/>
+  <text x="410" y="32" text-anchor="middle" font-size="11" fill="#8a3a3a">ROLLBACK (skip)</text>
+  <line x1="410" y1="80" x2="410" y2="47" stroke="#ac6a6a" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="430" y="68" font-size="9" fill="#ac6a6a">already seeded</text>
+</svg>
