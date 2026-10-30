@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="system-ui, -apple-system, sans-serif">
+  <style>
+    .box { stroke: #374151; stroke-width: 1.5; rx: 6; }
+    .box-read { fill: #f0f4ff; }
+    .box-write { fill: #fef3c7; }
+    .box-spi { fill: #ecfdf5; }
+    .label { font-size: 13px; fill: #374151; text-anchor: middle; }
+    .title { font-size: 11px; fill: #6b7280; text-anchor: middle; font-weight: 600; letter-spacing: 0.05em; }
+    .method { font-size: 11px; fill: #1f2937; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .arrow { stroke: #6b7280; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .extends { stroke: #6b7280; stroke-width: 1.5; fill: none; stroke-dasharray: 6,3; marker-end: url(#arrowhead); }
+    .divider { stroke: #d1d5db; stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#6b7280" />
+    </marker>
+  </defs>
+
+  <!-- Before label -->
+  <text x="190" y="24" class="title">BEFORE — READ ONLY</text>
+
+  <!-- DataProvider box -->
+  <rect x="60" y="40" width="260" height="130" class="box box-read" />
+  <text x="190" y="62" class="label" font-weight="600">DataProvider</text>
+  <line x1="60" y1="72" x2="320" y2="72" class="divider" />
+  <text x="76" y="92" class="method">type(): String</text>
+  <text x="76" y="110" class="method">canHandle(dataSetId): boolean</text>
+  <text x="76" y="128" class="method">query(lookup): QueryResult</text>
+  <text x="76" y="152" class="method" fill="#9ca3af" font-style="italic">// no write path</text>
+
+  <!-- After label -->
+  <text x="530" y="24" class="title">AFTER — READ + WRITE</text>
+
+  <!-- DataProvider (inherited) -->
+  <rect x="400" y="40" width="260" height="100" class="box box-read" />
+  <text x="530" y="62" class="label" font-weight="600">DataProvider</text>
+  <line x1="400" y1="72" x2="660" y2="72" class="divider" />
+  <text x="416" y="92" class="method">type(): String</text>
+  <text x="416" y="110" class="method">canHandle(dataSetId): boolean</text>
+  <text x="416" y="128" class="method">query(lookup): QueryResult</text>
+
+  <!-- MutableDataProvider -->
+  <rect x="400" y="180" width="260" height="150" class="box box-write" />
+  <text x="530" y="202" class="label" font-weight="600">MutableDataProvider</text>
+  <line x1="400" y1="212" x2="660" y2="212" class="divider" />
+  <text x="416" y="232" class="method">get(ctx, coll, id): JsonNode?</text>
+  <text x="416" y="250" class="method">create(ctx, coll, doc, slug): String</text>
+  <text x="416" y="268" class="method">update(ctx, coll, id, Δ, ver): void</text>
+  <text x="416" y="286" class="method">delete(ctx, coll, id): void</text>
+  <text x="416" y="304" class="method">hasReferences(ctx, coll, id): bool</text>
+
+  <!-- Extends arrow -->
+  <path d="M530,180 L530,145" class="extends" />
+  <text x="555" y="167" class="method" fill="#6b7280" font-style="italic">extends</text>
+</svg>

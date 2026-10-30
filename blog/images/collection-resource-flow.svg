@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" font-family="system-ui, -apple-system, sans-serif">
+  <style>
+    .box { stroke: #374151; stroke-width: 1.5; rx: 6; }
+    .client { fill: #eff6ff; }
+    .resource { fill: #f0fdf4; }
+    .spi { fill: #fef3c7; }
+    .cache { fill: #fdf2f8; }
+    .label { font-size: 12px; fill: #374151; text-anchor: middle; font-weight: 600; }
+    .detail { font-size: 10px; fill: #6b7280; text-anchor: middle; }
+    .mono { font-size: 10px; fill: #1f2937; font-family: 'SF Mono', 'Fira Code', monospace; text-anchor: middle; }
+    .arrow { stroke: #374151; stroke-width: 1.5; fill: none; marker-end: url(#ah); }
+    .arrow-back { stroke: #059669; stroke-width: 1.5; fill: none; marker-end: url(#ahg); stroke-dasharray: 5,3; }
+    .step { font-size: 10px; fill: #6b7280; font-style: italic; }
+  </style>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#374151" />
+    </marker>
+    <marker id="ahg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#059669" />
+    </marker>
+  </defs>
+
+  <!-- Client -->
+  <rect x="20" y="90" width="120" height="80" class="box client" />
+  <text x="80" y="122" class="label">Client</text>
+  <text x="80" y="140" class="mono">PATCH /{id}</text>
+  <text x="80" y="155" class="mono">If-Match: "3"</text>
+
+  <!-- CollectionResource -->
+  <rect x="190" y="60" width="160" height="140" class="box resource" />
+  <text x="270" y="85" class="label">CollectionResource</text>
+  <text x="270" y="105" class="detail">extract tenant → DataContext</text>
+  <text x="270" y="122" class="detail">parse If-Match → version</text>
+  <text x="270" y="139" class="detail">resolve provider</text>
+  <text x="270" y="156" class="detail">call update()</text>
+  <text x="270" y="173" class="detail">call get() → response</text>
+  <text x="270" y="190" class="detail">set ETag header</text>
+
+  <!-- MutableDataProvider -->
+  <rect x="410" y="80" width="160" height="100" class="box spi" />
+  <text x="490" y="105" class="label">MutableDataProvider</text>
+  <text x="490" y="125" class="detail">check _version = expected</text>
+  <text x="490" y="142" class="detail">apply merge patch</text>
+  <text x="490" y="159" class="detail">increment _version</text>
+  <text x="490" y="172" class="mono" fill="#dc2626">→ 409 if mismatch</text>
+
+  <!-- DataCacheService -->
+  <rect x="620" y="100" width="120" height="60" class="box cache" />
+  <text x="680" y="125" class="label">DataCacheService</text>
+  <text x="680" y="145" class="detail">invalidate(tenant, ds)</text>
+
+  <!-- Arrows -->
+  <path d="M140,130 L185,130" class="arrow" />
+  <text x="162" y="124" class="step">1</text>
+
+  <path d="M350,130 L405,130" class="arrow" />
+  <text x="377" y="124" class="step">2</text>
+
+  <path d="M350,170 L610,140" class="arrow" />
+  <text x="440" y="170" class="step">3</text>
+
+  <!-- Response back -->
+  <path d="M190,185 L140,185 L140,175" class="arrow-back" />
+  <text x="165" y="200" class="step">200 + ETag</text>
+</svg>
