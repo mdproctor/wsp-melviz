@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="760" height="380" font-family="'Segoe UI', system-ui, sans-serif">
+
+  <!-- Background -->
+  <rect width="760" height="380" fill="#f8f9fa" rx="12"/>
+
+  <!-- Title -->
+  <text x="380" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">Decorator Chain — Evaluation Order</text>
+  <text x="380" y="50" text-anchor="middle" font-size="11" fill="#888">outer decorators wrap inner ones — each layer adds a cross-cutting concern</text>
+
+  <!-- ═══════════════════════════════════════════
+       LEFT: Nested boxes showing decorator layers
+  ════════════════════════════════════════════ -->
+
+  <!-- cancel: — outermost, red border -->
+  <rect x="30" y="70" width="340" height="280" fill="#fef2f2" rx="8" stroke="#ef4444" stroke-width="2"/>
+  <text x="46" y="92" font-size="12" font-weight="700" fill="#dc2626">cancel:</text>
+  <text x="120" y="92" font-size="10" fill="#ef4444">signal-triggered abort</text>
+
+  <!-- timeout: -->
+  <rect x="50" y="104" width="300" height="230" fill="#eff6ff" rx="8" stroke="#3b82f6" stroke-width="2"/>
+  <text x="66" y="126" font-size="12" font-weight="700" fill="#2563eb">timeout:</text>
+  <text x="132" y="126" font-size="10" fill="#3b82f6">deadline enforcement</text>
+
+  <!-- retry: -->
+  <rect x="70" y="138" width="260" height="180" fill="#f0fdf4" rx="8" stroke="#22c55e" stroke-width="2"/>
+  <text x="86" y="160" font-size="12" font-weight="700" fill="#16a34a">retry:</text>
+  <text x="126" y="160" font-size="10" fill="#22c55e">failure recovery</text>
+
+  <!-- semaphore: -->
+  <rect x="90" y="172" width="220" height="130" fill="#faf5ff" rx="8" stroke="#a855f7" stroke-width="2"/>
+  <text x="106" y="194" font-size="12" font-weight="700" fill="#9333ea">semaphore:</text>
+  <text x="180" y="194" font-size="10" fill="#a855f7">concurrency gate</text>
+
+  <!-- The step itself -->
+  <rect x="120" y="210" width="160" height="72" fill="#1e293b" rx="6"/>
+  <text x="200" y="238" text-anchor="middle" font-size="13" font-weight="700" fill="#f1f5f9">invoke: api/submit</text>
+  <text x="200" y="258" text-anchor="middle" font-size="11" fill="#94a3b8">the actual work</text>
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT: YAML equivalent + evaluation arrows
+  ════════════════════════════════════════════ -->
+
+  <rect x="400" y="70" width="340" height="168" fill="white" rx="8" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="416" y="94" font-size="11" font-weight="600" fill="#64748b">YAML</text>
+
+  <text x="416" y="118" font-size="13" fill="#1e293b" font-family="'SF Mono', 'Fira Code', monospace">- invoke: api/submit</text>
+  <text x="432" y="138" font-size="13" fill="#dc2626" font-family="'SF Mono', 'Fira Code', monospace">cancel: shutdown</text>
+  <text x="432" y="158" font-size="13" fill="#2563eb" font-family="'SF Mono', 'Fira Code', monospace">timeout: 5s</text>
+  <text x="432" y="178" font-size="13" fill="#16a34a" font-family="'SF Mono', 'Fira Code', monospace">retry: 3</text>
+  <text x="432" y="198" font-size="13" fill="#9333ea" font-family="'SF Mono', 'Fira Code', monospace">semaphore: gate</text>
+
+  <!-- Evaluation arrows -->
+  <rect x="400" y="260" width="340" height="90" fill="white" rx="8" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="416" y="284" font-size="11" font-weight="600" fill="#64748b">Evaluation (outside → in)</text>
+
+  <!-- Arrow chain -->
+  <text x="416" y="312" font-size="12" font-weight="600" fill="#dc2626">cancel</text>
+  <text x="470" y="312" font-size="14" fill="#94a3b8">→</text>
+  <text x="484" y="312" font-size="12" font-weight="600" fill="#2563eb">timeout</text>
+  <text x="546" y="312" font-size="14" fill="#94a3b8">→</text>
+  <text x="560" y="312" font-size="12" font-weight="600" fill="#16a34a">retry</text>
+  <text x="606" y="312" font-size="14" fill="#94a3b8">→</text>
+  <text x="620" y="312" font-size="12" font-weight="600" fill="#9333ea">sem</text>
+  <text x="651" y="312" font-size="14" fill="#94a3b8">→</text>
+  <text x="665" y="312" font-size="12" font-weight="700" fill="#1e293b">step</text>
+
+  <text x="416" y="334" font-size="10" fill="#888">cancel wraps timeout — a timed-out step can still be cancelled</text>
+
+</svg>

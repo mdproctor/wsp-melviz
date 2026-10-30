@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 320" width="820" height="320" font-family="'Segoe UI', system-ui, sans-serif">
+
+  <!-- Background -->
+  <rect width="820" height="320" fill="#f8f9fa" rx="12"/>
+
+  <!-- Title -->
+  <text x="410" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">Stream Processing with from: — Channel-Connected Pipeline</text>
+  <text x="410" y="50" text-anchor="middle" font-size="11" fill="#888">producer publishes → channel buffers → consumer reads with from: decorator</text>
+
+  <!-- ═══════════════════════════════════════════
+       PRODUCER
+  ════════════════════════════════════════════ -->
+
+  <rect x="30" y="80" width="160" height="120" fill="white" rx="8" stroke="#2563eb" stroke-width="2"/>
+  <text x="110" y="104" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Producer</text>
+
+  <!-- Items being produced -->
+  <rect x="50" y="116" width="120" height="28" fill="#dbeafe" rx="4"/>
+  <text x="110" y="134" text-anchor="middle" font-size="11" fill="#1e40af">publish: events</text>
+  <rect x="50" y="150" width="120" height="28" fill="#eff6ff" rx="4"/>
+  <text x="110" y="168" text-anchor="middle" font-size="11" fill="#3b82f6">loop: 3</text>
+
+  <!-- Arrow: producer → channel -->
+  <line x1="190" y1="140" x2="260" y2="140" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#9333ea"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Items in flight -->
+  <rect x="210" y="126" width="28" height="28" fill="#dbeafe" rx="4" stroke="#2563eb" stroke-width="1"/>
+  <text x="224" y="144" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">1</text>
+  <rect x="228" y="118" width="28" height="28" fill="#bfdbfe" rx="4" stroke="#2563eb" stroke-width="1" opacity="0.7"/>
+  <text x="242" y="136" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">2</text>
+  <rect x="246" y="126" width="28" height="28" fill="#93c5fd" rx="4" stroke="#2563eb" stroke-width="1" opacity="0.5"/>
+  <text x="260" y="144" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">3</text>
+
+  <!-- ═══════════════════════════════════════════
+       CHANNEL
+  ════════════════════════════════════════════ -->
+
+  <rect x="270" y="80" width="140" height="120" fill="white" rx="8" stroke="#f59e0b" stroke-width="2"/>
+  <text x="340" y="104" text-anchor="middle" font-size="12" font-weight="700" fill="#b45309">Channel</text>
+  <text x="340" y="118" text-anchor="middle" font-size="10" fill="#d97706">bounded buffer</text>
+
+  <!-- Queue visualization -->
+  <rect x="290" y="130" width="100" height="50" fill="#fef3c7" rx="4" stroke="#f59e0b" stroke-width="1"/>
+  <rect x="296" y="140" width="26" height="30" fill="#fde68a" rx="3"/>
+  <text x="309" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">1</text>
+  <rect x="326" y="140" width="26" height="30" fill="#fde68a" rx="3"/>
+  <text x="339" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">2</text>
+  <rect x="356" y="140" width="26" height="30" fill="#fde68a" rx="3"/>
+  <text x="369" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">3</text>
+
+  <!-- Arrow: channel → filter -->
+  <line x1="410" y1="140" x2="460" y2="140" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- ═══════════════════════════════════════════
+       FILTER (optional)
+  ════════════════════════════════════════════ -->
+
+  <rect x="470" y="100" width="100" height="80" fill="white" rx="8" stroke="#16a34a" stroke-width="2"/>
+  <text x="520" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">filter:</text>
+  <text x="520" y="144" text-anchor="middle" font-size="10" fill="#16a34a">${value > 0}</text>
+
+  <!-- Filtered items -->
+  <rect x="480" y="154" width="16" height="16" fill="#dcfce7" rx="2"/>
+  <text x="488" y="166" text-anchor="middle" font-size="9" fill="#166534">1</text>
+  <rect x="502" y="154" width="16" height="16" fill="#f1f5f9" rx="2" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="504" y1="156" x2="516" y2="168" stroke="#ef4444" stroke-width="1.5"/>
+  <line x1="516" y1="156" x2="504" y2="168" stroke="#ef4444" stroke-width="1.5"/>
+  <rect x="524" y="154" width="16" height="16" fill="#dcfce7" rx="2"/>
+  <text x="532" y="166" text-anchor="middle" font-size="9" fill="#166534">3</text>
+
+  <!-- Arrow: filter → consumer -->
+  <line x1="570" y1="140" x2="620" y2="140" stroke="#9333ea" stroke-width="2" marker-end="url(#arrowPurple)"/>
+
+  <!-- ═══════════════════════════════════════════
+       CONSUMER (from: decorated step)
+  ════════════════════════════════════════════ -->
+
+  <rect x="630" y="80" width="170" height="120" fill="white" rx="8" stroke="#9333ea" stroke-width="2"/>
+  <text x="715" y="104" text-anchor="middle" font-size="12" font-weight="700" fill="#7e22ce">Consumer</text>
+
+  <rect x="646" y="116" width="138" height="24" fill="#faf5ff" rx="4"/>
+  <text x="715" y="132" text-anchor="middle" font-size="11" fill="#7e22ce">from: { channel: events }</text>
+
+  <rect x="646" y="144" width="138" height="24" fill="#faf5ff" rx="4"/>
+  <text x="715" y="160" text-anchor="middle" font-size="11" fill="#7e22ce">loop: continuous</text>
+
+  <rect x="646" y="172" width="138" height="20" fill="#fef2f2" rx="4"/>
+  <text x="715" y="186" text-anchor="middle" font-size="10" fill="#dc2626">cancel: shutdown</text>
+
+  <!-- ═══════════════════════════════════════════
+       EXIT CONDITION
+  ════════════════════════════════════════════ -->
+
+  <rect x="270" y="224" width="520" height="76" fill="white" rx="8" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="530" y="248" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b">Lifecycle</text>
+
+  <!-- Three exit conditions -->
+  <rect x="290" y="260" width="130" height="28" fill="#fef2f2" rx="4"/>
+  <text x="355" y="278" text-anchor="middle" font-size="10" fill="#dc2626">cancel: signal fires → abort</text>
+
+  <rect x="435" y="260" width="160" height="28" fill="#eff6ff" rx="4"/>
+  <text x="515" y="278" text-anchor="middle" font-size="10" fill="#2563eb">until: ${flag.done} → clean exit</text>
+
+  <rect x="610" y="260" width="160" height="28" fill="#fef3c7" rx="4"/>
+  <text x="690" y="278" text-anchor="middle" font-size="10" fill="#b45309">channel closes → drain + stop</text>
+
+</svg>
