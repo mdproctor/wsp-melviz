@@ -58,7 +58,7 @@ The practical value isn't the YAML itself — it's what the YAML makes possible 
 
 ## The architecture in layers
 
-![Architecture layers showing app.yaml parsed into AppDescriptor, registered by AppRegistry, validated by CollectionSchema at the SPI level](images/app-descriptor-layers.svg)
+![Architecture layers showing app.yaml parsed into AppDescriptor, registered by AppRegistry, validated by CollectionSchema at the SPI level](images/app-descriptor-layers.png)
 
 Three layers, each with a clean boundary:
 
@@ -72,7 +72,7 @@ Three layers, each with a clean boundary:
 
 Seed data loading has a subtle concurrency problem. Two requests hit an empty collection simultaneously. Both check "is the collection empty?" — both see zero documents — both load the seed data. You get duplicates.
 
-![Seed data flow showing BEGIN IMMEDIATE, re-check inside write lock, and TOCTOU guard](images/seed-data-flow.svg)
+![Seed data flow showing BEGIN IMMEDIATE, re-check inside write lock, and TOCTOU guard](images/seed-data-flow.png)
 
 The fix is a single-connection transaction using `BEGIN IMMEDIATE`, which acquires SQLite's write lock immediately rather than deferring it. Inside that lock, the count is re-checked — the classic TOCTOU guard. If another connection already loaded the data between the first check and the lock acquisition, the transaction rolls back cleanly.
 
