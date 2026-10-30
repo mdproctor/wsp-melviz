@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f4f8"/>
+      <stop offset="100%" stop-color="#d1ecf1"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3cd"/>
+      <stop offset="100%" stop-color="#ffeaa7"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4edda"/>
+      <stop offset="100%" stop-color="#c3e6cb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- CaseHub Apps tier -->
+  <rect x="40" y="20" width="640" height="90" rx="8" fill="url(#g1)" stroke="#0c5460" stroke-width="1.5"/>
+  <text x="360" y="52" text-anchor="middle" font-size="16" font-weight="bold" fill="#0c5460">Full Quarkus Apps</text>
+  <text x="360" y="74" text-anchor="middle" font-size="12" fill="#0c5460">Compiled Java · Custom endpoints · Complex integrations · High throughput</text>
+  <text x="360" y="94" text-anchor="middle" font-size="11" fill="#0c5460" font-style="italic">For when you need it — not by default</text>
+
+  <!-- Mosaic tier -->
+  <rect x="40" y="130" width="640" height="90" rx="8" fill="url(#g2)" stroke="#856404" stroke-width="1.5"/>
+  <text x="360" y="162" text-anchor="middle" font-size="16" font-weight="bold" fill="#856404">Mosaic — CaseHub Integration</text>
+  <text x="360" y="184" text-anchor="middle" font-size="12" fill="#856404">Case lifecycle · Case-aware forms · Auth · Tenant-aware storage</text>
+  <text x="360" y="204" text-anchor="middle" font-size="11" fill="#856404" font-style="italic">Layers on Pages — adds CaseHub semantics without changing the foundation</text>
+
+  <!-- Pages tier -->
+  <rect x="40" y="240" width="640" height="150" rx="8" fill="url(#g3)" stroke="#155724" stroke-width="1.5"/>
+  <text x="360" y="272" text-anchor="middle" font-size="16" font-weight="bold" fill="#155724">Pages — Application Runtime</text>
+
+  <!-- Pages sub-components -->
+  <rect x="60" y="290" width="145" height="44" rx="5" fill="#fff" stroke="#155724" stroke-width="1"/>
+  <text x="132" y="308" text-anchor="middle" font-size="11" font-weight="bold" fill="#155724">.page.yaml</text>
+  <text x="132" y="324" text-anchor="middle" font-size="10" fill="#155724">UI composition</text>
+
+  <rect x="215" y="290" width="145" height="44" rx="5" fill="#fff" stroke="#155724" stroke-width="1"/>
+  <text x="287" y="308" text-anchor="middle" font-size="11" font-weight="bold" fill="#155724">Data pipelines</text>
+  <text x="287" y="324" text-anchor="middle" font-size="10" fill="#155724">jq + DataProvider</text>
+
+  <rect x="370" y="290" width="145" height="44" rx="5" fill="#fff" stroke="#155724" stroke-width="1"/>
+  <text x="442" y="308" text-anchor="middle" font-size="11" font-weight="bold" fill="#155724">JSON Datastore</text>
+  <text x="442" y="324" text-anchor="middle" font-size="10" fill="#155724">SQLite JSONB · CRUD</text>
+
+  <rect x="525" y="290" width="145" height="44" rx="5" fill="#fff" stroke="#155724" stroke-width="1"/>
+  <text x="597" y="308" text-anchor="middle" font-size="11" font-weight="bold" fill="#155724">Label Trees</text>
+  <text x="597" y="324" text-anchor="middle" font-size="10" fill="#155724">Navigation · ACL</text>
+
+  <text x="360" y="370" text-anchor="middle" font-size="12" fill="#155724">app.yaml + .page.yaml + seed data = running application — zero Java</text>
+
+  <!-- Arrow annotations -->
+  <text x="700" y="75" text-anchor="end" font-size="10" fill="#666">Java devs</text>
+  <text x="700" y="185" text-anchor="end" font-size="10" fill="#666">Platform team</text>
+  <text x="700" y="315" text-anchor="end" font-size="10" fill="#666">Anyone with YAML</text>
+</svg>
