@@ -13,3 +13,13 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#596 — Issue #596 ← active
+  - [ ] Batch 1: Core types
+    - [ ] Task 1: AppDescriptor record and YAML parsing
+    - [ ] Task 2: CollectionSchema in data SPI
+  - [ ] Batch 2: Registry
+    - [ ] Task 3: AppRegistry CDI bean
+  - [ ] Batch 3: Validation and data
+    - [ ] Task 4: Schema validation on writes
+    - [ ] Task 5: Seed data loading
+  - [ ] Batch 4: Referential integrity
+    - [ ] Task 6: Ref resolution and restrict-on-delete
