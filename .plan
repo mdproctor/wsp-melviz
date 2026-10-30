@@ -13,8 +13,8 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#594 — Issue #594 ← active
-  - [ ] Batch 1: SPI Foundation
-    - [ ] Task 1: DataContext + MutationException + Mapper
-    - [ ] Task 2: MutableDataProvider + SlugUtils
-  - [ ] Batch 2: REST Endpoint
-    - [ ] Task 3: CollectionResource + integration tests
+  - [x] Batch 1: SPI Foundation
+    - [x] Task 1: DataContext + MutationException + Mapper
+    - [x] Task 2: MutableDataProvider + SlugUtils
+  - [x] Batch 2: REST Endpoint
+    - [x] Task 3: CollectionResource + integration tests
