@@ -26,3 +26,4 @@ write_marker=done
 land=done
 report_land=done
 arc42_scan=skipped
+land_mechanical_attempt=1
