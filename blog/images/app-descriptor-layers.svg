@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="spi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8e0f0"/>
+      <stop offset="100%" stop-color="#d4c8e8"/>
+    </linearGradient>
+    <linearGradient id="impl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dce8f0"/>
+      <stop offset="100%" stop-color="#c4d8e8"/>
+    </linearGradient>
+    <linearGradient id="app" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0f0e0"/>
+      <stop offset="100%" stop-color="#c8e8c8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- SPI Layer -->
+  <rect x="40" y="280" width="640" height="80" rx="8" fill="url(#spi)" stroke="#8b7aac" stroke-width="1.5"/>
+  <text x="360" y="310" text-anchor="middle" font-size="14" font-weight="600" fill="#4a3a6a">backend/data (SPI)</text>
+  <text x="360" y="335" text-anchor="middle" font-size="12" fill="#6a5a8a">CollectionSchema  ·  SchemaViolationException  ·  MutableDataProvider</text>
+
+  <!-- Implementation Layer -->
+  <rect x="40" y="140" width="640" height="120" rx="8" fill="url(#impl)" stroke="#6a8aac" stroke-width="1.5"/>
+  <text x="360" y="170" text-anchor="middle" font-size="14" font-weight="600" fill="#3a5a7a">backend/data-json (Implementation)</text>
+  <text x="150" y="200" text-anchor="middle" font-size="12" fill="#4a6a8a">JsonDataProvider</text>
+  <text x="360" y="200" text-anchor="middle" font-size="12" fill="#4a6a8a">AppRegistry</text>
+  <text x="560" y="200" text-anchor="middle" font-size="12" fill="#4a6a8a">JsonCollectionStore</text>
+
+  <text x="150" y="220" text-anchor="middle" font-size="10" fill="#6a8aaa">validates + defaults</text>
+  <text x="360" y="220" text-anchor="middle" font-size="10" fill="#6a8aaa">classpath scan + schemas</text>
+  <text x="560" y="220" text-anchor="middle" font-size="10" fill="#6a8aaa">SQLite JSONB + refs</text>
+
+  <!-- App Layer -->
+  <rect x="180" y="30" width="360" height="80" rx="8" fill="url(#app)" stroke="#6aac6a" stroke-width="1.5"/>
+  <text x="360" y="60" text-anchor="middle" font-size="14" font-weight="600" fill="#3a6a3a">org/apps/*/app.yaml</text>
+  <text x="360" y="82" text-anchor="middle" font-size="12" fill="#5a8a5a">AppDescriptor  ·  CollectionDef  ·  FieldDef  ·  seed data</text>
+
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- App -> Registry -->
+  <line x1="360" y1="110" x2="360" y2="138" stroke="#888" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="375" y="128" font-size="10" fill="#888">parsed by</text>
+
+  <!-- Registry -> SPI -->
+  <line x1="280" y1="260" x2="280" y2="278" stroke="#888" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="295" y="273" font-size="10" fill="#888">builds</text>
+
+  <!-- Provider -> Registry -->
+  <line x1="200" y1="200" x2="310" y2="200" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+
+  <!-- Provider -> Store -->
+  <line x1="200" y1="210" x2="500" y2="210" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+</svg>
