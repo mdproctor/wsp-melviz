@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 340" font-family="system-ui, sans-serif">
+  <defs>
+    <linearGradient id="feGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="rtGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="beGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+  </defs>
+
+  <text x="330" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#1e293b">Helpdesk JSON App — Runtime Stack</text>
+
+  <!-- Page YAML layer -->
+  <rect x="30" y="50" width="600" height="56" rx="6" fill="url(#feGrad)" opacity="0.9"/>
+  <text x="50" y="74" font-size="13" font-weight="700" fill="white">helpdesk.page.yaml</text>
+  <text x="50" y="94" font-size="11" fill="#bfdbfe">metrics · pie-chart · bar-chart · data-table · selector · schema-form · dataScope</text>
+  <text x="618" y="84" text-anchor="end" font-size="11" font-weight="600" fill="#bfdbfe">FRONTEND</text>
+
+  <!-- Pages Runtime layer -->
+  <rect x="30" y="116" width="600" height="56" rx="6" fill="url(#rtGrad)" opacity="0.9"/>
+  <text x="50" y="140" font-size="13" font-weight="700" fill="white">Pages Runtime</text>
+  <text x="50" y="160" font-size="11" fill="#ddd6fe">restSource → extractDataSet → DataSourceController → PagesElement → Lit render</text>
+  <text x="618" y="150" text-anchor="end" font-size="11" font-weight="600" fill="#ddd6fe">RUNTIME</text>
+
+  <!-- Arrows -->
+  <line x1="330" y1="106" x2="330" y2="116" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="330" y1="172" x2="330" y2="182" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="330" y1="238" x2="330" y2="248" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- REST labels on arrows -->
+  <text x="340" y="180" font-size="9" fill="#94a3b8">REST</text>
+
+  <!-- Backend layer -->
+  <rect x="30" y="182" width="600" height="56" rx="6" fill="url(#beGrad)" opacity="0.9"/>
+  <text x="50" y="206" font-size="13" font-weight="700" fill="white">app.yaml → AppRegistry → JsonDataProvider → CollectionResource</text>
+  <text x="50" y="226" font-size="11" fill="#a7f3d0">schema validation · defaults · seed loading · ref integrity · CRUD</text>
+  <text x="618" y="216" text-anchor="end" font-size="11" font-weight="600" fill="#a7f3d0">BACKEND</text>
+
+  <!-- Storage layer -->
+  <rect x="30" y="248" width="600" height="46" rx="6" fill="url(#dbGrad)" opacity="0.9"/>
+  <text x="50" y="272" font-size="13" font-weight="700" fill="white">SQLite JSONB</text>
+  <text x="50" y="286" font-size="11" fill="#fde68a">json_documents table · json_extract queries · WAL mode</text>
+  <text x="618" y="278" text-anchor="end" font-size="11" font-weight="600" fill="#fde68a">STORAGE</text>
+
+  <!-- Seed data callout -->
+  <rect x="380" y="302" width="250" height="32" rx="4" fill="#fefce8" stroke="#fde68a" stroke-width="1"/>
+  <text x="505" y="323" text-anchor="middle" font-size="11" fill="#92400e">tickets.json + agents.json → lazy seed on first access</text>
+</svg>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" font-family="system-ui, sans-serif">
+  <defs>
+    <linearGradient id="javaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="yamlGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="360" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Helpdesk App: Java vs YAML</text>
+
+  <!-- Java side -->
+  <rect x="40" y="60" width="300" height="310" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="190" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#991b1b">casehub-examples (Java)</text>
+
+  <rect x="60" y="105" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="126" font-size="12" font-weight="600" fill="white">Model classes</text>
+  <text x="308" y="126" text-anchor="end" font-size="12" fill="white">5 files</text>
+
+  <rect x="60" y="145" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="166" font-size="12" font-weight="600" fill="white">Engine / dispatchers</text>
+  <text x="308" y="166" text-anchor="end" font-size="12" fill="white">5 files</text>
+
+  <rect x="60" y="185" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="206" font-size="12" font-weight="600" fill="white">MCP operations / views</text>
+  <text x="308" y="206" text-anchor="end" font-size="12" fill="white">8 files</text>
+
+  <rect x="60" y="225" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="246" font-size="12" font-weight="600" fill="white">Push / WebSocket</text>
+  <text x="308" y="246" text-anchor="end" font-size="12" fill="white">5 files</text>
+
+  <rect x="60" y="265" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="286" font-size="12" font-weight="600" fill="white">Demo resources / REST</text>
+  <text x="308" y="286" text-anchor="end" font-size="12" fill="white">6 files</text>
+
+  <rect x="60" y="305" width="260" height="32" rx="4" fill="url(#javaGrad)"/>
+  <text x="72" y="326" font-size="12" font-weight="600" fill="white">Tests</text>
+  <text x="308" y="326" text-anchor="end" font-size="12" fill="white">12 files</text>
+
+  <text x="190" y="360" text-anchor="middle" font-size="22" font-weight="800" fill="#991b1b">41 files</text>
+
+  <!-- Arrow -->
+  <path d="M 360 210 L 380 210" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#64748b"/>
+    </marker>
+  </defs>
+  <text x="370" y="196" text-anchor="middle" font-size="22" fill="#64748b">→</text>
+
+  <!-- YAML side -->
+  <rect x="390" y="60" width="290" height="310" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
+  <text x="535" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#047857">JSON App (YAML)</text>
+
+  <rect x="410" y="110" width="250" height="48" rx="4" fill="url(#yamlGrad)"/>
+  <text x="422" y="132" font-size="12" font-weight="600" fill="white">app.yaml</text>
+  <text x="648" y="132" text-anchor="end" font-size="11" fill="white">schemas + refs + defaults</text>
+  <text x="648" y="148" text-anchor="end" font-size="11" fill="#a7f3d0">replaces Model + Engine</text>
+
+  <rect x="410" y="168" width="250" height="48" rx="4" fill="url(#yamlGrad)"/>
+  <text x="422" y="190" font-size="12" font-weight="600" fill="white">helpdesk.page.yaml</text>
+  <text x="648" y="190" text-anchor="end" font-size="11" fill="white">5 pages, charts, forms</text>
+  <text x="648" y="206" text-anchor="end" font-size="11" fill="#a7f3d0">replaces MCP + Push + REST</text>
+
+  <rect x="410" y="226" width="250" height="36" rx="4" fill="url(#yamlGrad)"/>
+  <text x="422" y="250" font-size="12" font-weight="600" fill="white">data/tickets.json</text>
+  <text x="648" y="250" text-anchor="end" font-size="11" fill="white">12 seed tickets</text>
+
+  <rect x="410" y="272" width="250" height="36" rx="4" fill="url(#yamlGrad)"/>
+  <text x="422" y="296" font-size="12" font-weight="600" fill="white">data/agents.json</text>
+  <text x="648" y="296" text-anchor="end" font-size="11" fill="white">5 seed agents</text>
+
+  <text x="535" y="348" text-anchor="middle" font-size="22" font-weight="800" fill="#047857">4 files</text>
+  <text x="535" y="368" text-anchor="middle" font-size="12" fill="#047857">zero code</text>
+</svg>
