@@ -13,3 +13,12 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#600 — Issue #600 ← active
+  - [ ] Batch 1: Backend parsing+registration
+    - [ ] Task 1: LabelTreeDef and AppDescriptor extension
+    - [ ] Task 2: AppRegistry label registration via LabelRegistry
+    - [ ] Task 3: Skip ref validation for label refs
+  - [ ] Batch 2: Frontend dropdowns
+    - [ ] Task 4: collection-bindings label ref type mapping
+    - [ ] Task 5: Schema-form label option fetching
+  - [ ] Batch 3: Frontend navigation
+    - [ ] Task 6: navTree labelSource support
