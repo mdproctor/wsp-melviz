@@ -1,0 +1,15 @@
+# Work Plan — issue-601-dynamic-page-management
+
+## State
+branch: issue-601-dynamic-page-management
+state: scaffolded
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 601
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#601 — Issue #601 ← active
