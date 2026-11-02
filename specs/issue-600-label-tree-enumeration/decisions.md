@@ -22,17 +22,16 @@
 **Exploration:** quick
 **Status:** captured
 
-## D3: REST endpoint design
+## D3: Label enumeration endpoint
 
-**Choice:** Keep `GET /api/labels/{appId}/{prefix}` as specified in the issue
+**Choice:** Consume platform's `LabelApi @McpDomain("labels")` — no Pages-side endpoint
 **Alternatives:**
-- `/api/labels/{prefix}` without appId — loses app-scoping convenience
-- `/api/labels?scope={appId}&prefix={path}` — more flexible but more complex
-**Rationale:** The appId in the URL determines the app's root path prefix. Internally calls `LabelRegistry.children(tenantId, appRootPath + prefix)`. Simple consumer-facing API that hides tenant/platform scoping details.
-**Trade-offs:** Tightly couples the endpoint to a single app's label scope. Cross-app label browsing would need a separate endpoint.
-**Sources:** backend/data CollectionResource.java (existing REST pattern)
+- Pages-local LabelResource at `/api/labels/{appId}/{prefix}` — duplicates what platform already provides
+**Rationale:** Platform #694 delivered `LabelApi` with `@McpDomain("labels")` providing children/resolve/subtree queries via REST + GraphQL + MCP. `LabelServiceCore` handles tenancyId from `CurrentPrincipal`. Pages frontend calls the platform endpoint directly. App-scoping is handled by prefixing the app's root path to queries (consumer-side concern).
+**Trade-offs:** Frontend must know the platform endpoint URL pattern rather than a Pages-local one. Coupling is to the platform API contract.
+**Sources:** platform LabelApi @McpDomain("labels"), LabelServiceCore
 **Exploration:** quick
-**Status:** captured
+**Status:** revised (was Pages-local endpoint, now platform endpoint)
 
 ## D4: Dropdown/selector integration mechanism
 
