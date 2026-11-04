@@ -69,3 +69,52 @@
 **Sources:** issue #611 requirements
 **Exploration:** quick
 **Status:** captured
+
+## D7: Server validation result — structured record replaces opaque exception
+
+**Choice:** New `SchemaValidationResult` record with `List<FieldViolation>`. `SchemaViolationException` updated to carry violations list.
+**Alternatives:**
+- Keep opaque exception, add field info as separate exception type — two exception paths to maintain
+- Return violations directly, no exception — breaks existing try/catch flow in resources
+**Rationale:** Single exception type carries structured data. Resource endpoints serialize to JSON. Backward compatible — message field still exists for non-structured consumers.
+**Trade-offs:** SchemaViolationException constructor changes — callers need updating
+**Sources:** SchemaViolationException.java, PageResource.java, AppCatalogueResource.java
+**Exploration:** quick
+**Status:** captured
+
+## D8: Error response JSON shape — violations array at top level
+
+**Choice:** `{"error": "VALIDATION_FAILED", "violations": [{"field", "constraint", "params", "message"}]}`
+**Alternatives:**
+- Field-keyed map `{"fields": {"name": [...]}}` — groups by field but less uniform for iteration
+- Flat errors array without constraint codes — simpler but loses machine-readability (contradicts D6)
+**Rationale:** Flat array is simplest to produce (direct serialization of FieldViolation list) and simplest to consume (filter by field on client). Groups naturally via `field` property.
+**Trade-offs:** Client must group-by-field if it wants per-field display — trivial
+**Sources:** D6 (constraint codes + params)
+**Exploration:** quick
+**Status:** captured
+
+## D9: Error routing — runtime routes via pagePath to originating form
+
+**Choice:** Runtime save handler checks `SaveResult.fieldErrors`, finds form components on the originating pagePath, routes errors via `setFieldErrors()` (PagesSchemaForm) or `errorMessage` (PagesFormInput)
+**Alternatives:**
+- Forms listen for `pages-save-error` and self-handle — decoupled but each form system reimplements routing
+- Validation middleware before save — client validates twice (redundant with blur validation)
+**Rationale:** Runtime already tracks pagePath in save pipeline. Single routing point serves both form systems. Consistent with how data is pushed to components.
+**Trade-offs:** Runtime needs form-type awareness to pick the right error API
+**Sources:** site.ts (save handler, pages-save-error dispatch), PagesPropertyPalette.setFieldErrors()
+**Exploration:** quick
+**Status:** captured
+
+## D10: Validate-on-blur — wire both form systems
+
+**Choice:** PagesSchemaForm: wire existing `validateOnBlur` prop to single-field `validateField()` on blur, push to palette. PagesFormInput: add `validateOnBlur` property (default true), call `validateField()` on blur, set `errorMessage`.
+**Alternatives:**
+- Submit-only validation — current state, no change needed but poor UX
+- Debounced live validation (on input, not blur) — more responsive but noisy for partially typed values
+**Rationale:** Blur is the standard UX pattern — validates when user moves away from field. Not noisy like on-input. Both systems have the error display infrastructure already.
+**Trade-offs:** PagesFormInput needs access to constraint metadata from schema — requires schema-to-input propagation
+**Depends on:** D1 (both form systems)
+**Sources:** PagesSchemaForm.ts (validateOnBlur prop exists), PagesFormInput.ts (errorMessage property exists), field-validation.ts
+**Exploration:** quick
+**Status:** captured
