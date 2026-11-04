@@ -10,8 +10,9 @@
 The JSON Apps forms infrastructure has client-side validation (`PagesSchemaForm.validate()` → `validateField()`) but the server only enforces types via `CollectionSchema.validate()`. Three gaps:
 
 1. **No server constraint enforcement.** `CollectionSchema` checks types only — `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` are client-only. Direct API calls bypass all constraint validation.
-2. **Opaque server errors.** `SchemaViolationException` carries a single string. The REST adapter returns `"HTTP 400: Bad Request"` without reading the response body. No path exists from server errors to field-level display.
-3. **No live validation feedback.** `PagesSchemaForm.validateOnBlur` exists as a prop but isn't wired. `PagesFormInput` has `errorMessage` but nothing writes to it on blur.
+2. **Opaque server errors.** `SchemaViolationException` carries a single string. `MutationExceptionMapper` maps `SCHEMA_VIOLATION` to HTTP 500 with `{"error": message, "code": code}`. The REST adapter returns `"HTTP 400: Bad Request"` without reading the response body. No path exists from server errors to field-level display.
+3. **Fragmented client validation.** Three separate `validateField` implementations exist with different constraint coverage. `PagesPropertyPalette` imports from `pages-ui-components` (most complete); `PagesSchemaForm` and `FormScopeState` import from `pages-component` (missing enum, multipleOf, array constraints); `activation.ts` has an inline copy (missing exclusiveMin/Max).
+4. **Incomplete blur validation wiring.** `PagesPropertyPalette._handleChange()` validates unconditionally on every field change — blur validation partially works for schema forms. But it's not gated by `validateOnBlur`, the `FormScopeState` blur path uses the incomplete `pages-component` implementation, and `PagesFormInput` has `errorMessage` but no blur handler.
 
 ## Design Principles
 
@@ -106,13 +107,25 @@ New Maven dependency:
 </dependency>
 ```
 
-The library provides full JSON Schema draft-07 support. `CollectionSchema.validate()` is updated:
+The library provides full JSON Schema draft-07 support. Two methods — `validate()` preserves the existing throwing API for all current callers; `validateToResult()` returns structured results for callers that want them:
 
 ```java
-public SchemaValidationResult validate(JsonNode document) {
+// Existing API — throws on failure (backward compatible)
+public void validate(JsonNode document) {
+    SchemaValidationResult result = validateToResult(document);
+    if (!result.valid()) {
+        String summary = result.violations().stream()
+            .map(v -> v.field() + ": " + v.message())
+            .collect(Collectors.joining("; "));
+        throw new SchemaViolationException(summary, result.violations());
+    }
+}
+
+// NEW — returns structured result without throwing
+public SchemaValidationResult validateToResult(JsonNode document) {
     List<FieldViolation> violations = new ArrayList<>();
 
-    // 1. Existing type checks (preserved for backward compat)
+    // 1. Existing type checks (preserved)
     validateTypes(document, violations);
 
     // 2. NEW: constraint validation via library
@@ -130,6 +143,8 @@ public SchemaValidationResult validate(JsonNode document) {
     return new SchemaValidationResult(violations.isEmpty(), violations);
 }
 ```
+
+All existing callers (`PageResource`, `AppCatalogueResource`, `JsonDataProvider`, tests) continue calling `validate()` unchanged. The `SchemaViolationException` now carries structured violations, which `MutationExceptionMapper` uses to produce 422 responses (§2.1).
 
 ### 1.4 FieldViolation and SchemaValidationResult
 
@@ -177,39 +192,35 @@ public class SchemaViolationException extends MutationException {
 }
 ```
 
-`CollectionSchema.validate()` throws when `!result.valid()`:
-
-```java
-SchemaValidationResult result = validate(document);
-if (!result.valid()) {
-    String summary = result.violations().stream()
-        .map(v -> v.field() + ": " + v.message())
-        .collect(Collectors.joining("; "));
-    throw new SchemaViolationException(summary, result.violations());
-}
-```
+`validate()` delegates to `validateToResult()` and throws when invalid — see §1.3.
 
 ## 2. Structured Error Response (#611)
 
-### 2.1 HTTP 422 Response
+### 2.1 HTTP 422 Response via MutationExceptionMapper
 
-`PageResource` and `AppCatalogueResource` catch blocks updated:
+The global `MutationExceptionMapper` (`@Provider`, `ExceptionMapper<MutationException>`) is the right architectural location for exception-to-response mapping. Currently it maps `SCHEMA_VIOLATION` to `default → 500`. Update it to produce 422 with structured violations:
 
 ```java
-catch (SchemaViolationException e) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("error", "VALIDATION_FAILED");
-    body.put("violations", e.violations().stream()
-        .map(v -> Map.of(
-            "field", v.field(),
-            "constraint", v.constraint(),
-            "params", v.params(),
-            "message", v.message()
-        ))
-        .toList());
-    return Response.status(422).entity(body).build();
+case "SCHEMA_VIOLATION" -> {
+    if (exception instanceof SchemaViolationException sve && !sve.violations().isEmpty()) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "VALIDATION_FAILED");
+        body.put("violations", sve.violations().stream()
+            .map(v -> Map.of(
+                "field", v.field(),
+                "constraint", v.constraint(),
+                "params", v.params(),
+                "message", v.message()
+            ))
+            .toList());
+        yield Response.status(422).entity(body).build();
+    }
+    // Legacy path — no structured violations
+    yield Response.status(400).entity(Map.of("error", exception.getMessage())).build();
 }
 ```
+
+This gives ALL code paths the correct response — `PageResource`, `AppCatalogueResource`, `JsonDataProvider.validateAndApplyDefaults()` (which has no local catch), and any future callers. The local `SchemaViolationException` catch blocks in `PageResource` and `AppCatalogueResource` can be removed — the mapper handles it.
 
 Response body example:
 
@@ -236,14 +247,6 @@ Response body example:
       "message": "is required"
     }
   ]
-}
-```
-
-When `violations()` is empty (legacy exception path), fall back to current behaviour:
-
-```java
-if (e.violations().isEmpty()) {
-    return Response.status(400).entity(Map.of("error", e.getMessage())).build();
 }
 ```
 
@@ -300,7 +303,7 @@ if (!result.success && result.fieldErrors?.length) {
 }
 ```
 
-`routeFieldErrors` finds form components on the originating `pagePath`:
+`routeFieldErrors` finds form components on the originating `pagePath` and passes structured violations through — not collapsed to flat strings:
 
 ```typescript
 function routeFieldErrors(
@@ -308,34 +311,39 @@ function routeFieldErrors(
   errors: readonly FieldViolation[],
   registry: ComponentRegistry,
 ): void {
-  // Group errors by field
-  const byField = new Map<string, string>();
+  // Group errors by field, preserving all violations
+  const byField = new Map<string, readonly FieldViolation[]>();
   for (const e of errors) {
-    // Use first error message per field for display
-    if (!byField.has(e.field)) {
-      byField.set(e.field, e.message);
-    }
+    const existing = byField.get(e.field) ?? [];
+    byField.set(e.field, [...existing, e]);
   }
 
   for (const [id, entry] of registry) {
     if (entry.pagePath !== pagePath) continue;
     const el = entry.vizElement;
 
-    // PagesSchemaForm — has setFieldErrors via palette
+    // PagesSchemaForm — has setServerErrors via palette
     if (isPagesSchemaForm(el)) {
       el.setServerErrors(byField);
       return;
     }
 
-    // PagesFormInput — set errorMessage directly
+    // PagesFormInput — set errorMessage from first violation
     if (isPagesFormInput(el) && el.props?.field && byField.has(el.props.field)) {
-      el.errorMessage = byField.get(el.props.field);
+      const violations = byField.get(el.props.field)!;
+      el.errorMessage = violations[0].message;
+      el.serverViolations = violations;  // full structured data available
     }
   }
 }
 ```
 
-`PagesSchemaForm` gains a `setServerErrors(errors: Map<string, string>)` method that delegates to `this._palette.setFieldErrors()` — same path as client validation errors.
+`PagesSchemaForm` gains a `setServerErrors(errors: Map<string, readonly FieldViolation[]>)` method. The palette's `setFieldErrors()` currently accepts `Map<string, string | undefined>` (flat messages). Two options:
+
+1. **Extend palette** to accept `Map<string, FieldViolation[] | string | undefined>` — renders first message for display, stores full violations for programmatic access
+2. **Collapse at the palette boundary** — `setServerErrors` extracts messages for display, stores raw violations separately for the `pages-save-error` event
+
+Option 1 is cleaner — the palette tracks error source (server vs client) via the `FieldViolation` type. A `FieldViolation[]` value means server error; a `string` means client validation error. This resolves R1-08 (distinguishing error sources for clearing).
 
 The `pages-save-error` event detail is extended to include field errors:
 
@@ -349,43 +357,59 @@ interface SaveErrorDetail {
 
 This allows external listeners (e.g. hosted components) to observe structured errors.
 
-## 3. Validate-on-Blur (#612)
+## 3. Validate-on-Blur and validateField Consolidation (#612)
 
-### 3.1 PagesSchemaForm
+### 3.1 Consolidate validateField Implementations
 
-The `validateOnBlur` prop already exists in `SchemaFormProps` but isn't wired. The wiring:
+Three separate `validateField` implementations exist with different constraint coverage:
 
-1. The palette's field elements emit `blur` events
-2. PagesSchemaForm listens for blur on the palette container
-3. On blur, identifies the field from the event target
-4. Calls `validateField(schema, value, required)` for that single field
-5. Pushes the single-field error to the palette via `setFieldErrors()` with a single-entry map
+| Implementation | Location | Constraints |
+|----------------|----------|-------------|
+| `validateField` | `pages-ui-components/validation/validate-field.ts` | **Most complete:** required, pattern, minLength, maxLength, minimum, maximum, exclusiveMinimum, exclusiveMaximum, enum, multipleOf, minItems, maxItems |
+| `validateField` | `pages-component/model/field-validation.ts` | Missing: enum, multipleOf, minItems, maxItems |
+| `validateFormField` | `pages-runtime/activation.ts` (inline) | Missing: exclusiveMin/Max, enum, multipleOf, array constraints |
+
+**Consolidation:** The `pages-ui-components` version is canonical. All other call sites are updated to import from it:
+
+- `pages-component/model/field-validation.ts` — re-exports from `pages-ui-components` for backward compat (existing importers don't break), marked deprecated
+- `pages-runtime/activation.ts` — inline `validateFormField()` replaced with import from `pages-ui-components`
+- `pages-runtime/form-scope.ts` — `FormScopeState.validateField()` delegates to `pages-ui-components` version
+
+This ensures all validation paths check the same constraints. The `pages-ui-components` version also gains `validateFieldAll()`:
 
 ```typescript
-private _handleFieldBlur(e: FocusEvent) {
-  if (!this.validateOnBlur) return;
-  const field = this._identifyField(e.target);
-  if (!field) return;
-  const schema = this._resolvedSchema?.properties?.[field];
-  if (!schema) return;
-  const value = this._palette.getFieldValue(field);
-  const required = this._resolvedSchema?.required?.includes(field) ?? false;
-  const error = validateField(schema, value, required);
-  this._palette.setFieldErrors(new Map([[field, error ?? undefined]]));
-}
+export function validateFieldAll(
+  schema: FieldSchema,
+  value: unknown,
+  required: boolean,
+): readonly FieldViolation[];
 ```
 
-### 3.2 PagesFormInput
+Returns all violations using the same `FieldViolation` type as the server response.
 
-`PagesFormInput` gains:
+### 3.2 PagesSchemaForm — Gate Existing Validation
 
-1. A `validateOnBlur` property (default `true`)
-2. A `fieldSchema` property — constraint metadata from the page's collection schema, set by the runtime during activation
-3. A blur handler that validates and sets `errorMessage`
+The palette's `_handleChange()` already validates on every field change unconditionally. The `validateOnBlur` prop exists but doesn't gate this behaviour. Three changes:
+
+1. **Gate palette validation:** `_handleChange()` should check `validateOnBlur` on the parent form before validating. When `validateOnBlur` is false, the palette only validates on explicit `validate()` calls (submit).
+
+2. **Existing tests pass:** `schema-form.test.ts` has blur validation tests (lines 498, 521, 546) that confirm the palette validates on committed changes. These tests remain valid — the change is to make the `validateOnBlur` gate explicit rather than unconditional.
+
+3. **No new blur handler needed in PagesSchemaForm.** The palette's `_handleChange()` already fires on blur for text inputs (the `change` event fires on blur). The work is gating it properly, not adding new wiring.
+
+### 3.3 PagesFormInput — Wire Through FormScopeState
+
+`FormScopeState` (`pages-runtime/form-scope.ts`) already provides:
+- `validateOnBlur` parameter in constructor
+- `validateField(field, value)` method
+- Blur listener in `activation.ts` (line 243) when `__formScopeValidateOnBlur` is true
+
+The gap: `FormScopeState.validateField()` delegates to the incomplete `pages-component` version. After consolidation (§3.1), it uses the canonical `pages-ui-components` version — which closes the constraint coverage gap.
+
+Additional wiring for `PagesFormInput` outside form-scope contexts (standalone native form inputs):
 
 ```typescript
 @property({ type: Boolean }) validateOnBlur = true;
-@property({ attribute: false }) fieldSchema?: FieldSchema;
 
 protected _handleBlur() {
   if (!this.validateOnBlur || !this.fieldSchema) return;
@@ -394,7 +418,7 @@ protected _handleBlur() {
 }
 ```
 
-The runtime sets `fieldSchema` during activation when the page has a `dataScope` with a collection schema:
+`fieldSchema` is set by the runtime during activation when the page has a `dataScope`:
 
 ```typescript
 if (isFormInput(vizEl) && vizEl.props?.field && collectionSchema) {
@@ -402,32 +426,20 @@ if (isFormInput(vizEl) && vizEl.props?.field && collectionSchema) {
 }
 ```
 
-### 3.3 Client validateField Extension
+When a `PagesFormInput` is inside a form-scope, `FormScopeState` handles blur validation (existing mechanism). When standalone (no form-scope), the input's own `_handleBlur` handles it. The two paths don't conflict — `FormScopeState.registerField()` would not be called for standalone inputs.
 
-`validateField()` currently returns the first matching error. For consistency with the server (D5 — all violations), update it to optionally return all violations:
+### 3.4 Error Clearing and Source Tracking
 
-```typescript
-export function validateField(
-  schema: FieldSchema,
-  value: unknown,
-  required: boolean,
-): string | null;
+The palette stores errors in `_errors: Map<string, string>` with no source tracking. After §2.4's changes, the palette can distinguish error sources:
 
-export function validateFieldAll(
-  schema: FieldSchema,
-  value: unknown,
-  required: boolean,
-): readonly FieldViolation[];
-```
+- **Client validation error:** `string` value in the error map (from `_handleChange()` / `validateField()`)
+- **Server validation error:** `FieldViolation[]` value (from `setServerErrors()`)
 
-`validateField()` remains unchanged (first error, backward compatible). `validateFieldAll()` returns the full list using the same `FieldViolation` type as the server response. Forms choose which to call based on display needs.
-
-### 3.4 Error Clearing
-
-Field errors are cleared on the next valid input:
-- **On blur:** if validation passes, clear any existing error
-- **On focus:** if the field has a server error (from save), clear it — the user is about to edit
-- **On successful save:** runtime clears all field errors on the originating form
+Clearing rules:
+- **On blur (client validation passes):** clear client error for that field. Server errors persist until the next save attempt.
+- **On focus:** clear server errors for that field — the user is about to edit, so the server error is stale.
+- **On successful save:** runtime clears all field errors (client and server) on the originating form.
+- **On new server error:** overwrites any existing error (client or server) for that field.
 
 ## 4. FieldSchema Availability
 
@@ -468,16 +480,21 @@ A cross-cutting concern: `validateField()` requires a `FieldSchema` object with 
 | `SchemaValidationResult` record | `backend/data` | `SchemaValidationResult.java` (new) |
 | `JsonSchemaBuilder` | `backend/data` | `JsonSchemaBuilder.java` (new) |
 | `SchemaViolationException` update | `backend/data` | `SchemaViolationException.java` |
-| 422 response handling | `backend/data-json` | `PageResource.java`, `AppCatalogueResource.java` |
-| `FieldViolation` interface (TS) | `pages-component` | `model/field-validation.ts` |
+| `MutationExceptionMapper` update | `backend/data` | `MutationExceptionMapper.java` |
+| Remove local catch blocks | `backend/data-json` | `PageResource.java`, `AppCatalogueResource.java` |
+| `FieldViolation` interface (TS) | `pages-ui-components` | `validation/validate-field.ts` |
+| `validateFieldAll()` | `pages-ui-components` | `validation/validate-field.ts` |
+| Deprecate duplicate validateField | `pages-component` | `model/field-validation.ts` (re-export) |
+| Remove inline validateFormField | `pages-runtime` | `activation.ts` |
+| Update FormScopeState import | `pages-runtime` | `form-scope.ts` |
 | `SaveResult` extension | `pages-runtime` | `save-adapter.ts` |
 | REST adapter 422 parsing | `pages-runtime` | `adapters/rest-adapter.ts` |
 | `routeFieldErrors` | `pages-runtime` | `site.ts` |
 | `SaveErrorDetail` extension | `pages-runtime` | `site.ts` |
 | `setServerErrors()` | `pages-viz` | `PagesSchemaForm.ts` |
-| Blur validation wiring (schema form) | `pages-viz` | `PagesSchemaForm.ts` |
-| Blur validation wiring (native form) | `pages-viz` | `PagesFormInput.ts` |
-| `validateFieldAll()` | `pages-component` | `model/field-validation.ts` |
+| Palette error source tracking | `pages-viz` | `pages-property-palette.ts` |
+| Gate palette validation behind validateOnBlur | `pages-viz` | `pages-property-palette.ts` |
+| Blur validation (native form) | `pages-viz` | `PagesFormInput.ts` |
 | networknt dependency | `backend/data` | `pom.xml` |
 
 ## Out of Scope
@@ -492,16 +509,21 @@ A cross-cutting concern: `validateField()` requires a `FieldSchema` object with 
 
 ## References
 
-- `packages/pages-component/src/model/field-validation.ts` — client-side validateField() reference implementation
+- `packages/pages-ui-components/src/validation/validate-field.ts` — canonical validateField() (most complete)
+- `packages/pages-component/src/model/field-validation.ts` — duplicate validateField() (to deprecate)
+- `packages/pages-runtime/src/activation.ts:35-51` — inline validateFormField() (to remove)
+- `packages/pages-runtime/src/form-scope.ts` — FormScopeState blur validation infrastructure
 - `packages/pages-viz/src/form-inputs/PagesSchemaForm.ts` — form component with validateOnBlur prop
 - `packages/pages-viz/src/form-inputs/PagesFormInput.ts` — abstract input base with errorMessage
+- `packages/pages-viz/src/pages-property-palette.ts` — palette with _handleChange() (unconditional validation)
 - `backend/data/src/main/java/io/casehub/pages/data/CollectionSchema.java` — server validation (type-only)
 - `backend/data/src/main/java/io/casehub/pages/data/SchemaViolationException.java` — current exception
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/PageResource.java` — HTTP error response
+- `backend/data/src/main/java/io/casehub/pages/data/MutationExceptionMapper.java` — global exception→response mapper
+- `backend/data/src/main/java/io/casehub/pages/data/json/JsonDataProvider.java` — validateAndApplyDefaults (no local catch)
+- `backend/data-json/src/main/java/io/casehub/pages/data/json/PageResource.java` — local catch blocks (to remove)
 - `packages/pages-runtime/src/adapters/rest-adapter.ts` — save pipeline, error handling
 - `packages/pages-runtime/src/site.ts` — save handler, pages-save-error dispatch
 - `docs/specs/2026-06-18-native-forms-design.md` — native forms architecture (deferred validation)
-- `docs/specs/issue-222-schema-form-nested/` — schema form nested forms spec
 - Protocol PP-20260705-bac842 (`pages-event-contract`) — reserved events: pages-field-change, pages-save-error
 - Protocol PP-20260907-951cbe (`generated-schemas-not-hand-written`) — Zod schema generation
 - networknt/json-schema-validator — JSON Schema draft-07 library
