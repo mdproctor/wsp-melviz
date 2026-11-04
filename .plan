@@ -13,6 +13,16 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#609 — Issue #609 ← active
+  - [ ] Batch 1: Server Validation
+    - [ ] Task 1: FieldViolation + SchemaValidationResult + FieldConstraints + networknt dep
+    - [ ] Task 2: JsonSchemaBuilder + CollectionSchema.validateToResult()
+  - [ ] Batch 2: Structured Errors
+    - [ ] Task 3: MutationExceptionMapper 422 + remove local catches
+    - [ ] Task 4: FieldViolation TS + SaveResult + REST adapter 422
+    - [ ] Task 5: Error routing + setServerErrors on forms
+  - [ ] Batch 3: Consolidation + Blur
+    - [ ] Task 6: Consolidate validateField + validateFieldAll
+    - [ ] Task 7: Gate palette validation + PagesFormInput blur handler
 - [ ] casehubio/casehub-pages#610 — Server-side JSON Schema constraint enforcement
 - [ ] casehubio/casehub-pages#611 — Structured validation error response and field-level error mapping
 - [ ] casehubio/casehub-pages#612 — Validate-on-blur for form inputs
