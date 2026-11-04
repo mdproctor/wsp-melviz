@@ -13,3 +13,6 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#609 — Issue #609 ← active
+- [ ] casehubio/casehub-pages#610 — Server-side JSON Schema constraint enforcement
+- [ ] casehubio/casehub-pages#611 — Structured validation error response and field-level error mapping
+- [ ] casehubio/casehub-pages#612 — Validate-on-blur for form inputs

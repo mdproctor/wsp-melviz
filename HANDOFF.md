@@ -2,27 +2,33 @@
 
 ## Status
 
-On main. #598 landed and closed. Epic #592 (JSON Apps Runtime) has 3 remaining issues in the queue.
+On branch `issue-609-forms-validation`. Scaffolded, no implementation started. Ready for brainstorm → plan → execute.
 
-## What just shipped
+## What this branch covers
 
-#598 — Apps management view. `AppManagementResource` at `/api/apps` with list, detail, and lifecycle (start/stop) endpoints. Extended `_apps` schema with `enabled`, `displayName`, `autoSeed`, `maxDocuments` fields. Lifecycle gating in `PageResource` and `AppCatalogueResource` — disabled apps return 404, data preserved in SQLite. `apps-management.page.yaml` with list, settings (schema-form), and lifecycle (action-button) tabs. 4 commits, 35 tests.
+Epic #609 — Forms Validation. Three child issues:
 
-Key decisions: settings as _apps document fields (not PreferenceStore — lifecycle state is app data, not user preference); gating at resource layer (store stays unaware of lifecycle); dynamic apps only (static classpath apps always enabled); cache eviction on stop (prevents stale-page-with-404-data UX).
+| # | Issue | Scale | Blocked by |
+|---|-------|-------|------------|
+| #610 | Server-side JSON Schema constraint enforcement | S/Med | — |
+| #611 | Structured validation error response + field-level error mapping | S/Med | — |
+| #612 | Validate-on-blur for form inputs | S/Low | #611 |
 
-## Queue
+#610 and #611 are independent. #612 depends on #611's field-level error display.
 
-| # | Issue | Scale | Notes |
-|---|-------|-------|-------|
-| #605 | Gallery server-connected rendering | S/Low | Wire gallery to render apps with real backend data |
-| #606 | Template param escape upgrade | XS/Low | XSS protection for `#{params.x}` in dynamic pages |
-| #607 | Wire extendDataSetScope | XS/Low | Dynamic pages declaring their own datasets |
+## Context
 
-## References
+The JSON Apps forms infrastructure has client-side validation (`PagesSchemaForm.validate()` + `validateField()`) but the server only enforces types via `CollectionSchema.validate()`. Client validation is bypassed by direct API calls. Server errors are opaque strings — no field-level mapping back to the form.
 
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppManagementResource.java` — new resource
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppRegistry.java` — extended schema, isAppEnabled
-- `examples/samples/Domain Showcases/apps-management/apps-management.page.yaml` — management page
-- Design spec: `specs/issue-598-apps-management-view/2026-11-04-apps-management-view-design.md`
-- Blog: `blog/2026-11-04-mdp01-app-lifecycle-without-the-platform.md`
-- Epic: casehubio/casehub-pages#592
+## Key files
+
+- `packages/pages-component/src/model/field-validation.ts` — client-side constraint checking (reference implementation)
+- `packages/pages-viz/src/form-inputs/PagesSchemaForm.ts` — form component, `validate()` on submit
+- `packages/pages-viz/src/form-inputs/PagesFormInput.ts` — abstract input base class
+- `backend/data/src/main/java/io/casehub/pages/data/CollectionSchema.java` — server validation (type-only)
+- `backend/data/src/main/java/io/casehub/pages/data/SchemaViolationException.java` — current exception
+- `packages/pages-runtime/src/adapters/rest-adapter.ts` — save pipeline, opaque error handling
+
+## Previous work
+
+Epic #592 (JSON Apps Runtime) completed — all 12 issues shipped. This epic builds on that foundation.
