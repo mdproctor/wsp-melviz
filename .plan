@@ -13,3 +13,10 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#598 — Issue #598 ← active
+  - [ ] Batch 1: Schema + Endpoints
+    - [ ] Task 1: Extend _apps schema + isAppEnabled
+    - [ ] Task 2: AppManagementResource list/detail
+    - [ ] Task 3: Lifecycle endpoint start/stop
+  - [ ] Batch 2: Gating + Page
+    - [ ] Task 4: Lifecycle gate in PageResource/AppCatalogueResource
+    - [ ] Task 5: apps-management.page.yaml
