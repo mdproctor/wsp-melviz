@@ -1,28 +1,28 @@
 # HANDOFF — casehub-pages
 
-## Last Session
+## Status
 
-Completed 5 issues across two branches:
+On main. #598 landed and closed. Epic #592 (JSON Apps Runtime) has 3 remaining issues in the queue.
 
-**Branch issue-453-simulation-yaml-block (closed):**
-- #453 — Scenario YAML simulation block (L/High, 14 tasks, 5 batches). SimulationRuntime gains overlay-scoped corpus resolution (sequential/key-lookup strategies), discriminated corpus format with per-entry realism. SimulationAwareInvokeHandler intercepts graphql-domain bindings. VerifySimulationHandler provides journal assertion semantics. SimulationDecorator in decorator chain. Standalone simulation steps. Landed as bdb7de17.
+## What just shipped
 
-**Branch issue-438-intellij-plugin-ci (closed):**
-- #438 — IntelliJ plugin CI integration (S/Med). yarn build:plugin script, CI workflow with JDK 21, contributor guide docs.
-- #513 — Playwright suite repair (M/Med). HTML copy to dist + active class preservation across re-renders (162 to 0 failures).
-- #534 — Visual line highlight (S/Low). posAtCoords from getClientRects replaces coordsAtPos scanning.
-- Landed as 3c9066fd.
+#598 — Apps management view. `AppManagementResource` at `/api/apps` with list, detail, and lifecycle (start/stop) endpoints. Extended `_apps` schema with `enabled`, `displayName`, `autoSeed`, `maxDocuments` fields. Lifecycle gating in `PageResource` and `AppCatalogueResource` — disabled apps return 404, data preserved in SQLite. `apps-management.page.yaml` with list, settings (schema-form), and lifecycle (action-button) tabs. 4 commits, 35 tests.
 
-Also fixed 10 stale orphaned-content findings from prior #532 branch.
+Key decisions: settings as _apps document fields (not PreferenceStore — lifecycle state is app data, not user preference); gating at resource layer (store stays unaware of lifecycle); dynamic apps only (static classpath apps always enabled); cache eviction on stop (prevents stale-page-with-404-data UX).
 
-## Immediate Next Step
+## Queue
 
-Recommended #500 (scenario outcome tracking) — builds directly on #453's invocation journal infrastructure for post-execution analysis with CBR linkage. Alternative: #498 (scenario lifecycle state) or #499 (event-triggered scenario activation).
+| # | Issue | Scale | Notes |
+|---|-------|-------|-------|
+| #605 | Gallery server-connected rendering | S/Low | Wire gallery to render apps with real backend data |
+| #606 | Template param escape upgrade | XS/Low | XSS protection for `#{params.x}` in dynamic pages |
+| #607 | Wire extendDataSetScope | XS/Low | Dynamic pages declaring their own datasets |
 
 ## References
 
-- `packages/yaml-core/src/step/simulation-runtime.ts` — SimulationRuntime, overlay stack, corpus resolution
-- `packages/pages-aria/src/playbook/invoke/simulation-aware-handler.ts` — graphql-domain simulation interception
-- `packages/pages-aria/src/playbook/invoke/verify-simulation-handler.ts` — journal assertion action
-- `packages/pages-markdown-editor/src/markdown-editor-bridge.ts` — highlightLine with posAtCoords
-- `.github/workflows/ci.yml` — IntelliJ plugin build steps
+- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppManagementResource.java` — new resource
+- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppRegistry.java` — extended schema, isAppEnabled
+- `examples/samples/Domain Showcases/apps-management/apps-management.page.yaml` — management page
+- Design spec: `specs/issue-598-apps-management-view/2026-11-04-apps-management-view-design.md`
+- Blog: `blog/2026-11-04-mdp01-app-lifecycle-without-the-platform.md`
+- Epic: casehubio/casehub-pages#592
