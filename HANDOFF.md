@@ -1,28 +1,16 @@
 # HANDOFF — casehub-pages
 
-## Status
+## Last Session
 
-On main. #598 landed and closed. Epic #592 (JSON Apps Runtime) has 3 remaining issues in the queue.
+Implemented Epic #609 (Forms Validation) — full brainstorm → design → plan → execute → work-end cycle. Server enforces JSON Schema draft-07 constraints via networknt library, returns structured HTTP 422 with field-level violations, REST adapter parses them, forms display inline errors. Consolidated three `validateField` implementations to one canonical source in `pages-component`. Code review found and fixed a circular dependency in the re-export chain. Landed as `5169f965` on main. Created #613 (layout spanning + DnD) and scaffolded branch.
 
-## What just shipped
+## Immediate Next Step
 
-#598 — Apps management view. `AppManagementResource` at `/api/apps` with list, detail, and lifecycle (start/stop) endpoints. Extended `_apps` schema with `enabled`, `displayName`, `autoSeed`, `maxDocuments` fields. Lifecycle gating in `PageResource` and `AppCatalogueResource` — disabled apps return 404, data preserved in SQLite. `apps-management.page.yaml` with list, settings (schema-form), and lifecycle (action-button) tabs. 4 commits, 35 tests.
-
-Key decisions: settings as _apps document fields (not PreferenceStore — lifecycle state is app data, not user preference); gating at resource layer (store stays unaware of lifecycle); dynamic apps only (static classpath apps always enabled); cache eviction on stop (prevents stale-page-with-404-data UX).
-
-## Queue
-
-| # | Issue | Scale | Notes |
-|---|-------|-------|-------|
-| #605 | Gallery server-connected rendering | S/Low | Wire gallery to render apps with real backend data |
-| #606 | Template param escape upgrade | XS/Low | XSS protection for `#{params.x}` in dynamic pages |
-| #607 | Wire extendDataSetScope | XS/Low | Dynamic pages declaring their own datasets |
+Brainstorm #613 — start with research: (1) check early git history for DashBuilder/Melviz original layout model and drag-and-drop implementation, (2) survey current best practices (Gridstack.js, React-Grid-Layout, Grafana panel model, CSS Grid native spanning). Research note on the issue has details.
 
 ## References
 
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppManagementResource.java` — new resource
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppRegistry.java` — extended schema, isAppEnabled
-- `examples/samples/Domain Showcases/apps-management/apps-management.page.yaml` — management page
-- Design spec: `specs/issue-598-apps-management-view/2026-11-04-apps-management-view-design.md`
-- Blog: `blog/2026-11-04-mdp01-app-lifecycle-without-the-platform.md`
-- Epic: casehubio/casehub-pages#592
+- `.plan` — #613 scaffolded, queue position 0/1
+- `docs/specs/2026-06-15-casehub-component-grid-layout-design.md` — current grid layout spec
+- `packages/pages-component/src/renderer/` — GridPlacement, GridItem rendering
+- GitHub #613 comment — pre-brainstorming research threads
