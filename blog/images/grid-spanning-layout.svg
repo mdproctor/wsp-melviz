@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="system-ui, -apple-system, sans-serif">
+  <!-- Background -->
+  <rect width="720" height="480" fill="#1a1f2e" rx="8"/>
+
+  <!-- Grid lines (12-column, subtle) -->
+  <g stroke="#2a3040" stroke-width="0.5">
+    <!-- Vertical lines (12 columns, 55px each, starting at x=30) -->
+    <line x1="30" y1="50" x2="30" y2="450"/>
+    <line x1="85" y1="50" x2="85" y2="450"/>
+    <line x1="140" y1="50" x2="140" y2="450"/>
+    <line x1="195" y1="50" x2="195" y2="450"/>
+    <line x1="250" y1="50" x2="250" y2="450"/>
+    <line x1="305" y1="50" x2="305" y2="450"/>
+    <line x1="360" y1="50" x2="360" y2="450"/>
+    <line x1="415" y1="50" x2="415" y2="450"/>
+    <line x1="470" y1="50" x2="470" y2="450"/>
+    <line x1="525" y1="50" x2="525" y2="450"/>
+    <line x1="580" y1="50" x2="580" y2="450"/>
+    <line x1="635" y1="50" x2="635" y2="450"/>
+    <line x1="690" y1="50" x2="690" y2="450"/>
+    <!-- Horizontal lines (rows, 80px each) -->
+    <line x1="30" y1="50" x2="690" y2="50"/>
+    <line x1="30" y1="130" x2="690" y2="130"/>
+    <line x1="30" y1="210" x2="690" y2="210"/>
+    <line x1="30" y1="290" x2="690" y2="290"/>
+    <line x1="30" y1="370" x2="690" y2="370"/>
+    <line x1="30" y1="450" x2="690" y2="450"/>
+  </g>
+
+  <!-- Column numbers -->
+  <g font-size="9" fill="#4a5568" text-anchor="middle">
+    <text x="57" y="42">1</text>
+    <text x="112" y="42">2</text>
+    <text x="167" y="42">3</text>
+    <text x="222" y="42">4</text>
+    <text x="277" y="42">5</text>
+    <text x="332" y="42">6</text>
+    <text x="387" y="42">7</text>
+    <text x="442" y="42">8</text>
+    <text x="497" y="42">9</text>
+    <text x="552" y="42">10</text>
+    <text x="607" y="42">11</text>
+    <text x="662" y="42">12</text>
+  </g>
+
+  <!-- Row numbers -->
+  <g font-size="9" fill="#4a5568" text-anchor="middle">
+    <text x="18" y="94">1</text>
+    <text x="18" y="174">2</text>
+    <text x="18" y="254">3</text>
+    <text x="18" y="334">4</text>
+    <text x="18" y="414">5</text>
+  </g>
+
+  <!-- Block: 4x3 (cols 1-4, rows 1-3) — teal -->
+  <rect x="34" y="54" width="212" height="232" rx="6" fill="#1a6b5a"/>
+  <text x="140" y="160" text-anchor="middle" font-size="24" font-weight="bold" fill="white">4 x 3</text>
+  <text x="140" y="185" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.7)">positioned</text>
+
+  <!-- Block: 8x1 (cols 5-12, row 1) — blue -->
+  <rect x="254" y="54" width="432" height="72" rx="6" fill="#2563eb"/>
+  <text x="470" y="97" text-anchor="middle" font-size="20" font-weight="bold" fill="white">8 x 1</text>
+  <text x="575" y="97" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.7)">positioned</text>
+
+  <!-- Block: 4x2 (cols 5-8, rows 2-3) — purple -->
+  <rect x="254" y="134" width="212" height="152" rx="6" fill="#9333ea"/>
+  <text x="360" y="210" text-anchor="middle" font-size="20" font-weight="bold" fill="white">4 x 2</text>
+  <text x="360" y="233" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.7)">positioned</text>
+
+  <!-- Block: 2x1 (cols 9-10, row 2) — red -->
+  <rect x="474" y="134" width="102" height="72" rx="6" fill="#dc2626"/>
+  <text x="525" y="177" text-anchor="middle" font-size="16" font-weight="bold" fill="white">2 x 1</text>
+
+  <!-- Block: 2x1 (cols 11-12, row 2) — orange -->
+  <rect x="584" y="134" width="102" height="72" rx="6" fill="#ea580c"/>
+  <text x="635" y="177" text-anchor="middle" font-size="16" font-weight="bold" fill="white">2 x 1</text>
+
+  <!-- Block: 4x1 (cols 9-12, row 3) — cyan -->
+  <rect x="474" y="214" width="212" height="72" rx="6" fill="#0891b2"/>
+  <text x="580" y="257" text-anchor="middle" font-size="16" font-weight="bold" fill="white">4 x 1</text>
+
+  <!-- Auto-placed row (row 4-5): three equal blocks -->
+  <!-- Block: auto 4x1 — indigo -->
+  <rect x="34" y="294" width="212" height="72" rx="6" fill="#4f46e5"/>
+  <text x="140" y="337" text-anchor="middle" font-size="16" font-weight="bold" fill="white">4 x 1</text>
+  <text x="140" y="354" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">auto</text>
+
+  <!-- Block: auto 4x1 — violet -->
+  <rect x="254" y="294" width="212" height="72" rx="6" fill="#7c3aed"/>
+  <text x="360" y="337" text-anchor="middle" font-size="16" font-weight="bold" fill="white">4 x 1</text>
+  <text x="360" y="354" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">auto</text>
+
+  <!-- Block: auto 4x1 — pink -->
+  <rect x="474" y="294" width="212" height="72" rx="6" fill="#be185d"/>
+  <text x="580" y="337" text-anchor="middle" font-size="16" font-weight="bold" fill="white">4 x 1</text>
+  <text x="580" y="354" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">auto</text>
+
+  <!-- Block: auto 12x1 — slate -->
+  <rect x="34" y="374" width="652" height="72" rx="6" fill="#475569"/>
+  <text x="360" y="417" text-anchor="middle" font-size="16" font-weight="bold" fill="white">12 x 1</text>
+  <text x="440" y="417" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">auto — full width</text>
+
+  <!-- Labels -->
+  <text x="690" y="316" text-anchor="end" font-size="10" fill="#6b7280" transform="rotate(-90,698,336)">CSS auto-flow</text>
+  <line x1="695" y1="290" x2="695" y2="450" stroke="#6b7280" stroke-width="1" stroke-dasharray="3,3"/>
+</svg>
