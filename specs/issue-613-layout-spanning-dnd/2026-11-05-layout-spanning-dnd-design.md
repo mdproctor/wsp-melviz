@@ -145,13 +145,38 @@ gain `mode: 'positioned'`.
    present. Authors can override to `overflow: auto` or `overflow: visible`
    via `Component.style` if needed.
 
-5. **DOM order invariant (WCAG 2.1 SC 1.3.2):** After any DnD reposition
-   that changes grid coordinates, the renderer reorders DOM children to
-   match visual position (sorted by `y` ascending, then `x` ascending).
-   This ensures DOM source order matches the visual reading order even after
-   DnD edits, maintaining the same WCAG compliance that `grid-auto-flow: row`
-   provides for untouched grids. The reorder is applied during re-render —
-   items are rendered in sorted order, not in their original array order.
+5. **DOM order invariant (WCAG 2.1 SC 1.3.2):** The renderer orders DOM
+   children to preserve reading order. The ordering rule depends on item
+   mode:
+
+   - **All-positioned grids:** Items sorted by `(y ascending, x ascending)`.
+     DOM order matches visual grid position exactly.
+   - **All-auto grids:** Items rendered in array order. CSS
+     `grid-auto-flow: row` places them in reading order. DOM order = array
+     order = visual order.
+   - **Mixed grids (positioned + auto):** Positioned items rendered first,
+     sorted by `(y ascending, x ascending)`. Auto items rendered after, in
+     array order. CSS Grid places positioned items at explicit cells and
+     auto items fill remaining cells in DOM order.
+
+   In mixed grids, auto items maintain correct relative order among
+   themselves but their visual position relative to positioned items depends
+   on CSS auto-flow. If auto items fill gaps between positioned items, the
+   absolute DOM-to-visual mapping may diverge for those auto items. This is
+   an inherent property of mixing explicit and auto CSS Grid placement —
+   the same divergence occurs in any CSS Grid with both placed and
+   auto-placed children. For fully positioned or fully auto grids (the
+   common cases), the WCAG guarantee is exact.
+
+6. **Auto item ID generation:** For `mode: 'positioned'` items, the
+   renderer passes `(placement.x, placement.y)` to `generateId`,
+   producing IDs like `{parentId}::{x}::{y}`. For `mode: 'auto'` items,
+   the renderer passes `("auto", arrayIndex)`, producing IDs like
+   `{parentId}::auto::{index}`. This follows the existing slot child
+   pattern (`{parentId}::{slotName}::{index}`) and is distinguishable
+   from positioned item IDs. Array index stability: IDs shift when items
+   are inserted or removed — the same behaviour as slot child IDs.
+   Components needing stable identity should use explicit `component.id`.
 
 ### 2.4 Parser changes
 
@@ -304,25 +329,39 @@ resolveCollisions(allPositioned: GridPlacement[], moved: GridPlacement):
   1. Place `moved` at its proposed {x, y, w, h}.
   2. Collect all positioned items (excluding `moved`) into a list.
   3. Sort the list by (y ascending, x ascending).
-  4. For each item in sorted order:
-     a. If item overlaps `moved` or any previously displaced item:
-        - Push item down: set item.y = bottom edge of the overlapping
-          item (overlapper.y + overlapper.h).
-        - Mark item as displaced.
-     b. If item does not overlap anything, leave it in place.
-  5. Return the new positions for all items.
+  4. blockers = [moved]
+  5. For each item in sorted order:
+     a. newY = item.y
+     b. For each blocker in blockers (sorted by y ascending):
+        If columnsOverlap(item, blocker) AND
+           blocker.y < newY + item.h AND
+           blocker.y + blocker.h > newY:
+          newY = blocker.y + blocker.h
+     c. If newY > item.y:
+        item.y = newY
+        Append item to blockers
+  6. Return the new positions for all items.
 ```
 
-**Overlap test:** Two items overlap when their grid cell rectangles
-intersect: `a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h &&
-a.y + a.h > b.y`.
+**Column overlap test:** Two items share columns when
+`a.x < b.x + b.w && a.x + a.w > b.x`.
+
+**Full overlap test:** Two items overlap when their grid cell rectangles
+intersect: column overlap AND `a.y < b.y + b.h && a.y + a.h > b.y`.
+
+The inner loop (step 5b) scans all blockers for each item. Because
+`newY` only increases and blockers are checked in y-ascending order, an
+item is pushed below every blocker it overlaps at its proposed position.
+This prevents the multi-overlap bug where two items could be pushed to
+the same row: item B checks displaced item A as a blocker and is pushed
+below it.
 
 **Termination guarantee:** Items are processed in y-ascending order and
-only move downward (increasing `y`). No item can be pushed above its
-current position, so no cycle is possible. The algorithm terminates in
-one pass of O(N) items, with each item checking for overlap against at
-most N others — worst case O(N²), which is acceptable for typical grid
-sizes (N < 100).
+only move downward (increasing `y`). `newY` only increases within the
+inner loop. No item can be pushed above its current position, so no
+cycle is possible. The algorithm terminates in one pass of O(N) items,
+with each item checking at most N blockers — worst case O(N²), which is
+acceptable for typical grid sizes (N < 100).
 
 **Width validation:** `w` is clamped to `GridProps.columns` at parse time
 and on every placement update. An item with `w > columns` is clamped to
@@ -347,6 +386,18 @@ boundary, producing a preview of where all items will land. The preview
 renders displaced items at their projected positions using CSS transforms
 (not model updates) for performance. On `pointerup`, the final positions
 are committed to the model.
+
+**Auto item reflow trade-off:** Auto items are exempt from the displacement
+preview. During drag, auto items remain at their current CSS auto-flow
+positions. On drop, the model updates and re-render causes auto items to
+reflow to new positions — this reflow is not previewed. For grids with many
+auto items, the visual jump on drop may be noticeable. This is an accepted
+trade-off: previewing auto item reflow would require computing the CSS
+auto-placement algorithm in JavaScript on every `pointermove` frame, which
+is the same DOM-coupling problem that the positioned-only scope (§3.3) was
+designed to avoid. In practice, grids that undergo heavy DnD editing tend
+toward all-positioned (dragging auto items converts them), reducing the
+prevalence of mixed-mode grids where this matters.
 
 ### 3.4 Resize
 
