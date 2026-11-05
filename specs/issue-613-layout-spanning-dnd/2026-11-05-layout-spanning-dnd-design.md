@@ -103,6 +103,8 @@ items:
 
 4. **Row height:** When `GridProps.rowHeight` is present, set
    `grid-auto-rows: ${rowHeight}px`. When absent, keep current `min-content`.
+   Content taller than `h * rowHeight` overflows — panels with `rowHeight`
+   set must use `overflow: auto` or `overflow: hidden` on the item container.
 
 ### 2.4 Parser changes
 
@@ -139,6 +141,9 @@ A toggle activates grid edit mode on a specific grid instance. In edit mode:
   drag.
 - Nested grids: only the targeted grid level shows edit affordances. Edit mode
   is scoped to a single grid instance.
+- Discoverability: the toggle must be visible without prior knowledge — a
+  toolbar button or prominent affordance on the grid container, not buried in
+  a context menu.
 
 ### 3.2 Pointer event architecture (D4)
 
@@ -216,6 +221,10 @@ Grid DnD operates as a new editing surface within the Visual YAML Builder
 This gives undo/redo for free — every DnD operation is a `PageDocument`
 transaction. Change notifications propagate to all surfaces (tree view, YAML
 editor, preview).
+
+Until Layer 2b lands, DnD changes in Layer 2a are in-memory only — the
+runtime model updates but YAML is not persisted. Users see visual changes
+immediately but must wait for YAML round-trip to save them.
 
 ### 4.3 YAML round-trip (D10)
 
