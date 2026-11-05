@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-613-layout-spanning-dnd
-state: active
+state: closing:review
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -11,6 +11,7 @@ design-repo:
 design-section-hashes: 
 flyway-next-v: 
 
+evidence-era: true
 ## Queue
 - [ ] casehubio/casehub-pages#613 — Issue #613 ← active
   - [x] Batch 1: Type foundation
