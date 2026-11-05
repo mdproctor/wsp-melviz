@@ -264,7 +264,45 @@ it("omits grid-auto-flow when all items are positioned", () => {
 });
 ```
 
-- [ ] **Step 4: Write failing test for auto item IDs**
+- [ ] **Step 4: Write failing test for DOM ordering (WCAG §2.3.5)**
+
+```typescript
+it("renders positioned items sorted by (y, x) for WCAG DOM order", () => {
+  const target = document.createElement("div");
+  const component: Component = {
+    type: "grid",
+    items: [
+      { placement: { mode: "positioned", x: 6, y: 1, w: 6, h: 1 }, component: { type: "html", id: "bottom-right" } },
+      { placement: { mode: "positioned", x: 0, y: 0, w: 6, h: 1 }, component: { type: "html", id: "top-left" } },
+      { placement: { mode: "positioned", x: 6, y: 0, w: 6, h: 1 }, component: { type: "html", id: "top-right" } },
+    ],
+  };
+  renderComponent(target, component);
+  const grid = target.firstElementChild as HTMLElement;
+  const children = grid.querySelectorAll(":scope > [data-component-id]");
+  expect(children[0]!.getAttribute("data-component-id")).toBe("top-left");
+  expect(children[1]!.getAttribute("data-component-id")).toBe("top-right");
+  expect(children[2]!.getAttribute("data-component-id")).toBe("bottom-right");
+});
+
+it("renders positioned items before auto items in mixed grids", () => {
+  const target = document.createElement("div");
+  const component: Component = {
+    type: "grid",
+    items: [
+      { placement: { mode: "auto", w: 6, h: 1 }, component: { type: "html", id: "auto-1" } },
+      { placement: { mode: "positioned", x: 0, y: 0, w: 6, h: 1 }, component: { type: "html", id: "pos-1" } },
+    ],
+  };
+  renderComponent(target, component);
+  const grid = target.firstElementChild as HTMLElement;
+  const children = grid.querySelectorAll(":scope > [data-component-id]");
+  expect(children[0]!.getAttribute("data-component-id")).toBe("pos-1");
+  expect(children[1]!.getAttribute("data-component-id")).toBe("auto-1");
+});
+```
+
+- [ ] **Step 5: Write failing test for auto item IDs**
 
 ```typescript
 it("generates auto IDs for auto-placed items", () => {
@@ -300,21 +338,18 @@ it("generates coordinate IDs for positioned items", () => {
 });
 ```
 
-- [ ] **Step 5: Run all new tests to verify they fail**
+- [ ] **Step 6: Run all new tests to verify they fail**
 
 Run: `yarn vitest run packages/pages-component/src/renderer/render.test.ts -t "grid items"`
 Expected: FAIL
 
-- [ ] **Step 6: Fix the 12-column hardcode + add auto-flow**
+- [ ] **Step 7: Fix the 12-column hardcode + add auto-flow + DOM ordering**
 
 In `render.ts`, replace the items path (the block inside
 `if (component.items && component.items.length > 0)`) with:
 
 ```typescript
 if (component.items && component.items.length > 0) {
-  // Grid setup — delegate column template to applyLayoutCSS (already called above).
-  // applyLayoutCSS sets display:grid and gridTemplateColumns from GridProps.columns.
-  // We only add items-specific properties here.
   el.style.gridAutoRows = "min-content";
   el.style.alignContent = "start";
   el.style.gap = "var(--pages-space-3, 12px)";
@@ -324,12 +359,25 @@ if (component.items && component.items.length > 0) {
     el.style.gridAutoFlow = "row";
   }
 
-  for (let i = 0; i < component.items.length; i++) {
-    const item = component.items[i]!;
+  const positioned = component.items
+    .map((item, i) => ({ item, originalIndex: i }))
+    .filter(e => e.item.placement.mode === "positioned");
+  const auto = component.items
+    .map((item, i) => ({ item, originalIndex: i }))
+    .filter(e => e.item.placement.mode === "auto");
+
+  positioned.sort((a, b) => {
+    const ap = a.item.placement as { mode: "positioned"; x: number; y: number; w: number; h: number };
+    const bp = b.item.placement as { mode: "positioned"; x: number; y: number; w: number; h: number };
+    return ap.y !== bp.y ? ap.y - bp.y : ap.x - bp.x;
+  });
+
+  const ordered = [...positioned, ...auto];
+  for (const { item, originalIndex } of ordered) {
     if (item.placement.mode === "positioned") {
       renderNode(el, item.component, id, item.placement.x, item.placement.y, permissions, doc, onNode);
     } else {
-      renderNode(el, item.component, id, "auto", i, permissions, doc, onNode);
+      renderNode(el, item.component, id, "auto", originalIndex, permissions, doc, onNode);
     }
     const child = el.lastElementChild;
     if (child instanceof HTMLElement) {
@@ -340,25 +388,26 @@ if (component.items && component.items.length > 0) {
 ```
 
 This removes the hardcoded `display: grid` and `gridTemplateColumns`
-from the items path. The `applyLayoutCSS` call at line 55-57 already
-sets these correctly from `GridProps.columns` for `type: "grid"`.
+from the items path — `applyLayoutCSS` (called at line 55-57) already
+sets these from `GridProps.columns`. DOM children are ordered:
+positioned items sorted by (y, x) first, then auto items in array order.
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [ ] **Step 8: Run tests to verify they pass**
 
 Run: `yarn vitest run packages/pages-component/src/renderer/render.test.ts`
 Expected: ALL PASS
 
-- [ ] **Step 8: Run full component test suite**
+- [ ] **Step 9: Run full component test suite**
 
 Run: `yarn vitest run packages/pages-component/`
 Expected: ALL PASS
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add packages/pages-component/src/renderer/render.ts \
        packages/pages-component/src/renderer/render.test.ts
-git commit -m "feat(#613): fix 12-column hardcode, add auto-flow and auto IDs"
+git commit -m "feat(#613): fix 12-column hardcode, add auto-flow, DOM ordering, auto IDs"
 ```
 
 ### Task 3: rowHeight support + overflow handling
@@ -711,8 +760,9 @@ export function parsePageContent(
     return { items };
   }
 
+  // Existing componentsRaw and rowsRaw branches are unchanged here —
+  // mode: "positioned" was already added in Task 1 Step 7.
   if (componentsRaw) {
-    // ... existing code, but add mode: "positioned" as const to placements
 ```
 
 Add the `GridPlacement` type import at the top of the file:
@@ -720,18 +770,30 @@ Add the `GridPlacement` type import at the top of the file:
 import type { GridPlacement } from "@casehubio/pages-component";
 ```
 
-- [ ] **Step 5: Add mode: "positioned" to existing format placements**
+- [ ] **Step 5: Add test for type: columns desugar path**
 
-In the `componentsRaw` branch (line 284), change:
+The `component-desugar.ts` columns path was updated in Task 1 Step 7
+to include `mode: "positioned"`. Verify it works end-to-end:
+
 ```typescript
-placement: { mode: "positioned" as const, x: 0, y: i, w: 12, h: 1 },
+it("type: columns desugar produces mode: positioned", () => {
+  const root = parsePage({
+    pages: [{
+      components: [
+        { type: "columns", columns: [
+          { components: [{ html: "A" }] },
+          { components: [{ html: "B" }] },
+        ]},
+      ],
+    }],
+  });
+  const page = root.slots!["content"]![0]!;
+  const gridItem = page.items![0]!;
+  const nestedGrid = gridItem.component;
+  expect(nestedGrid.type).toBe("grid");
+  expect(nestedGrid.items![0]!.placement.mode).toBe("positioned");
+});
 ```
-
-In the `rowsRaw` branch, add `mode: "positioned" as const` to every
-placement object literal:
-- Line 324-326 (column component placements)
-- Line 358-360 (nested row placements)
-- Line 379 (row wrapper placement)
 
 - [ ] **Step 6: Run tests to verify they pass**
 
