@@ -67,20 +67,57 @@ interface GridProps {
 
 ### 2.2 YAML surface
 
+The page-level parser (`parsePageContent`) currently accepts two mutually
+exclusive YAML formats: `components:` (flat list) and `rows:` (structured
+layout with columns). Both produce `GridItem[]` internally — `components:`
+assigns `{x:0, y:i, w:12, h:1}` per item, `rows:` assigns placement from
+the column/span structure. Neither format exposes `placement` objects or
+the `mode` field to YAML authors.
+
+This spec adds a **third format**: `items:` with explicit `placement` objects.
+The parser selects format based on which key is present (mutually exclusive,
+priority: `items:` > `rows:` > `components:`).
+
+#### New `items:` format
+
 ```yaml
-# Explicit positioning (existing, unchanged except for mode field)
 items:
   - placement: { mode: positioned, x: 0, y: 0, w: 6, h: 2 }
     component: { type: metric, ... }
 
-# Auto-placed with spanning (new)
   - placement: { mode: auto, w: 4, h: 1 }
     component: { type: bar-chart, ... }
 
-# Auto-placed, default 1x1 (new, minimal)
   - placement: { mode: auto, w: 1, h: 1 }
     component: { type: metric, ... }
 ```
+
+#### Existing format mapping
+
+- **`components:` format** — each component gets
+  `{ mode: 'positioned', x: 0, y: i, w: 12, h: 1 }`. No change to existing
+  parser logic; `mode: 'positioned'` is set on the produced `GridPlacement`.
+- **`rows:` format** — placement derived from column spans and row positions
+  as today, with `mode: 'positioned'` added to each produced placement.
+
+#### DnD and format conversion
+
+Pages authored with `components:` or `rows:` format produce positioned items
+at parse time. If a user edits placement via DnD (Layer 2b), the YAML must be
+in `items:` format for round-trip to preserve placement coordinates. The first
+DnD operation on a `components:`/`rows:` page triggers a one-time format
+conversion: `PageDocument` rewrites the page content to `items:` format with
+the current computed placements. This is a lossy conversion (the original
+`rows:`/`columns:` structure is not recoverable), but it is explicit — the
+user chose to enter DnD edit mode, which implies grid-based authoring.
+
+#### Nested grid components
+
+Components with `type: grid` and an `items:` array in their YAML are parsed
+directly — each item's `placement` is read as a `GridPlacement` discriminated
+union. The `component-desugar.ts` path for `type: columns` already produces
+`{ type: "grid", items: [...] }` with `{ x, y, w, h }` placements; these
+gain `mode: 'positioned'`.
 
 ### 2.3 Renderer changes
 
@@ -103,14 +140,45 @@ items:
 
 4. **Row height:** When `GridProps.rowHeight` is present, set
    `grid-auto-rows: ${rowHeight}px`. When absent, keep current `min-content`.
-   Content taller than `h * rowHeight` overflows — panels with `rowHeight`
-   set must use `overflow: auto` or `overflow: hidden` on the item container.
+   Content taller than `h * rowHeight` overflows — the **renderer** sets
+   `overflow: hidden` on each grid item container when `rowHeight` is
+   present. Authors can override to `overflow: auto` or `overflow: visible`
+   via `Component.style` if needed.
+
+5. **DOM order invariant (WCAG 2.1 SC 1.3.2):** After any DnD reposition
+   that changes grid coordinates, the renderer reorders DOM children to
+   match visual position (sorted by `y` ascending, then `x` ascending).
+   This ensures DOM source order matches the visual reading order even after
+   DnD edits, maintaining the same WCAG compliance that `grid-auto-flow: row`
+   provides for untouched grids. The reorder is applied during re-render —
+   items are rendered in sorted order, not in their original array order.
 
 ### 2.4 Parser changes
 
-`page-parser.ts` handles the `mode` field in YAML and produces the
-discriminated union. Existing YAML without `mode` is treated as
-`mode: 'positioned'` for backward compatibility.
+**`page-parser.ts`** — `parsePageContent` gains a third branch for the
+`items:` key. When present, each array entry is parsed as
+`{ placement: GridPlacement, component: Component }`. The `placement` object
+is validated: `mode` must be `'positioned'` or `'auto'`; positioned items
+require `x`, `y`, `w`, `h`; auto items require `w`, `h`. Width is clamped
+to `GridProps.columns` (default 12). Existing YAML without `mode` in a
+placement is treated as `mode: 'positioned'` for backward compatibility.
+
+The `components:` and `rows:` branches remain unchanged except that the
+`GridPlacement` objects they produce now include `mode: 'positioned'`.
+
+**`component-desugar.ts`** — the DashBuilder `type: columns` desugaring
+(lines 396–424) produces `{ type: "grid", items: [...] }` with
+`{ x, y, w, h }` placements. These placements gain `mode: 'positioned'`
+since they have explicit coordinates computed from the column spans.
+
+**Migration of all call sites:** `GridPlacement` becomes a discriminated
+union. TypeScript's exhaustive `switch`/`if` checking enforces that every
+site reading `placement.x` or `placement.y` first narrows on
+`mode === 'positioned'`. Known call sites: `grid.ts:7-8`,
+`render.ts:104`, `grid.test.ts:7,14`, `component-desugar.ts:414`,
+`page-parser.ts` placement construction (lines 284, 324, 358, 379).
+TypeScript compilation failure is the migration mechanism — no runtime
+risk of missed sites.
 
 ### 2.5 Backward compatibility
 
@@ -136,14 +204,57 @@ A toggle activates grid edit mode on a specific grid instance. In edit mode:
 - Grid lines become visible (CSS outline on cells or overlay).
 - Drag handles appear on each panel (top bar for move, edges/corners for
   resize).
-- Container tree DnD (tab drag) is suppressed for grids inside Container
-  entries to prevent interference between grid panel drag and container tab
-  drag.
+- Container tree DnD is suppressed (see §3.1.2).
 - Nested grids: only the targeted grid level shows edit affordances. Edit mode
   is scoped to a single grid instance.
 - Discoverability: the toggle must be visible without prior knowledge — a
   toolbar button or prominent affordance on the grid container, not buried in
   a context menu.
+
+#### 3.1.1 State management
+
+Edit mode is **runtime UI state** — not persisted in the model, not saved to
+YAML, not restored on navigation. It is transient interaction state, like a
+dropdown being open.
+
+- **Storage:** A `data-grid-editing` attribute on the grid container element.
+  The attribute's presence indicates edit mode is active. All edit mode
+  behaviour (handle visibility, grid line overlay, event capture) is driven
+  by this attribute via CSS selectors and event delegation.
+- **Mutual exclusion:** A singleton `GridEditController` ensures only one grid
+  is in edit mode at a time. Activating edit mode on a second grid
+  deactivates the first. The controller is scoped to the page runtime — it
+  coordinates across all grids on the page.
+- **Toggle location:** An overlay button positioned at the top-right corner
+  of the grid container, visible on hover. In edit mode, the button
+  changes to a "done editing" state.
+- **Event isolation:** In edit mode, a transparent overlay `<div>` covers each
+  grid item's content area. This overlay captures `pointerdown` events,
+  preventing clicks from reaching panel content (which may have its own click
+  handlers). Drag handles sit above the overlay. The overlay is removed when
+  edit mode is deactivated.
+- **Interaction with SelectionOverlay:** The Visual YAML Builder's
+  `SelectionOverlay` provides click-to-select for the component tree. In grid
+  edit mode, the `SelectionOverlay` defers to grid DnD — grid edit mode takes
+  priority. When grid edit mode is deactivated, `SelectionOverlay` resumes.
+
+#### 3.1.2 Container tree DnD suppression
+
+Grids inside Container entries (tab panels, accordion sections, etc.) must
+prevent interference between grid panel drag and container tab drag.
+
+**Mechanism:** When grid edit mode activates, the grid container registers a
+**capturing** event listener for `pages-tab-drag-start` (the custom event
+that initiates Container tree tab drag, dispatched from `container.ts:123`).
+The capturing listener calls `stopPropagation()`, preventing the event from
+reaching the `free-layout-dnd.ts` handler on the host element.
+
+**Scope:** All Container tree DnD events are suppressed — both tab drag and
+edge splits. The Container's toolbar (layout cycle button, arrange dropdown)
+remains visible and functional — only DnD pointer interactions are blocked.
+
+**Cleanup:** When grid edit mode deactivates, the capturing listener is
+removed, restoring Container tree DnD.
 
 ### 3.2 Pointer event architecture (D4)
 
@@ -167,18 +278,75 @@ Custom algorithm studying Gridstack.js and React-Grid-Layout as reference
 (both MIT). Libraries conflict with model-driven rendering — Gridstack.js
 expects to own the DOM, React-Grid-Layout is React-based.
 
-Algorithm:
+#### Scope: positioned items only
 
-1. On proposed placement, detect overlapping items by comparing grid cell
-   rectangles.
-2. Overlapped items are pushed down (increase `y`) by the minimum needed to
-   clear.
-3. Cascading: displaced items that now overlap others trigger further
-   displacement.
-4. Displacement preview renders during drag so the user sees where panels will
-   land.
-5. All displaced items become `mode: 'positioned'` (they now have explicit
-   coordinates from the displacement calculation).
+The collision/displacement algorithm operates **exclusively on
+`mode: 'positioned'` items**. Auto-placed items (`mode: 'auto'`) are exempt
+from displacement — CSS `grid-auto-flow: row` reflows them automatically
+around positioned items. This eliminates the auto-to-positioned ratchet
+(where displacement would permanently convert auto items to positioned) and
+removes the need to read auto items' computed DOM positions.
+
+**Dragging an auto item:** When a user drags an auto item, the drag
+operation reads the item's current DOM position once (`getBoundingClientRect`)
+to initialise the drag ghost, then converts the item to
+`mode: 'positioned'` with the drop coordinates. This is an intentional user
+action — the user chose to place this item at specific coordinates.
+
+#### Algorithm (sorted-by-y greedy, single downward pass)
+
+Adapted from React-Grid-Layout's compaction model. The algorithm is a
+single downward pass over positioned items sorted by position, which
+guarantees termination.
+
+```
+resolveCollisions(allPositioned: GridPlacement[], moved: GridPlacement):
+  1. Place `moved` at its proposed {x, y, w, h}.
+  2. Collect all positioned items (excluding `moved`) into a list.
+  3. Sort the list by (y ascending, x ascending).
+  4. For each item in sorted order:
+     a. If item overlaps `moved` or any previously displaced item:
+        - Push item down: set item.y = bottom edge of the overlapping
+          item (overlapper.y + overlapper.h).
+        - Mark item as displaced.
+     b. If item does not overlap anything, leave it in place.
+  5. Return the new positions for all items.
+```
+
+**Overlap test:** Two items overlap when their grid cell rectangles
+intersect: `a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h &&
+a.y + a.h > b.y`.
+
+**Termination guarantee:** Items are processed in y-ascending order and
+only move downward (increasing `y`). No item can be pushed above its
+current position, so no cycle is possible. The algorithm terminates in
+one pass of O(N) items, with each item checking for overlap against at
+most N others — worst case O(N²), which is acceptable for typical grid
+sizes (N < 100).
+
+**Width validation:** `w` is clamped to `GridProps.columns` at parse time
+and on every placement update. An item with `w > columns` is clamped to
+`columns` and positioned at `x = 0`. An item placed at `x` where
+`x + w > columns` is clamped: `x = columns - w`.
+
+**Push direction:** Always downward (increasing `y`). Horizontal
+displacement is not performed — items are never pushed left or right.
+Resize that increases `w` may cause overlap; the overlapped items are
+pushed down, not sideways. This matches Gridstack.js and React-Grid-Layout
+behaviour.
+
+**Unbounded grid height:** The grid grows vertically as needed. There is
+no maximum row count — displacement can push items to any `y` value.
+The grid container uses `grid-auto-rows` (not `grid-template-rows`), so
+new rows are created implicitly.
+
+#### Displacement preview
+
+During drag, the algorithm runs on every `pointermove` that crosses a cell
+boundary, producing a preview of where all items will land. The preview
+renders displaced items at their projected positions using CSS transforms
+(not model updates) for performance. On `pointerup`, the final positions
+are committed to the model.
 
 ### 3.4 Resize
 
@@ -226,6 +394,59 @@ Until Layer 2b lands, DnD changes in Layer 2a are in-memory only — the
 runtime model updates but YAML is not persisted. Users see visual changes
 immediately but must wait for YAML round-trip to save them.
 
+#### 4.2.1 Required PageDocument extensions
+
+`PageDocument` currently has no grid-item capability — no container
+descriptor for `grid`, no methods for manipulating `GridItem` placement
+values or the `items` array. The following extensions are required:
+
+**Container descriptor for `grid`:** Add to `CONTAINER_DESCRIPTORS`:
+
+```typescript
+{ type: 'grid', defaultContentSlot: 'items',
+  slots: [{ kind: 'grid-items'; yamlKey: 'items' }] }
+```
+
+This requires a new `SlotDescriptor` kind (`'grid-items'`) because grid
+items have a `{ placement, component }` structure that differs from all
+existing slot kinds (which expect either named maps, arrays, or nested
+arrays of components).
+
+**New `GridItemNode` class** (parallel to `RowNode`, `ColumnNode`):
+
+```typescript
+class GridItemNode {
+  constructor(private _doc: PageDocument, readonly path: (string | number)[]);
+
+  getPlacement(): GridPlacement;
+  setPlacement(placement: GridPlacement): void;
+  getComponent(): ComponentNode;
+}
+```
+
+**New methods on `ComponentNode`** for grid containers:
+
+```typescript
+getGridItems(): GridItemNode[];
+addGridItem(placement: GridPlacement, type: string,
+            props?: Record<string, unknown>): GridItemNode;
+insertGridItemAt(index: number, placement: GridPlacement, type: string,
+                 props?: Record<string, unknown>): GridItemNode;
+removeGridItem(index: number): void;
+```
+
+**CST path navigation:** Grid items are navigated via the CST path
+`[...componentPath, 'items', index]`. The `placement` sub-object is at
+`[...componentPath, 'items', index, 'placement']`. `setPlacement` mutates
+individual properties (`mode`, `x`, `y`, `w`, `h`) on the `placement` map
+node in place, preserving YAML formatting and comments.
+
+**Undo/redo integration:** Each grid DnD operation (reposition, resize,
+insert, delete) is a `PageDocument` transaction. Compound operations
+(displacement of multiple items during a drop) use
+`beginTransaction()`/`commitTransaction()` so that the entire drop +
+displacement is a single undo step.
+
 ### 4.3 YAML round-trip (D10)
 
 When DnD changes a `GridPlacement`:
@@ -246,33 +467,53 @@ don't — grids stay as `items` with `GridPlacement`.
 
 ## 5. Layout-Agnostic DnD Architecture
 
-The DnD infrastructure is designed to work across all layout types, not just
-`grid`. Each layout type provides a constraint adapter that tells the DnD
-system what operations are permitted:
+The DnD infrastructure is designed for extension beyond `grid`, but **this
+spec fully specifies only `grid` DnD**. Other layout types have fundamentally
+different placement models and require their own DnD specifications.
 
-| Layout | Span directions | Snap axis | Resize handles |
-|--------|----------------|-----------|----------------|
-| `grid` | cols + rows (2D) | both | all edges + corners |
-| `columns` | cols only | horizontal | left/right edges |
-| `rows` | rows only | vertical | top/bottom edges |
-| `tabs`/`stack`/etc | none | reorder only | none |
+### 5.1 Shared infrastructure (specified)
 
-The constraint adapter interface:
+The following components are layout-agnostic and shared:
 
-- **Snap targets:** What grid cells or positions exist for snapping.
-- **Allowed resize handles:** Which edges/corners to show based on permitted
-  span directions.
-- **Displacement axis:** Whether displaced items push horizontally, vertically,
-  or both.
-- **Reorder-only mode:** For 1D layouts like tabs/stack, DnD becomes reordering
-  (change array index) rather than spanning.
+- **Edit mode toggle** — the `GridEditController` pattern (singleton mutual
+  exclusion, overlay button, event isolation) applies to any layout type.
+- **Pointer event machinery** — `pointerdown`/`pointermove`/`pointerup` with
+  `setPointerCapture`.
+- **Ghost preview** — visual feedback during drag.
+- **PageDocument integration** — undo/redo transactions, CST-preserving
+  mutations.
+- **Container tree DnD suppression** — capturing listener for
+  `pages-tab-drag-start`.
 
-The core pointer event machinery, edit mode toggle, ghost preview, and
-PageDocument integration are shared across all layout types. Only the
-layout-specific constraint math differs.
+### 5.2 Layout-specific constraint adapters
 
-Build for `grid` first (2D, full spanning). Other layout types add DnD by
-implementing their constraint adapter — the infrastructure is ready.
+Each layout type provides a constraint adapter. The models differ
+significantly:
+
+| Layout | Placement model | DnD operation | Status |
+|--------|----------------|---------------|--------|
+| `grid` | `{x, y, w, h}` coordinate grid | 2D reposition + resize + insert | **Specified (this spec)** |
+| `columns` | `distribution: number[]` ratios | Ratio adjustment at column boundaries | Future spec |
+| `rows` | Flex ordering (DOM order) | Vertical reorder | Future spec |
+| `tabs`/`stack`/etc | Array index | Reorder (change index) | Future spec |
+
+The `grid` adapter is fully specified in §3. The `columns` adapter would
+manipulate `ColumnsProps.distribution` ratios — not grid coordinates. The
+`rows` adapter would reorder flex children — not grid-row spans. These
+are genuinely different DnD mechanisms sharing only the pointer event and
+edit mode infrastructure, not the collision or snapping logic.
+
+The constraint adapter interface abstracts over these differences:
+
+- **`getSnapTargets()`** — grid cells (grid), column boundaries (columns),
+  row boundaries (rows), or array indices (tabs/stack).
+- **`getAllowedHandles()`** — which edges/corners to show.
+- **`applyDrop(from, to)`** — apply the layout-specific model mutation.
+- **`getDisplacementAxis()`** — vertical (grid), horizontal (columns),
+  or none (reorder-only).
+
+Build for `grid` first. Other layout types add DnD by implementing their
+constraint adapter against the shared infrastructure.
 
 ---
 
@@ -312,13 +553,14 @@ implementing their constraint adapter — the infrastructure is ready.
 - YAML round-trip: DnD change → `PageDocument.toString()` → re-parse → same
   runtime state.
 
-### 6.4 Layout-agnostic DnD tests
+### 6.4 Shared DnD infrastructure tests
 
-- Constraint adapter: `columns` layout restricts resize to horizontal only.
-- Constraint adapter: `rows` layout restricts resize to vertical only.
-- Constraint adapter: `tabs`/`stack` allows reorder only, no spanning.
-- Shared infrastructure: edit mode toggle works for `columns` and `rows` (not
-  just `grid`).
+- Edit mode mutual exclusion: activating edit on grid B deactivates grid A.
+- Event isolation: pointer events on grid item content are captured by overlay.
+- Container DnD suppression: `pages-tab-drag-start` is stopped during grid
+  edit mode.
+- Ghost preview: ghost element follows pointer at snapped grid coordinates.
+- DOM reorder: after DnD reposition, DOM children are sorted by (y, x).
 
 ---
 
@@ -328,7 +570,11 @@ implementing their constraint adapter — the infrastructure is ready.
 - `pages-component/src/renderer/render.ts:96-109` — items rendering path (hardcoded 12-column bug)
 - `pages-component/src/renderer/grid.ts` — `applyGridPlacement`
 - `pages-component/src/renderer/layout.ts:21-27` — `applyLayoutCSS` for grid type
+- `pages-ui/src/parser/page-parser.ts:272-395` — `parsePageContent` (three YAML format branches)
+- `pages-ui/src/parser/component-desugar.ts:396-424` — DashBuilder `type: columns` → `type: grid` desugaring (constructs `GridPlacement` objects, needs `mode: 'positioned'`)
 - `pages-runtime/src/frame-sandbox/free-layout-dnd.ts` — Container tree free-layout DnD (pointer event pattern reference, not grid-specific)
+- `pages-runtime/src/frame-sandbox/container.ts:123` — `pages-tab-drag-start` custom event dispatch
+- `pages-document/src/container-descriptors.ts` — `CONTAINER_DESCRIPTORS` registry (needs `grid` entry)
 - `docs/specs/2026-06-15-casehub-component-grid-layout-design.md` — original grid layout spec
 - `docs/specs/issue-434-visual-yaml-builder-phase1b/2026-09-14-visual-yaml-builder-phase1b-design.md` — Visual YAML Builder Phase 1b (PageDocument, SelectionOverlay)
 - `pages-document/src/page-document.ts` — PageDocument CST facade
