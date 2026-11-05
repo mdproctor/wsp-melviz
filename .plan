@@ -2,7 +2,7 @@
 
 ## State
 branch: issue-613-layout-spanning-dnd
-state: scaffolded
+state: active
 project-sha: 
 date: 
 issue-repo: casehubio/casehub-pages
@@ -13,10 +13,10 @@ flyway-next-v:
 
 ## Queue
 - [ ] casehubio/casehub-pages#613 — Issue #613 ← active
-  - [ ] Batch 1: Type foundation
-    - [ ] Task 1: GridPlacement union + call sites
-  - [ ] Batch 2: Renderer
-    - [ ] Task 2: Fix 12-col + auto-flow + auto IDs
-    - [ ] Task 3: rowHeight + overflow
-  - [ ] Batch 3: Parser
-    - [ ] Task 4: items format + backward compat
+  - [x] Batch 1: Type foundation
+    - [x] Task 1: GridPlacement union + call sites
+  - [x] Batch 2: Renderer
+    - [x] Task 2: Fix 12-col + auto-flow + auto IDs
+    - [x] Task 3: rowHeight + overflow
+  - [x] Batch 3: Parser
+    - [x] Task 4: items format + backward compat
