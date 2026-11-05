@@ -492,6 +492,43 @@ removeGridItem(index: number): void;
 individual properties (`mode`, `x`, `y`, `w`, `h`) on the `placement` map
 node in place, preserving YAML formatting and comments.
 
+**Generic container method extensions:** The existing `getChildren()` and
+`addChild()` on `ComponentNode` dispatch on `slot.kind` with branches for
+`'named-record'`, `'array'`, and `'nested-array'`. Without a `'grid-items'`
+branch, grids would appear as containers with zero children (the slot is
+silently skipped), and `addChild()` would fall through to the
+`'nested-array'` else branch which accesses `slotDesc.childKey` — a field
+absent on `'grid-items'`, producing malformed YAML. Both must be extended:
+
+`getChildren()` — add a `'grid-items'` branch that iterates the `items`
+YAML sequence and returns `ComponentNode` objects pointing to each item's
+component sub-path: `[...path, 'items', i, 'component']`. The slot name
+in the returned `ContainerChildren.slots` is `'items'`. This makes grid
+item components visible in the builder tree without any tree-side changes.
+
+`addChild()` — add a `'grid-items'` branch that creates a grid item with
+default placement `{ mode: 'auto', w: 1, h: 1 }` (matching the insertion
+default in §4.1) and the given component type. The YAML structure is:
+
+```yaml
+- placement: { mode: auto, w: 1, h: 1 }
+  component: { type: <type> }
+```
+
+The `ComponentNode` returned points to
+`[...path, 'items', newIndex, 'component']`. The builder shell's "Add
+child" action (`builder-shell.ts:961`) calls
+`node.addChild(desc.defaultContentSlot, ...)` where
+`defaultContentSlot = 'items'` — this routes to the `'grid-items'`
+branch with no caller changes.
+
+The dedicated `getGridItems()`/`addGridItem()` methods serve the DnD use
+case (placement-aware operations, `GridItemNode` with `setPlacement()`).
+The generic `getChildren()`/`addChild()` serve the builder tree and shell
+(component-only view, default placement on insert). Both APIs coexist —
+the generic methods are the builder's view of the grid; the dedicated
+methods are the DnD system's view.
+
 **Undo/redo integration:** Each grid DnD operation (reposition, resize,
 insert, delete) is a `PageDocument` transaction. Compound operations
 (displacement of multiple items during a drop) use
