@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" font-family="system-ui, sans-serif" font-size="13">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <!-- Grid Edit Controller -->
+  <rect x="20" y="100" width="160" height="60" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="100" y="125" text-anchor="middle" fill="#e2e8f0" font-weight="600" font-size="12">Grid Edit Controller</text>
+  <text x="100" y="142" text-anchor="middle" fill="#94a3b8" font-size="11">pointer → cell coords</text>
+
+  <!-- Event -->
+  <line x1="180" y1="130" x2="248" y2="130" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="214" y="120" text-anchor="middle" fill="#60a5fa" font-size="10" font-style="italic">pages-grid-edit</text>
+
+  <!-- Grid Edit Bridge -->
+  <rect x="250" y="100" width="160" height="60" rx="6" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="330" y="125" text-anchor="middle" fill="#e2e8f0" font-weight="600" font-size="12">Grid Edit Bridge</text>
+  <text x="330" y="142" text-anchor="middle" fill="#94a3b8" font-size="11">event → document mutation</text>
+
+  <!-- PageDocument -->
+  <line x1="410" y1="130" x2="478" y2="130" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="444" y="120" text-anchor="middle" fill="#60a5fa" font-size="10" font-style="italic">setPlacement()</text>
+
+  <rect x="480" y="100" width="160" height="60" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="560" y="125" text-anchor="middle" fill="#e2e8f0" font-weight="600" font-size="12">PageDocument</text>
+  <text x="560" y="142" text-anchor="middle" fill="#94a3b8" font-size="11">YAML CST ↔ GridItemNode</text>
+
+  <!-- YAML output -->
+  <line x1="560" y1="160" x2="560" y2="228" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="480" y="230" width="160" height="36" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1"/>
+  <text x="560" y="253" text-anchor="middle" fill="#e2e8f0" font-size="12">YAML Editor (round-trip)</text>
+
+  <!-- Undo -->
+  <line x1="560" y1="100" x2="560" y2="42" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="500" y="10" width="120" height="30" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1"/>
+  <text x="560" y="30" text-anchor="middle" fill="#e2e8f0" font-size="12">Undo / Redo</text>
+
+  <!-- Labels -->
+  <text x="100" y="190" text-anchor="middle" fill="#64748b" font-size="10">pages-component</text>
+  <text x="330" y="190" text-anchor="middle" fill="#64748b" font-size="10">pages-builder</text>
+  <text x="560" y="190" text-anchor="middle" fill="#64748b" font-size="10">pages-document</text>
+</svg>
