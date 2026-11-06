@@ -84,3 +84,16 @@
 **Exploration:** quick
 **Depends on:** D1
 **Status:** captured
+
+## D8: Grid mode declaration
+
+**Choice:** Explicit `collision` property on the grid layout YAML — `collision: displace` (auto-push, dashboard-style) or `collision: prompt` (popup with displace/split/replace/swap, page-builder-style)
+**Alternatives:**
+- Infer from content — fragile heuristic, surprises users when the system guesses wrong
+- Defer to v2 — delays a low-cost decision that shapes the interaction model
+**Rationale:** Explicit is better than inferred. One YAML property, no ambiguity, no heuristics. Default can be `prompt` (safer — never silently displaces).
+**Trade-offs:** One more property to learn — mitigated by a sensible default
+**Sources:** User direction
+**Exploration:** quick
+**Depends on:** D3
+**Status:** captured
