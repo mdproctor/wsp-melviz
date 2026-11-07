@@ -1,0 +1,25 @@
+# Work Plan — Work Plan —
+
+## State
+branch: issue-618-grid-edit-placeholder-drag
+status: active
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 618
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#618 — Issue #618 ← active
+  - [ ] Batch 1: Compaction
+    - [ ] Task 1: Compaction engine with TDD
+  - [ ] Batch 2: Placeholder
+    - [ ] Task 2: Replace ghost with structural placeholder
+    - [ ] Task 3: Drag handle title bar only
+  - [ ] Batch 3: Collision
+    - [ ] Task 4: Collision property in types
+    - [ ] Task 5: Collision popup for prompt mode
+  - [ ] Batch 4: Gallery
+    - [ ] Task 6: Update samples and visual test

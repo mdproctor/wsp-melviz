@@ -117,4 +117,4 @@ The POC proves the interaction. Three things remain before framework integration
 
 **Rows/columns layout system.** The other layout mode in Pages — container-based rows and columns — has more limitations but better automatic reflow. The relationship between the two systems needs defining: are they alternatives, or can a row container be a grid item?
 
-The POC stays as a living reference. Framework integration will be a separate implementation plan, informed by what we actually proved rather than what we guessed.
+The POC stays as a living reference. Framework integration will be a separate implementation plan, informed by what we actually proved rather than what we guessed.u
