@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="system-ui, -apple-system, sans-serif">
+  <!-- Title -->
+  <text x="360" y="24" text-anchor="middle" font-size="14" font-weight="600" fill="#e4e4e7">Panel Sizing Modes</text>
+
+  <!-- Proportional width -->
+  <rect x="20" y="45" width="220" height="190" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <text x="130" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#93c5fd">Proportional Width</text>
+  <text x="130" y="84" text-anchor="middle" font-size="10" fill="#64748b">grid-column: span 4</text>
+  <!-- Wide container -->
+  <rect x="35" y="100" width="190" height="24" rx="3" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="35" y="100" width="62" height="24" rx="3" fill="#2563eb" opacity="0.8"/>
+  <text x="66" y="116" text-anchor="middle" font-size="9" fill="white">4/12</text>
+  <text x="195" y="116" text-anchor="middle" font-size="9" fill="#475569">wide container</text>
+  <!-- Narrow container -->
+  <rect x="35" y="140" width="120" height="24" rx="3" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="35" y="140" width="40" height="24" rx="3" fill="#2563eb" opacity="0.8"/>
+  <text x="55" y="156" text-anchor="middle" font-size="9" fill="white">4/12</text>
+  <text x="135" y="156" text-anchor="middle" font-size="9" fill="#475569">narrow</text>
+  <!-- Arrow -->
+  <text x="130" y="195" text-anchor="middle" font-size="10" fill="#3b82f6">Panel shrinks with container</text>
+  <text x="130" y="210" text-anchor="middle" font-size="10" fill="#3b82f6">Same proportion always</text>
+
+  <!-- Fixed width -->
+  <rect x="260" y="45" width="200" height="190" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <text x="360" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#fbbf24">Fixed Width</text>
+  <text x="360" y="84" text-anchor="middle" font-size="10" fill="#64748b">min-width: 300px</text>
+  <!-- Wide container -->
+  <rect x="275" y="100" width="170" height="24" rx="3" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="275" y="100" width="80" height="24" rx="3" fill="#b45309" opacity="0.8"/>
+  <text x="315" y="116" text-anchor="middle" font-size="9" fill="white">300px</text>
+  <!-- Narrow container -->
+  <rect x="275" y="140" width="100" height="24" rx="3" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="275" y="140" width="80" height="24" rx="3" fill="#b45309" opacity="0.8"/>
+  <text x="315" y="156" text-anchor="middle" font-size="9" fill="white">300px</text>
+  <text x="360" y="195" text-anchor="middle" font-size="10" fill="#f59e0b">Panel holds its width</text>
+  <text x="360" y="210" text-anchor="middle" font-size="10" fill="#f59e0b">Container may overflow</text>
+
+  <!-- Height modes -->
+  <rect x="480" y="45" width="220" height="190" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <text x="590" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#86efac">Height Modes</text>
+  <!-- Rows -->
+  <rect x="500" y="88" width="60" height="36" rx="3" fill="#059669" opacity="0.8"/>
+  <text x="530" y="111" text-anchor="middle" font-size="9" fill="white">2 rows</text>
+  <text x="600" y="106" font-size="9" fill="#64748b">grid-row: span 2</text>
+  <text x="600" y="118" font-size="9" fill="#64748b">80px per row</text>
+  <!-- Fixed -->
+  <rect x="500" y="134" width="60" height="44" rx="3" fill="#dc2626" opacity="0.8"/>
+  <text x="530" y="161" text-anchor="middle" font-size="9" fill="white">200px</text>
+  <text x="600" y="152" font-size="9" fill="#64748b">min-height: 200px</text>
+  <text x="600" y="164" font-size="9" fill="#64748b">row grows to fit</text>
+  <!-- Content -->
+  <rect x="500" y="188" width="60" height="26" rx="3" fill="#7c3aed" opacity="0.8"/>
+  <text x="530" y="206" text-anchor="middle" font-size="9" fill="white">auto</text>
+  <text x="600" y="200" font-size="9" fill="#64748b">height: auto</text>
+  <text x="600" y="212" font-size="9" fill="#64748b">content determines</text>
+</svg>

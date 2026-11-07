@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#3b82f6"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="360" y="20" text-anchor="middle" font-size="14" font-weight="600" fill="#e4e4e7">POC-First Iteration Loop</text>
+
+  <!-- Boxes -->
+  <rect x="20" y="50" width="130" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="85" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#93c5fd">Build in POC</text>
+  <text x="85" y="92" text-anchor="middle" font-size="9" fill="#64748b">standalone HTML</text>
+
+  <rect x="185" y="50" width="130" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="250" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#93c5fd">See in browser</text>
+  <text x="250" y="92" text-anchor="middle" font-size="9" fill="#64748b">Playwright headed</text>
+
+  <rect x="350" y="50" width="130" height="60" rx="8" fill="#3b1a1a" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="415" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#fca5a5">User feedback</text>
+  <text x="415" y="92" text-anchor="middle" font-size="9" fill="#64748b">"this doesn't work"</text>
+
+  <rect x="515" y="50" width="130" height="60" rx="8" fill="#1a2e1a" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="580" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#86efac">Extract + TDD</text>
+  <text x="580" y="92" text-anchor="middle" font-size="9" fill="#64748b">pure function tests</text>
+
+  <!-- Forward arrows -->
+  <line x1="150" y1="80" x2="183" y2="80" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="315" y1="80" x2="348" y2="80" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="480" y1="80" x2="513" y2="80" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Loop-back arrow -->
+  <path d="M580,110 L580,145 Q580,155 570,155 L95,155 Q85,155 85,145 L85,112" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-red)"/>
+  <text x="335" y="170" text-anchor="middle" font-size="10" fill="#ef4444">fix and try again</text>
+
+  <!-- Bottom annotation -->
+  <text x="360" y="195" text-anchor="middle" font-size="10" fill="#64748b">Algorithm evolves through real UX feedback, not abstract design. Tests lock in each fix.</text>
+</svg>
