@@ -131,7 +131,7 @@ Horizontal gaps are not compacted — column positions are intentional.
 
 ### Nested Grid Auto-Shrink
 
-After compacting a nested grid's items, the container's `h` optionally shrinks to the compacted content height (max `y + h` across all nested items). The parent grid does not re-compact — the container just takes less space vertically, and the parent's next compaction pass (if any) closes the gap.
+After compacting a nested grid's items, the container's `h` automatically shrinks to the compacted content height (`max(y + h)` across all nested items). This runs after every nested compaction — not user-toggled. The parent grid does not re-compact immediately — the container just takes less space vertically, and the parent's next compaction pass (if any) closes the gap.
 
 ## Editor Architecture (D15)
 
@@ -199,7 +199,7 @@ A migration script scans all `.page.yaml` files and rewrites `rows`/`columns` fo
 
 ### Parser Changes
 
-After migration, the parser's `rows`/`columns` code paths are removed. Only `items` is parsed. The `components` shorthand may be retained as a convenience (it's just `items` with implicit full-width auto-flow placement).
+After migration, the parser's `rows`/`columns` code paths are removed. The `components` shorthand is retained — it desugars to full-width auto-flow items and is genuinely simpler for single-column pages. Only `rows`/`columns` are removed.
 
 ### PageDocument Changes
 
