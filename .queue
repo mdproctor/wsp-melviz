@@ -17,10 +17,10 @@ flyway-next-v: none
     - [x] Task 1: GridItem optional component
   - [x] Batch 2: Compaction
     - [x] Task 2: Pure compaction engine
-  - [ ] Batch 3: Selection
-    - [ ] Task 3: Selection model
+  - [x] Batch 3: Selection
+    - [x] Task 3: Selection model
   - [ ] Batch 4: Layout
-    - [ ] Task 4: Split and merge ops
+    - [x] Task 4: Split and merge ops
   - [ ] Batch 5: Overlay
     - [ ] Task 5: Structural placeholder
   - [ ] Batch 6: Controller
