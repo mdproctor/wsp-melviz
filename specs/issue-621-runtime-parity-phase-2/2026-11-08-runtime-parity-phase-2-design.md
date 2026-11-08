@@ -27,6 +27,8 @@ Phase 1 (#620) achieved schema parity — the TS Walker accepts the same YAML vo
 
 New file: `step/error-category.ts`
 
+21 values matching Java's `ErrorCategory` enum:
+
 ```typescript
 export const ERROR_CATEGORIES = [
   'UNKNOWN_STEP', 'PARAMETER_VIOLATION', 'INVALID_STRUCTURE',
@@ -64,7 +66,7 @@ After change:
 3. Create scoped resolver: `context.resolver.withObjectScope('error', errorSource)`
 4. Build catch context: `{ ...context, resolver: scopedResolver }`
 
-The try evaluation loop is modified to track `lastFailedStepName` alongside `tryResult`.
+The try evaluation loop is modified to track `lastFailedStepName` alongside `tryResult`. For unnamed steps, `${error.step}` falls back to the step path (e.g., `"root → Step 2"`) so catch blocks always have a location reference.
 
 ### 1.3 Test Strategy
 
@@ -79,7 +81,7 @@ The try evaluation loop is modified to track `lastFailedStepName` alongside `try
 
 **Gap:** `StructuralEvaluator.dispatch()` has no `case 'control'` — ControlStep (parsed since Phase 1) silently falls through with undefined behaviour.
 
-**Approach:** Wire to ScenarioScope's lifecycle engine.
+**Approach:** Wire to ScenarioScope's `consumer()` API — `ConsumerHandle` provides `pause()`, `resume()`, `isPaused()`, `awaitResume()`.
 
 ### 2.1 StructuralEvaluator Changes
 
@@ -91,16 +93,17 @@ case 'control': return this.evaluateControl(step, context);
 ```
 
 Add import of `ControlStep` type. Implement `evaluateControl()`:
-- For `pause`: `context.scope.lifecycleEngine().pause(step.target)`
-- For `resume`: `context.scope.lifecycleEngine().resume(step.target)`
-- If lifecycle engine doesn't know the target: `stepFailureWithCategory(msg, 'NOT_FOUND')`
+- For `pause`: `context.scope.consumer(step.target).pause()`
+- For `resume`: `context.scope.consumer(step.target).resume()`
 - On success: `stepSuccess({ control: step.control, target: step.target })`
+
+**Note:** `ScenarioScope.consumer(name)` auto-creates a `DefaultConsumerHandle` on first access (via `_getOrCreate`), so there is no "unknown target" error path. Pausing an unregistered consumer creates a handle in paused state — it will be paused when a real consumer later attaches to that name.
 
 ### 2.2 Test Strategy
 
-- Unit test: pause a named consumer, verify lifecycle engine state
-- Unit test: resume a paused consumer, verify reactivation
-- Unit test: pause unknown target, verify NOT_FOUND failure
+- Unit test: pause a named consumer, verify `isPaused()` returns true
+- Unit test: resume a paused consumer, verify `isPaused()` returns false
+- Unit test: pause an unregistered target, verify handle is created in paused state
 
 ---
 
@@ -137,7 +140,12 @@ export class AnnotationParser {
 
 New file: `annotation/annotation-extractor.ts`
 
-Takes `ParsedAnnotation[]` and the parsed YAML steps array. Correlates annotations to steps using line-number-based positioning.
+Takes `ParsedAnnotation[]` (with line numbers from the raw text scan) and a flat list of step line ranges derived from re-scanning the raw YAML for step-introducing keys. Uses **position-order matching** rather than relying on the YAML parser to preserve source positions (standard YAML parsers strip positions).
+
+**How position-order matching works:**
+1. `AnnotationParser.parse(rawYaml)` produces annotations with line numbers
+2. A separate `StepPositionScanner.scan(rawYaml)` identifies the line number of each step-introducing key (action names, structural keys like `block:`, `if:`, etc.) in document order
+3. `AnnotationExtractor` correlates: annotations between step-line N-1 and step-line N attach to step N. Annotations before the first step are document-level.
 
 **Addressing scheme** (matching Java):
 - Annotations before the first step → document-level
@@ -145,15 +153,19 @@ Takes `ParsedAnnotation[]` and the parsed YAML steps array. Correlates annotatio
 - Step addresses are hierarchical: `0`, `1`, `1.0` (first child of step 1), `1.0.2` (third child of first child of step 1)
 
 ```typescript
+export class StepPositionScanner {
+  static scan(rawYaml: string): StepLineInfo[];
+}
+
 export class AnnotationExtractor {
   static extract(
     annotations: ParsedAnnotation[],
-    stepLineNumbers: StepLineInfo[],
+    stepPositions: StepLineInfo[],
   ): AnnotationMap;
 }
 ```
 
-`StepLineInfo` carries each step's line number and address in the hierarchy. The Walker needs to produce this during resolution (see §3.6).
+This avoids any dependency on YAML parser internals for source position metadata — both annotation lines and step positions come from raw text scanning.
 
 ### 3.3 AnnotationMap
 
@@ -183,6 +195,8 @@ New file: `annotation/injection-resolver.ts`
 
 Processes `@Inject(TypeName, qualifier: "value")` annotations. Looks up the named type in the `ServiceRegistry` and injects into the step's params.
 
+**Timing:** InjectionResolver runs at **evaluation time** (in `StructuralEvaluator`), not during Walker resolution. The Walker has no access to a `ServiceRegistry` — it is a static resolution phase. During `Walker.resolve()`, annotations are parsed, extracted, and stored on the step's `annotations` field. During `StructuralEvaluator.evaluate()`, `InjectionResolver` reads the stored annotations, resolves `@Inject` bindings from `context.services`, and augments the step's params before execution.
+
 ```typescript
 export class InjectionResolver {
   static resolve(
@@ -199,7 +213,7 @@ Returns augmented params with injected values. Injection failures produce clear 
 
 New file: `annotation/decorator-annotation-resolver.ts`
 
-Maps the 12 migrated decorator annotations to decorator map entries:
+Maps 13 decorator annotations to decorator map entries (12 migrated decorators from Java plus `mutex` which is a TS-side decorator):
 
 | Annotation | Decorator Map Entry |
 |------------|-------------------|
@@ -228,7 +242,7 @@ export class DecoratorAnnotationResolver {
 }
 ```
 
-### 3.6 Walker Integration
+### 3.6 Walker Integration (Resolution Phase)
 
 Modified file: `step/walker.ts`
 
@@ -244,14 +258,26 @@ static resolve(
 
 When `rawYaml` is provided:
 1. `AnnotationParser.parse(rawYaml)` → `ParsedAnnotation[]`
-2. Pass annotation map through `resolveAtDepth()` via an internal context object
-3. In `resolveOne()`, look up annotations for the current step address
-4. `DecoratorAnnotationResolver.mergeDecorators(stepAnnotations, decorators)` → merged decorators
-5. Populate `annotations` field on the resolved step with the `Annotation[]` data
+2. `StepPositionScanner.scan(rawYaml)` → `StepLineInfo[]`
+3. `AnnotationExtractor.extract(parsedAnnotations, stepPositions)` → `AnnotationMap`
+4. Pass annotation map through `resolveAtDepth()` via an internal context object
+5. In `resolveOne()`, look up annotations for the current step address
+6. `DecoratorAnnotationResolver.mergeDecorators(stepAnnotations, decorators)` → merged decorators
+7. Populate `annotations` field on the resolved step with the `Annotation[]` data
+
+**InjectionResolver is NOT called here** — it requires a `ServiceRegistry` which is unavailable during static resolution. `@Inject` annotations are stored in the step's `annotations` field and resolved at evaluation time (§3.6b).
 
 The hierarchical address is tracked through the recursion — each `resolveAtDepth()` call passes a base address, and each step gets `baseAddress.index`.
 
 Threading through match cases and select branches: `resolveMatchCases` and similar helpers pass the parent step's address so child steps get correctly addressed (e.g., `1.0` for the first step inside the first case of match at position 1).
+
+**Callers:** Any caller that wants annotation support provides `rawYaml`. The parameter is optional — existing callers that pass only `(steps, catalog)` continue to work without annotations. `YamlTestExecutor` (§5.4) must pass `rawYaml` when resolving test steps.
+
+### 3.6b StructuralEvaluator Integration (Evaluation Phase)
+
+Modified file: `step/structural-evaluator.ts`
+
+Before dispatching a step, the evaluator checks for `@Inject` annotations in `step.annotations` and resolves them via `InjectionResolver.resolve(step.annotations, step.params, context.services)`. This augments the step's params with injected dependencies before execution.
 
 ### 3.7 New Directory Structure
 
@@ -287,7 +313,7 @@ packages/yaml-core/src/annotation/
 
 ### 4.1 Parser
 
-New file: `step/simulate-block-parser.ts`
+New file: `test/simulate-block-parser.ts` (in `test/` directory since it is only consumed by `YamlTestExecutor`)
 
 ```typescript
 export class SimulateBlockParser {
@@ -318,10 +344,13 @@ simulate:
       - { input: { url: "/api" }, output: { status: 200 } }
 ```
 
+**Alias field mapping detail:** For the `agent` alias, corpus entries use user-facing field names (`prompt`, `response`). The parser transforms these to `CorpusDatum` shape: `{ prompt: "hello", response: "world" }` becomes `{ input: { key: "hello" }, output: "world" }`. The `key` field inside `input` is the lookup key that `agent-provider.invoke` uses for corpus matching via `SimulationRuntime.resolve()`. Non-aliased entries (like `rest-request` above) use `input`/`output` directly — no field mapping needed.
+
 **Output:** `SimulationConfig` (existing type from simulation-runtime.ts) with:
 - Aliases expanded to qualified names
-- Corpus field-mapped per alias table
+- Corpus field-mapped per alias table into `CorpusDatum { input, output }` shape
 - Strategy strings passed through
+- `capture` array populated from the simulate block's optional `capture:` key (defaults to `[]`)
 
 ### 4.2 Test Strategy
 
@@ -383,7 +412,7 @@ New file: `test/plugins/assert-plugin.ts`
 
 Definition: `{ name: 'assert', inputs: { expression: { type: 'STRING', required: true } }, outputs: {} }`
 
-Action: Resolves the expression parameter via the context's VariableResolver, then checks truthiness. Returns `stepSuccess({})` or `stepFailureWithCategory('Assertion failed: ...', 'STEP_ACTION_FAILED')`.
+Action: The expression parameter arrives pre-resolved — the step evaluation pipeline runs `VariableResolver` on all params before the action executes (via `DecoratorChain`). The plugin checks truthiness of the resolved value. Returns `stepSuccess({})` or `stepFailureWithCategory('Assertion failed: ...', 'STEP_ACTION_FAILED')`.
 
 #### assertThat
 
@@ -480,11 +509,17 @@ export class YamlTestExecutor {
 **Lifecycle per test case:**
 1. Parse `simulate` block via `SimulateBlockParser.parse()` → push `SimulationOverlay`
 2. Build `VariableResolver` from `vars` and `params`
-3. Run `setup` steps (if any) via `StructuralEvaluator`
-4. Run test `steps` via `StructuralEvaluator`
-5. Run `teardown` steps (if any, even on failure) via `StructuralEvaluator`
-6. Pop `SimulationOverlay`
-7. Produce `TestResult`
+3. **Resolve** setup, test, and teardown steps via `Walker.resolve(steps, compositeCatalog, rawYaml)` — this populates annotations and merges decorator annotations
+4. Run `setup` steps (if any) via `StructuralEvaluator`
+5. Run test `steps` via `StructuralEvaluator`
+6. Run `teardown` steps (if any, even on failure) via `StructuralEvaluator`
+7. Pop `SimulationOverlay`
+8. Produce `TestResult`
+
+**Service registration:** `YamlTestExecutor` registers these services in the test `ServiceRegistry` so test plugins can access runtime infrastructure:
+- `SimulationRuntime` — for `verify-simulation` to access the `InvocationJournal`
+- `Catalog` — for `run-playbook` and `validate-playbook` to resolve sub-playbook steps
+- `StructuralEvaluator` — for `run-playbook` to execute sub-playbook steps
 
 **Test isolation:** Each test case gets its own `SimulationOverlay`, `VariableResolver`, and `ScenarioScope`. Tests within a suite do not share state.
 
@@ -541,7 +576,7 @@ packages/yaml-core/src/test/
 
 ## File Summary
 
-### New Files (26)
+### New Files (28)
 
 | File | Component |
 |------|-----------|
@@ -551,15 +586,17 @@ packages/yaml-core/src/test/
 | `annotation/annotation-parser.test.ts` | H1 |
 | `annotation/annotation-extractor.ts` | H1 — position correlation |
 | `annotation/annotation-extractor.test.ts` | H1 |
+| `annotation/step-position-scanner.ts` | H1 — raw YAML step position scanning |
+| `annotation/step-position-scanner.test.ts` | H1 |
 | `annotation/annotation-map.ts` | H1 — immutable annotation store |
 | `annotation/annotation-map.test.ts` | H1 |
-| `annotation/injection-resolver.ts` | H1 — @Inject DI |
+| `annotation/injection-resolver.ts` | H1 — @Inject DI (runs at evaluation time) |
 | `annotation/injection-resolver.test.ts` | H1 |
-| `annotation/decorator-annotation-resolver.ts` | H1 — 12 decorator mappings |
+| `annotation/decorator-annotation-resolver.ts` | H1 — 13 decorator mappings |
 | `annotation/decorator-annotation-resolver.test.ts` | H1 |
-| `step/simulate-block-parser.ts` | M6 — test simulate parsing |
-| `step/simulate-block-parser.test.ts` | M6 |
 | `test/index.ts` | H4 — barrel export |
+| `test/simulate-block-parser.ts` | M6 — test simulate parsing (moved from step/) |
+| `test/simulate-block-parser.test.ts` | M6 |
 | `test/yaml-test-parser.ts` | H4 — .test.yaml parsing |
 | `test/yaml-test-parser.test.ts` | H4 |
 | `test/yaml-test-discovery.ts` | H4 — file scanning |
