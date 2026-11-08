@@ -13,3 +13,29 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#625 — Issue #625 ← active
+  - [ ] Batch 1: Types
+    - [ ] Task 1: GridItem optional component
+  - [ ] Batch 2: Compaction
+    - [ ] Task 2: Pure compaction engine
+  - [ ] Batch 3: Selection
+    - [ ] Task 3: Selection model
+  - [ ] Batch 4: Layout
+    - [ ] Task 4: Split and merge ops
+  - [ ] Batch 5: Overlay
+    - [ ] Task 5: Structural placeholder
+  - [ ] Batch 6: Controller
+    - [ ] Task 6: Two-mode edit controller
+  - [ ] Batch 7: Bridge
+    - [ ] Task 7: GridEditBridge update
+  - [ ] Batch 8: Migration
+    - [ ] Task 8: YAML migration script
+    - [ ] Task 9: Parser cleanup
+  - [ ] Batch 9: Nesting
+    - [ ] Task 10: Recursive sub-grids
+  - [ ] Batch 10: DSL
+    - [ ] Task 11: Empty container builder
+  - [ ] Batch 11: Layout
+    - [ ] Task 12: Edge resize ops
+  - [ ] Batch 12: Integration
+    - [ ] Task 13: Wire to builder-shell
+    - [ ] Task 14: Migrate sample files
