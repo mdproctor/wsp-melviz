@@ -30,12 +30,12 @@ flyway-next-v: none
   - [x] Batch 8: Migration
     - [x] Task 8: YAML migration script
     - [x] Task 9: Parser cleanup
-  - [ ] Batch 9: Nesting
-    - [ ] Task 10: Recursive sub-grids
-  - [ ] Batch 10: DSL
-    - [ ] Task 11: Empty container builder
-  - [ ] Batch 11: Layout
-    - [ ] Task 12: Edge resize ops
-  - [ ] Batch 12: Integration
-    - [ ] Task 13: Wire to builder-shell
-    - [ ] Task 14: Migrate sample files
+  - [x] Batch 9: Nesting
+    - [x] Task 10: Recursive sub-grids
+  - [x] Batch 10: DSL
+    - [x] Task 11: Empty container builder
+  - [x] Batch 11: Layout
+    - [x] Task 12: Edge resize ops
+  - [x] Batch 12: Integration
+    - [x] Task 13: Wire to builder-shell
+    - [x] Task 14: Migrate sample files

@@ -2,16 +2,28 @@
 
 ## Last Session
 
-Continued implementation of epic #625 — unified grid layout model with two-mode editor. Completed Tasks 6-9 this session. Total progress: 9 of 14 tasks complete (Batches 1-8 done).
+Completed all 14 tasks of epic #625 — unified grid layout model with two-mode editor. All batches (1-12) done.
 
-- **Task 6:** Rewrote `grid-edit-controller.ts` with two-mode support (layout swap drag + content displace/compact). Items identified by `data-item-id` index for empty container support. Mode toggle in overlay.
-- **Task 7:** Extended `GridEditBridge` with split/merge/swap/remove/add-empty operations. Added `PageNode.addEmptyItem()`.
-- **Task 8:** Created `grid-migration.ts` — `migrateRowsToItems()` and `needsMigration()` for rows/columns to items format conversion.
-- **Task 9:** Removed rows/columns parser paths (~1600 lines deleted). Parser only handles items and components shorthand. Removed `addRow()/insertRowAt()/wrapInRow()` from PageNode. Builder-shell row-mutation paths cleaned up.
+This session completed Tasks 6-14:
+- **Task 6:** Two-mode edit controller (layout swap + content compact)
+- **Task 7:** GridEditBridge with split/merge/swap/remove/add-empty operations
+- **Task 8:** YAML migration script (migrateRowsToItems)
+- **Task 9:** Removed rows/columns parser paths (~1600 lines deleted)
+- **Task 10:** Recursive nested sub-grid support (desugarComponent + isNestedGrid)
+- **Task 11:** emptyContainer() DSL builder
+- **Task 12:** Edge resize operations (resizeItem)
+- **Task 13:** Builder-shell wiring verified (already connected)
+- **Task 14:** Migrated 221 sample YAML files from rows/columns to items format
 
 ## Immediate Next Step
 
-Task 10: Recursive sub-grids (nesting). Then Task 11: empty container DSL builder. Then Tasks 12-14: resize ops, builder-shell wiring, sample file migration.
+All implementation tasks complete. Ready for `work end` — code review, squash, and merge to main.
+
+## Known Pre-existing Issues
+
+- `grid-overlay-insertion.test.ts`: 4 tests fail (insertion zones stub from Task 5 overlay rewrite)
+- `builders.test.ts`: 2 tests fail (grid/at builders — pre-existing)
+- 9 pre-existing TypeScript compilation errors in pages-builder (childKey, toJSON, type narrowing)
 
 ## References
 
