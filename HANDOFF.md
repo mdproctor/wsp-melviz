@@ -2,13 +2,13 @@
 
 ## Last Session
 
-Brainstormed and started implementation of epic #625 — unified grid layout model with two-mode editor. Captured 19 design decisions (D1-D13 inherited from #618 POC, D14-D19 new). Wrote design spec and 14-task implementation plan. Completed 5 of 14 tasks: GridItem.component optional (type system), compaction engine (pure functions), selection model, split/merge operations, and grid overlay rewrite with structural placeholder.
+Continued implementation of epic #625 — unified grid layout model with two-mode editor. Completed Task 6: rewrote `grid-edit-controller.ts` with two-mode support. Total progress: 6 of 14 tasks complete (Batches 1-6 done).
 
-Key design choices: optional `component` on GridItem for empty containers, single controller with mode flag (layout swap vs content displace), independent per-level compaction with auto-shrink for nesting, full rewrite of all grid-* files from scratch using POC as behavioural reference.
+Task 6 changes: Rewrote the controller to support layout mode (swap drag, selection with click/shift-extend) and content mode (displace/push/compact drag via compactAll). Items now identified by index (`data-item-id`) instead of component ID to support empty containers. Mode toggle added to overlay. Keydown listener moved to document for escape handling.
 
 ## Immediate Next Step
 
-Task 6: Rewrite `grid-edit-controller.ts` — two-mode controller with layout (swap drag, split/merge) and content (displace/push/replace drag) modes. Largest single task in the plan.
+Task 7: Update GridEditBridge for new operation types — add split/merge/swap/remove/add-empty operations. Then Task 8: YAML migration script, Task 9: parser cleanup.
 
 ## References
 
