@@ -1,120 +1,101 @@
 ---
 layout: post
-title: "Tetris, Not Pixels: Building a Grid Editor That Actually Works"
-date: 2026-11-07
+title: "From Grid Editor to App Builder: One Model, Two Modes"
+date: 2026-11-08
 entry_type: article
 subtype: technical
 projects: [casehubio/casehub-pages]
-tags: [grid, drag-and-drop, ux, css-grid, compaction, tdd, poc]
+tags: [grid, drag-and-drop, ux, css-grid, compaction, layout-model, app-builder, poc]
 series: issue-615-dnd-insert-yaml-roundtrip
 ---
 
-# Tetris, Not Pixels: Building a Grid Editor That Actually Works
+# From Grid Editor to App Builder: One Model, Two Modes
 
-*Follows [When Custom Stops Being an Advantage](/docs/blog/2026-11-06-mdp01-when-custom-stops-being-an-advantage.md). That entry ended: "I'll know the pivot is right when I can drag a panel and predict where it will land before I release the mouse."*
+*Follows [When Custom Stops Being an Advantage](/docs/blog/2026-11-06-mdp01-when-custom-stops-being-an-advantage.md). What started as a grid drag-and-drop fix became the foundation for an app builder.*
 
-The previous session shipped the architecture: bridge pattern, YAML round-trip, format conversion. Then the interaction failed. This session rebuilt it from the ground up, starting with a question that changed the approach: "Why absolute positioning? We did this before with a table."
+## The Problem With Two Layout Systems
 
-## The Table Model Was Already There
+CaseHub Pages had two ways to lay out content. The `rows`/`columns` system was declarative — you listed components with column spans and they flowed top-to-bottom, left-to-right. Responsive, simple, but no spanning. A chart couldn't stretch across two column containers.
 
-The grid layout in CaseHub Pages uses CSS Grid with integer coordinates: `{ x, y, w, h }` on a 12-column grid. The rendering is one function:
+The `items` system used explicit grid coordinates — `{ x: 0, y: 0, w: 6, h: 2 }` on a 12-column CSS Grid. Full control, arbitrary spanning, but no reflow.
 
-```typescript
-element.style.gridColumn = `${x + 1} / span ${w}`;
-element.style.gridRow    = `${y + 1} / span ${h}`;
+Two vocabularies for the same runtime. The parser converted `rows`/`columns` into positioned `items` at parse time — at runtime, there was only CSS Grid. Two input formats, one output, mutual exclusion at page level, and LLMs generating YAML had to learn both.
+
+![Unified layout model](images/unified-layout-model.svg)
+
+The POC work on grid editing surfaced a cleaner answer: just `items`. Auto-flow items (`{ w: 6 }` — no coordinates) reflow like `rows`/`columns`. Positioned items (`{ x: 0, y: 0, w: 6, h: 2 }`) pin to coordinates. Both live in the same array. The presence of `x`/`y` determines the mode — no discriminator field needed. One vocabulary, strictly more expressive than either predecessor.
+
+## Building the Interaction
+
+The POC is a standalone HTML file — no framework, no YAML, no build step. A 12-column CSS Grid with coloured panels, pointer events, and the compaction algorithm in JavaScript. Every interaction is visible in the browser within seconds of writing it.
+
+The compaction algorithm is one rule: fix the moved item at its new position, then place every other item at the lowest row where it fits without overlapping anything already placed. One rule handles move, resize, expand, shrink, and delete. 15 lines of code, 40 unit tests, round-trip stability (expand then shrink → original layout restored exactly).
+
+But drag-and-drop alone isn't enough. Two iterations shaped the interaction model:
+
+**Dual drag handles, not a popup.** The first design showed a popup on collision — "displace, split, replace, or swap?" Five options interrupted the drag flow. Internet research showed that Grafana, Gridstack, and React-Grid-Layout all use displacement-only, Figma uses modifier keys, and Visual Studio uses directional drop zones. The winning UX: two drag icons on each panel's title bar. ⠿ for displace (push down), ⇄ for swap (exchange positions). Hold Option during swap to replace (destructive). Intent declared before the drag, no interruption after.
+
+**Row breaks as gravity boundaries.** The grid needed logical sections. Research showed Grafana uses full-width collapsible row headers. The POC implementation: a pencil-thin divider (4px) that expands on hover, showing a title and collapse toggle. Structurally, a break is an immovable full-width grid item that the compactor treats as a boundary.
+
+![Gravity boundaries](images/gravity-boundaries.svg)
+
+The critical invariant: **gravity never crosses a break.** Panels compact within their section only. If a displaced panel can't fit in its section, the break shifts down to make room — the section grows rather than the panel crossing the boundary. This required rewriting the compactor from first principles, with pre-assigned section membership and a while-loop that doesn't skip positions after pushing a break.
+
+Dragging the break itself uses magnetic snap — a cursor line tracks the mouse freely, and when it gets close to a row boundary (40px threshold), the divider snaps into place showing a live displacement preview. Move away and the preview reverts. Release while snapped to commit; release while unsnapped to cancel. No thrashing, because `snapToCell` uses frozen row positions captured at drag start — the DOM changes from compaction don't feed back into the snap calculation.
+
+## What the POC Proves
+
+Eight capabilities validated in Playwright, not assumed:
+
+1. **Displacement compaction** with vertical gravity and float modes
+2. **Dual drag handles** — displace (⠿), swap (⇄), replace (⌥+⇄)
+3. **Row breaks** as gravity boundaries with collapse, magnetic snap drag
+4. **Expand-to-fill** — panel fills available space horizontally and vertically
+5. **Sticky panels** — immovable, others reflow around them
+6. **Undo/redo** — state stack with Ctrl+Z/Ctrl+Shift+Z, 50 levels deep
+7. **DOM-based snap-to-cell** — reads actual row positions, handles variable-height rows
+8. **Sizing modes** — proportional, fixed width, fixed height, content height — verified at 800px, default, and 1600px viewports
+
+## Two Modes: Structure Then Content
+
+The POC work led to a design decision that changes the scope of the project.
+
+![Two-mode editor](images/two-mode-editor.svg)
+
+**Layout mode** designs the grid structure. Split cells, merge cells, add row breaks, resize proportions. No drag-and-drop — the interactions are structural (click a boundary to split, select two cells to merge). The output is a skeleton of empty containers.
+
+**Content mode** fills the containers. Drag components from a palette into empty cells. Swap, replace, rearrange. The containers are set; you're placing content into them.
+
+An empty container is a first-class item in the unified model — `{ w: 6, h: 2 }` with no `component` key. The YAML shows the layout skeleton before any components are added. This is already implicit in the POC's two-stage delete, where removing a panel leaves an amber placeholder holding space. The design makes it intentional.
+
+## App Builder, Not Just Grid Editor
+
+The unified model with two-mode editing is the foundation for more than dashboards. A form is a page where the components are inputs instead of charts:
+
+```yaml
+# Dashboard
+items:
+  - { w: 6, h: 2, component: { type: chart, metric: revenue } }
+  - { w: 6, h: 2, component: { type: table, query: orders } }
+
+# Form — same model, different components
+items:
+  - { w: 6, component: { type: text-input, label: "First name" } }
+  - { w: 6, component: { type: text-input, label: "Last name" } }
+  - { w: 12, component: { type: textarea, label: "Notes" } }
 ```
 
-Column start, row start, column span, row span. It's a table. The Grid Spanning showcase in the gallery demonstrates every combination — 4x3 blocks next to 2x1 blocks next to 8x1 bars — all rendered natively by the browser's CSS Grid engine.
+Same containers, same split/merge, same drag-to-fill. The grid editor is the page builder is the form builder. The distinction is the component palette, not the layout engine.
 
-The previous implementation's drag ghost was absolutely positioned: `position: absolute` with pixel `top`/`left`/`width`/`height` computed from grid geometry. It floated above the layout in an overlay. It couldn't show where the panel would actually land because it wasn't participating in the grid. The CSS Grid items were structural; the drag feedback was decorative.
+Nested sub-grids extend this further. A grid item whose component has its own `items` array creates a grid-within-a-grid — what `rows`/`columns` nesting did, but using the same vocabulary at every level.
 
-The fix was to make the drag feedback structural too.
+## What's Next
 
-## Prototype First, Framework Never
+The POC is a 1500-line HTML file that proves the interaction model. Thirteen issues across four phases (epic #625) take it to production:
 
-The original plan had four batches of framework integration ending with visual verification in the last batch. That's backwards. Three problems with the plan would have produced code that passed tests and didn't work:
+- **Phase 1** — layout mode with split, merge, and cell creation
+- **Phase 2** — empty containers as drop zones with a component palette
+- **Phase 3** — unified YAML output and nested sub-grids
+- **Phase 4** — framework integration, wiring to the PageDocument model with YAML CST mutation and compound undo/redo
 
-1. **CSS Grid transitions don't exist.** The plan described `transition: grid-column 200ms ease`. The `grid-column` property isn't animatable. That line would have done nothing. The smooth reflow would have been items teleporting between positions.
-
-2. **No visual verification until the end.** Unit tests for integer arithmetic pass while the drag feels wrong.
-
-3. **No prototype.** Debugging pointer interactions inside a framework with YAML rendering, bridges, and event contracts is brutal.
-
-The rebuilt approach: a standalone HTML file. No framework, no YAML, no build step. A 12-column CSS Grid with coloured panels, pointer events, and the compaction algorithm in 30 lines of JavaScript. Every interaction is visible in the browser within seconds of writing it.
-
-![POC iteration loop](images/poc-iteration-loop.svg)
-
-The loop ran fast. Build a feature in the POC, open it in Playwright, try it, get feedback, fix it, try again. Each iteration was minutes, not hours. The algorithm evolved through real UX feedback: "the displaced items jump to the bottom," "shrinking doesn't restore the layout," "the top border resize moves instead of resizing."
-
-## The Compaction Algorithm: One Rule
-
-The first implementation had two phases fighting each other: "insert rows" to make space, then "compact upward" to fill gaps. The insert phase was optimistic; the compact phase was greedy. They disagreed on where items belonged, producing visual artifacts.
-
-The fix was to recognise that both phases were trying to solve the same problem. The unified algorithm is one rule:
-
-![Single-rule compaction algorithm](images/compaction-single-rule.svg)
-
-Fix the moved item at its new position. Sort every other item by their current row. Place each one at the lowest row where it doesn't overlap anything already placed. That's it — 15 lines for move, resize, expand, shrink, and delete. No special cases, no separate displacement step, no cascade resolution.
-
-The critical property: **round-trip stability**. Expand a panel, then shrink it back to its original size. Every item returns to its exact original position. The algorithm doesn't remember where items were — it produces the same output for the same constraints because it recomputes the entire layout each time.
-
-This is testable as a pure function. 40 unit tests lock in the behaviour: overlap detection, cascading displacement, gap compaction, round-trip restore, and the difference between vertical and float compaction modes.
-
-## Tetris, Not Tiles
-
-The compaction model is Tetris. Items fall as high as they can. They don't move horizontally — column positions represent user intent ("this panel belongs on the left side"). When you remove an item or shrink it, items above don't move; items below float up into the freed space.
-
-This isn't a guess. Gridstack.js, React-Grid-Layout, Grafana, Kibana, and Home Assistant all converged on the same model. React-Grid-Layout v2 made the compactor pluggable — recognising that one mode doesn't fit all, but vertical gravity is the default because it's what users expect from a dashboard.
-
-CaseHub Pages now supports two modes, switchable at the layout level:
-
-- **Vertical** (gravity top) — the Tetris model. Items compact upward. Standard for dashboards.
-- **Float** (no gravity) — items stay where placed. Only pushed when directly overlapping. Standard for free-form page layouts.
-
-The compactor interface is pluggable. Adding a new mode — horizontal compaction, masonry packing, or something domain-specific — means implementing one function.
-
-## Sizing Modes: Not Everything Is 1fr
-
-A 12-column grid with `repeat(12, 1fr)` makes every column proportional. That works for dashboards where all panels flex with the viewport. It doesn't work when a panel contains a fixed-width component (a 300px-wide form, a sidebar navigation) that shouldn't collapse.
-
-![Panel sizing modes](images/sizing-modes.svg)
-
-Each panel now declares its sizing independently:
-
-**Width:** proportional (default — spans N columns, resizes with container) or fixed (pixel min-width that holds regardless of container size).
-
-**Height:** rows (default — spans N rows at 80px each), fixed (pixel min-height, grid row grows to accommodate via `minmax(80px, auto)`), or content (auto height determined by the panel's content).
-
-The implementation is CSS Grid native. A fixed-width panel still occupies N grid columns — it just has `min-width: 300px` so the grid cell won't shrink below that. A fixed-height panel has `min-height: 200px` and the grid row expands from its default 80px to fit. No JavaScript layout calculation. The browser does the work.
-
-## What Came Out of the POC
-
-The POC validated seven things that would have been expensive to discover inside the framework:
-
-1. **Structural placeholder works.** Inserting a CSS Grid child during drag and updating its `grid-column`/`grid-row` on each snap position is smooth. No flicker, no layout thrash.
-
-2. **FLIP animation is the right tool.** Since `grid-column` and `grid-row` aren't animatable, displaced items are animated using the FLIP technique: measure positions before the grid change, apply the change, then `transform` each item from its old position to its new with a CSS transition. 200ms ease.
-
-3. **Drag handle at 24px feels right.** The top strip of each panel triggers drag; the rest is for content interaction. Edge proximity (8px) triggers resize, and resize takes priority over the drag handle — so dragging the top-right corner resizes, it doesn't move.
-
-4. **Compaction round-trips.** Expand then shrink → original layout. This was the hardest to get right and the most important property to prove.
-
-5. **Two-stage delete is intuitive.** Delete a panel: it leaves an amber placeholder showing where it was. Delete the placeholder: the grid compacts to fill the gap. The user always sees what will happen before it happens.
-
-6. **Mixed sizing modes work.** A grid can have proportional panels alongside fixed-width panels alongside content-height panels. CSS Grid handles the track sizing natively.
-
-7. **Playwright `viewport: null` fixes select positioning.** Playwright's viewport override uses CDP `Emulation.setDeviceMetricsOverride`, which displaces native `<select>` popup menus on macOS Retina. Using `viewport: null` with `--window-size` launch args gives correct rendering.
-
-The compaction algorithm is already in production code (`grid-compaction.ts`) with 40 tests. The POC interaction model — placeholder, FLIP, drag handle, resize, delete — is the reference implementation for the framework integration.
-
-## Next Steps
-
-The POC proves the interaction. Three things remain before framework integration:
-
-**Row breaks.** The current grid is one flat CSS Grid. Logical grouping — section headers, row separators — needs a container-break concept. Three options being evaluated: a full-width break item (`grid-column: 1 / -1`), a row container that uses flexbox internally, or CSS Subgrid (now baseline-available in all browsers) for aligned nested grids. The row container approach bridges the grid and rows/columns layout systems.
-
-**Collision popup.** The `prompt` mode (for page-builder grids where panel placement is intentional) shows a popup on occupied-cell drop: displace, split, replace, or swap. The algorithm for each is defined; the UI needs building.
-
-**Rows/columns layout system.** The other layout mode in Pages — container-based rows and columns — has more limitations but better automatic reflow. The relationship between the two systems needs defining: are they alternatives, or can a row container be a grid item?
-
-The POC stays as a living reference. Framework integration will be a separate implementation plan, informed by what we actually proved rather than what we guessed.u
+The POC stays as a living reference. Each phase is proved in the POC before it's built in the framework. Because this is now the foundation — and foundations are where guessing is most expensive.
