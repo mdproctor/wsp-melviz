@@ -97,3 +97,66 @@
 **Exploration:** quick
 **Depends on:** D3
 **Status:** captured
+
+## D9: Unified layout model
+
+**Choice:** Unify on `items` as the single layout model. Remove `rows`/`columns` as a separate system — desugar existing YAML with a migration script, then drop the parse path.
+**Alternatives:**
+- Keep both models — two ways to do the same thing, ongoing confusion
+- Keep rows/columns as sugar — parser converts, but two vocabularies persist in docs and tooling
+**Rationale:** `items` with auto-flow (`w` only, no `x`/`y`) is shorter and more expressive than `rows`/`columns` YAML. It handles sequential reflow, explicit placement, and spanning in one vocabulary. LLMs and users learn one format. The parser already does the conversion — the runtime is already unified.
+**Trade-offs:** Existing pages using `rows`/`columns` need a one-time migration. The `distribution: [2, 1]` proportional column syntax becomes `w` arithmetic on a 12-column grid (approximate but sufficient).
+**Sources:** Blog post (grid-editing-without-a-framework), page-parser.ts parsePageContent(), types.ts GridPlacement
+**Exploration:** deep-analysis
+**Status:** captured
+
+## D10: Two-mode editor — layout mode and content mode
+
+**Choice:** The grid editor has two distinct modes: layout mode (design the grid structure with split/merge/resize — no drag-and-drop) and content mode (drag components into containers, rearrange, swap — the current POC).
+**Alternatives:**
+- Single mode with all interactions — overloaded UX, ambiguous intent (am I resizing the container or the content?)
+- Three modes (layout, content, preview) — preview adds value but is separable
+**Rationale:** Separating structure from content matches the "template-first" workflow: design the grid skeleton with empty containers, then populate with components. The interactions are fundamentally different — layout mode uses split/merge/edge-drag (structural), content mode uses drag-and-drop/swap/displace (spatial). Mixing them creates ambiguity about what the user intends when they click a cell edge.
+**Trade-offs:** Two-mode UX requires a clear mode indicator and easy switching. Users must learn when to use which mode.
+**Sources:** Grafana dashboard builder, Excel cell merge/split, Figma auto-layout
+**Exploration:** quick
+**Depends on:** D9 (unified model makes containers first-class)
+**Status:** captured
+
+## D11: Empty containers as first-class items
+
+**Choice:** An item with no component is a valid grid item — an empty container waiting for content. The YAML representation is `{ w: 6, h: 2 }` with no `component` key.
+**Alternatives:**
+- Placeholder component type — `{ component: { type: placeholder } }` — explicit but verbose
+- No empty containers — must always have content (current POC behavior)
+**Rationale:** Empty containers are the output of layout mode and the input to content mode. They're the visual skeleton that makes "template-first" work. The POC's "drop placeholder" (amber dashed box after deletion) is already this concept — making it intentional rather than a deletion artifact. In YAML, the absence of `component` is a clear, minimal signal.
+**Trade-offs:** Renderer must handle items with no component gracefully (render as empty styled cell). Validation must allow componentless items.
+**Sources:** POC drop-placeholder behavior, Grafana empty panel state
+**Exploration:** quick
+**Depends on:** D10 (layout mode creates empty containers)
+**Status:** captured
+
+## D12: Layout mode interactions
+
+**Choice:** Layout mode provides: add/remove rows, split cell, merge cells, resize cell edges. No drag-and-drop. Output is a grid of empty containers.
+**Alternatives:**
+- Drag-based layout design — spatially intuitive but ambiguous (are you moving the cell or the content?)
+**Rationale:** Layout mode is structural, not spatial. You're defining the skeleton. Split/merge/add-row are discrete operations with unambiguous results. Drag-and-drop belongs to content mode where you're placing components into the containers that layout mode created.
+**Trade-offs:** Users who want to "sketch" a layout by dragging must switch modes — but the separation prevents accidental content displacement when designing structure.
+**Sources:** Excel/Google Sheets merge/split, Figma frame creation
+**Exploration:** quick
+**Depends on:** D10, D11
+**Status:** captured
+
+## D13: Content mode — drag into containers with replace
+
+**Choice:** In content mode, dragging a component onto an empty container fills it. Dragging onto an occupied container uses the existing dual-handle UX: ⠿ displaces, ⇄ swaps, ⌥+⇄ replaces. The replace mode (already implemented in POC) is the natural way to change a container's content.
+**Alternatives:**
+- Separate "replace" mode — adds a third handle icon, more UI surface
+- Always replace on occupied drop — no choice, destructive by default
+**Rationale:** The dual-handle UX already covers the occupied-container case. Empty containers just accept the drop. No new interaction needed — content mode is the POC as built, extended to recognize empty containers as valid drop targets.
+**Trade-offs:** None significant — this reuses existing POC interactions.
+**Sources:** POC dual drag handles (D4 evolution), POC drop-placeholder behavior
+**Exploration:** quick
+**Depends on:** D4 (collision resolution), D11 (empty containers)
+**Status:** captured
