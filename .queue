@@ -39,3 +39,6 @@ flyway-next-v: none
   - [x] Batch 12: Integration
     - [x] Task 13: Wire to builder-shell
     - [x] Task 14: Migrate sample files
+- [ ] casehubio/casehub-pages#644 — Always-on drag handles and resize edges
+- [ ] casehubio/casehub-pages#640 — Redundant items/components key distinction
+- [ ] casehubio/casehub-pages#639 — Nested grid DnD controller scope
