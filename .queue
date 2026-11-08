@@ -15,8 +15,8 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#625 — Issue #625 ← active
   - [x] Batch 1: Types
     - [x] Task 1: GridItem optional component
-  - [ ] Batch 2: Compaction
-    - [ ] Task 2: Pure compaction engine
+  - [x] Batch 2: Compaction
+    - [x] Task 2: Pure compaction engine
   - [ ] Batch 3: Selection
     - [ ] Task 3: Selection model
   - [ ] Batch 4: Layout
