@@ -23,8 +23,8 @@ flyway-next-v: none
     - [x] Task 4: Split and merge ops
   - [x] Batch 5: Overlay
     - [x] Task 5: Structural placeholder
-  - [ ] Batch 6: Controller
-    - [ ] Task 6: Two-mode edit controller
+  - [x] Batch 6: Controller
+    - [x] Task 6: Two-mode edit controller
   - [ ] Batch 7: Bridge
     - [ ] Task 7: GridEditBridge update
   - [ ] Batch 8: Migration
