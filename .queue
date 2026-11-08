@@ -1,0 +1,41 @@
+# Work Plan — issue-625-unified-grid-layout-model
+
+## State
+branch: issue-625-unified-grid-layout-model
+status: active
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: 625
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#625 — Issue #625 ← active
+  - [x] Batch 1: Types
+    - [x] Task 1: GridItem optional component
+  - [x] Batch 2: Compaction
+    - [x] Task 2: Pure compaction engine
+  - [x] Batch 3: Selection
+    - [x] Task 3: Selection model
+  - [x] Batch 4: Layout
+    - [x] Task 4: Split and merge ops
+  - [x] Batch 5: Overlay
+    - [x] Task 5: Structural placeholder
+  - [x] Batch 6: Controller
+    - [x] Task 6: Two-mode edit controller
+  - [x] Batch 7: Bridge
+    - [x] Task 7: GridEditBridge update
+  - [x] Batch 8: Migration
+    - [x] Task 8: YAML migration script
+    - [x] Task 9: Parser cleanup
+  - [x] Batch 9: Nesting
+    - [x] Task 10: Recursive sub-grids
+  - [x] Batch 10: DSL
+    - [x] Task 11: Empty container builder
+  - [x] Batch 11: Layout
+    - [x] Task 12: Edge resize ops
+  - [x] Batch 12: Integration
+    - [x] Task 13: Wire to builder-shell
+    - [x] Task 14: Migrate sample files

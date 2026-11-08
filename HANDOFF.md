@@ -1,28 +1,42 @@
 # HANDOFF — casehub-pages
 
-## Status
+## Last Session
 
-On main. #598 landed and closed. Epic #592 (JSON Apps Runtime) has 3 remaining issues in the queue.
+Fixed the builder tree UX for the items model (#625). All 7 checklist items from the previous session are now complete and verified in Playwright:
 
-## What just shipped
+1. **Page context menu:** "Add item" replaces "Add row" — creates empty container at next available y position
+2. **Grid-item context menu:** Move up/down, Split horizontal/vertical, Delete — wired through `GridEditBridge`
+3. **Insert before/after:** Displacement semantics — "before" places at target position and pushes target down; "after" places below target
+4. **Component picker integration:** Selecting a component on an items-mode page creates a positioned grid item (not a flat component)
+5. **"Wrap in Row/Column" removed:** Only "Wrap in Tabs" remains on component menu
+6. **Row/column context menus removed:** No stale menus for dead node types
+7. **Edit layout button:** Activates grid edit controller in builder's Visual mode
 
-#598 — Apps management view. `AppManagementResource` at `/api/apps` with list, detail, and lifecycle (start/stop) endpoints. Extended `_apps` schema with `enabled`, `displayName`, `autoSeed`, `maxDocuments` fields. Lifecycle gating in `PageResource` and `AppCatalogueResource` — disabled apps return 404, data preserved in SQLite. `apps-management.page.yaml` with list, settings (schema-form), and lifecycle (action-button) tabs. 4 commits, 35 tests.
+Additional fixes applied during the work:
+- `TreeNodeType` union now includes `'grid-item'` — previously used as string literal without being in the type
+- Filled grid items in the tree use nodeType `'grid-item'` (was incorrectly `'component'`)
+- `classifyPath` handles `items` paths — returns `'grid-item'` for YAML cursor navigation
+- `_resolvePropertySource` handles `grid-item` — shows component properties for filled items, placement for empty
+- `_findGridItemAtPath` helper added for path resolution
+- `scope-collector.ts` handles `grid-item` nodeType for preview highlighting
+- Filed #639 for nested grid DnD (controller only targets root items)
 
-Key decisions: settings as _apps document fields (not PreferenceStore — lifecycle state is app data, not user preference); gating at resource layer (store stays unaware of lifecycle); dynamic apps only (static classpath apps always enabled); cache eviction on stop (prevents stale-page-with-404-data UX).
+## What's Left on #625
 
-## Queue
+The core grid model and builder tree UX are complete. Remaining work:
 
-| # | Issue | Scale | Notes |
-|---|-------|-------|-------|
-| #605 | Gallery server-connected rendering | S/Low | Wire gallery to render apps with real backend data |
-| #606 | Template param escape upgrade | XS/Low | XSS protection for `#{params.x}` in dynamic pages |
-| #607 | Wire extendDataSetScope | XS/Low | Dynamic pages declaring their own datasets |
+- **#639 — Nested grid DnD:** `GridEditController` only operates on root-level items. Nested grids inside containers have no drag/drop support.
+- **Split undo batching:** Split creates two mutations (resize + add empty) requiring two undos. Should batch into a single undo step.
+
+## Branch State
+
+All implementation and UX-fix commits are on `issue-625-unified-grid-layout-model`. Clean working tree, all test suites pass.
 
 ## References
 
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppManagementResource.java` — new resource
-- `backend/data-json/src/main/java/io/casehub/pages/data/json/AppRegistry.java` — extended schema, isAppEnabled
-- `examples/samples/Domain Showcases/apps-management/apps-management.page.yaml` — management page
-- Design spec: `specs/issue-598-apps-management-view/2026-11-04-apps-management-view-design.md`
-- Blog: `blog/2026-11-04-mdp01-app-lifecycle-without-the-platform.md`
-- Epic: casehubio/casehub-pages#592
+- Design spec: `docs/specs/issue-625-unified-grid-layout-model/2026-11-08-unified-grid-layout-model-design.md`
+- Decisions: `docs/specs/issue-625-unified-grid-layout-model/decisions.md`
+- Plan: `plans/2026-11-08-unified-grid-layout-model.md`
+- Test page: `packages/pages-builder/builder-tree-test.html`
+- Epic: casehubio/casehub-pages#625
+- Nested grid DnD: casehubio/casehub-pages#639
