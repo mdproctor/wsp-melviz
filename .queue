@@ -19,17 +19,17 @@ flyway-next-v: none
     - [x] Task 2: Pure compaction engine
   - [x] Batch 3: Selection
     - [x] Task 3: Selection model
-  - [ ] Batch 4: Layout
+  - [x] Batch 4: Layout
     - [x] Task 4: Split and merge ops
   - [x] Batch 5: Overlay
     - [x] Task 5: Structural placeholder
   - [x] Batch 6: Controller
     - [x] Task 6: Two-mode edit controller
-  - [ ] Batch 7: Bridge
-    - [ ] Task 7: GridEditBridge update
-  - [ ] Batch 8: Migration
-    - [ ] Task 8: YAML migration script
-    - [ ] Task 9: Parser cleanup
+  - [x] Batch 7: Bridge
+    - [x] Task 7: GridEditBridge update
+  - [x] Batch 8: Migration
+    - [x] Task 8: YAML migration script
+    - [x] Task 9: Parser cleanup
   - [ ] Batch 9: Nesting
     - [ ] Task 10: Recursive sub-grids
   - [ ] Batch 10: DSL
