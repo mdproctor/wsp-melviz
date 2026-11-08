@@ -21,8 +21,8 @@ flyway-next-v: none
     - [x] Task 3: Selection model
   - [ ] Batch 4: Layout
     - [x] Task 4: Split and merge ops
-  - [ ] Batch 5: Overlay
-    - [ ] Task 5: Structural placeholder
+  - [x] Batch 5: Overlay
+    - [x] Task 5: Structural placeholder
   - [ ] Batch 6: Controller
     - [ ] Task 6: Two-mode edit controller
   - [ ] Batch 7: Bridge
