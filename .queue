@@ -1,0 +1,28 @@
+# Work Plan — issue-621-runtime-parity-phase-2
+
+## State
+branch: issue-621-runtime-parity-phase-2
+status: active
+project-sha: 
+date: 
+issue-repo: casehubio/casehub-pages
+covers: casehubio/casehub-pages#608
+design-repo: 
+design-section-hashes: 
+flyway-next-v: 
+
+## Queue
+- [ ] casehubio/casehub-pages#621 — Issue #621 ← active
+  - [x] Batch 1: Quick Wins
+    - [x] Task 1: Typed error catch scope
+    - [x] Task 2: ControlStep runtime
+  - [x] Batch 2: Annotation Foundation
+    - [x] Task 3: AnnotationParser + AnnotationMap
+    - [x] Task 4: StepPositionScanner + AnnotationExtractor
+  - [x] Batch 3: Annotation Runtime
+    - [x] Task 5: DecoratorAnnotationResolver + InjectionResolver
+    - [x] Task 6: Walker + StructuralEvaluator integration
+  - [x] Batch 4: Test Infrastructure
+    - [x] Task 7: SimulateBlockParser + YamlTestParser + Discovery
+    - [x] Task 8: Test plugins + TestCatalog
+    - [x] Task 9: YamlTestExecutor + Vitest adapter
