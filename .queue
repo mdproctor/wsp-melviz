@@ -1,12 +1,12 @@
-# Work Plan — issue-625-unified-grid-layout-model
+# Work Plan — 
 
 ## State
-branch: 
+branch: issue-639-nested-grid-dnd-cross-grid-drag
+issue-repo: casehubio/casehub-pages
 status: active
+covers: 639
 project-sha: 
 date: 
-issue-repo: casehubio/casehub-pages
-covers: 625
 design-repo: 
 design-section-hashes: 
 flyway-next-v: none
@@ -15,4 +15,12 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#625 — Issue #625
 - [x] casehubio/casehub-pages#644 — Always-on drag handles and resize edges
 - [ ] casehubio/casehub-pages#640 — Redundant items/components key distinction ← active
+  - [ ] Batch 1: Foundation
+    - [ ] Task 1: Coordinator tree + registration + path resolution
+    - [ ] Task 2: stopPropagation on nested pointerdown
+  - [ ] Batch 2: Bridge
+    - [ ] Task 3: Path-routed bridge mutations
+  - [ ] Batch 3: CrossGrid
+    - [ ] Task 4: Controller release/accept API + scaling
+    - [ ] Task 5: Coordinator cross-grid drag lifecycle
 - [ ] casehubio/casehub-pages#639 — Nested grid DnD controller scope
