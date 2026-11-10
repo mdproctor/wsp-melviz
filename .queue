@@ -13,6 +13,6 @@ flyway-next-v: none
 
 ## Queue
 - [x] casehubio/casehub-pages#625 — Issue #625
-- [ ] casehubio/casehub-pages#644 — Always-on drag handles and resize edges ← active
-- [ ] casehubio/casehub-pages#640 — Redundant items/components key distinction
+- [x] casehubio/casehub-pages#644 — Always-on drag handles and resize edges
+- [ ] casehubio/casehub-pages#640 — Redundant items/components key distinction ← active
 - [ ] casehubio/casehub-pages#639 — Nested grid DnD controller scope
