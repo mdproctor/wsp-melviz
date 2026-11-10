@@ -198,7 +198,7 @@ When all items are dragged out of a nested grid, the parent grid item remains as
 
 ## Non-Goals
 
-- Drag between sibling grids that don't share a parent-child relationship (e.g., two panels side by side, each with a nested grid). This would require a more complex "nearest common ancestor" resolution. Future work.
+- Direct sibling-to-sibling grid drag shortcuts. Dragging from nested grid A (in parent item 1) to nested grid B (in parent item 2) works naturally — the pointer path goes A → parent → B through the coordinator tree. What's excluded is any special "direct transfer" logic that bypasses the intermediate parent grid.
 - Creating new nested grids by dragging items. Users create nested grids via the component picker.
 - Visual preview of the dragged item during cross-grid transit (ghost/clone). The source hides the item, the target shows a placeholder. A floating preview could be added later.
 
