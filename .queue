@@ -1,7 +1,7 @@
 # Work Plan — Work Plan —
 
 ## State
-branch: issue-639-nested-grid-dnd-cross-grid-drag
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
 covers: 639
@@ -14,13 +14,12 @@ flyway-next-v: none
 ## Queue
 - [x] casehubio/casehub-pages#625 — Issue #625
 - [x] casehubio/casehub-pages#644 — Always-on drag handles and resize edges
-- [ ] casehubio/casehub-pages#640 — Redundant items/components key distinction ← active
-  - [x] Batch 1: Foundation
-    - [x] Task 1: Coordinator tree + registration + path resolution
-    - [x] Task 2: stopPropagation on nested pointerdown
-  - [x] Batch 2: Bridge
-    - [x] Task 3: Path-routed bridge mutations
-  - [x] Batch 3: CrossGrid
-    - [x] Task 4: Controller release/accept API + scaling
-    - [x] Task 5: Coordinator cross-grid drag lifecycle
-- [ ] casehubio/casehub-pages#639 — Nested grid DnD controller scope
+- [x] casehubio/casehub-pages#640 — Redundant items/components key distinction
+- [ ] casehubio/casehub-pages#639 — Nested grid DnD controller scope ← active
+  - [x] Batch 1: 652-1
+    - [x] Task 1: scope-collector recurse nested grid paths
+  - [x] Batch 2: 652-2
+    - [x] Task 2: _buildRenderedIndex path-based DOM lookup
+  - [x] Batch 3: 652-3
+    - [x] Task 3: panel title renders above grid content
+- [ ] casehubio/casehub-pages#652 — Tree-to-visual selection broken for nested grid items
