@@ -2,56 +2,41 @@
 
 ## Last Session
 
-Implemented #639 (nested grid DnD + cross-grid drag) — full implementation across 5 tasks in 3 batches. Also fixed #650 (generic component parsing bug) during manual testing.
+Implemented #639 (nested grid DnD + cross-grid drag), fixed #650 (generic component parsing), and fixed #651 (builder chrome contrast).
 
-### What was built
+### Commits on branch
 
-1. **GridEditCoordinator** (`grid-edit-coordinator.ts`) — new module replacing the singleton controller pattern. Builds parent-child tree from DOM containment, resolves deepest grid under pointer, resolves DOM → YAML paths, manages cross-grid drag state.
-
-2. **Controller changes** (`grid-edit-controller.ts`) — removed `activeController` singleton (multiple controllers active simultaneously), added `stopPropagation` on nested controller `pointerdown`, added `releaseItem`/`acceptForeignItem`/`clearForeignItem` for cross-grid handoff, `dispatchEdit` now includes coordinator-resolved `gridPath`.
-
-3. **Path-routed bridge** (`grid-edit-bridge.ts`) — `GridEditDetail` gains optional `gridPath`, bridge routes mutations to the correct nested YAML node. New `applyCrossGridEdit` for atomic remove-from-source + insert-into-target in single undo frame.
-
-4. **Proportional scaling** (`grid-scale.ts`) — `scaleWidth(sourceW, sourceCols, targetCols)` with `Math.round` + clamp to `[1, targetColumns]`.
-
-5. **Builder-shell wiring** — listens for `pages-grid-cross-edit` event alongside existing `pages-grid-edit`.
-
-6. **Parsing fix (#650)** — `desugarComponent` now catches any component type (not just `"grid"`) with a `grid:` property before the `"unknown"` fallback. Panel, container, and any other component type with nested grid items now render correctly.
+1. `feat(#639)`: GridEditCoordinator — tree registration, path resolution, singleton removal
+2. `feat(#639)`: stopPropagation on nested controller pointerdown
+3. `feat(#639)`: path-routed bridge — nested grid edits target correct YAML path
+4. `feat(#639)`: controller release/accept API + proportional scaling
+5. `feat(#639)`: cross-grid drag lifecycle — coordinator handoff + atomic bridge mutations
+6. `fix(#650)`: generic component handler — any type with grid: gets nested items parsed
+7. `fix(#651)`: dark-mode CSS tokens on dock workbench — tree and panels readable
 
 ### What needs debugging next session
 
-The coordinator infrastructure and bridge routing are tested and working (56 new unit tests across 4 packages). But **visual testing revealed multiple issues** that need a debugging session:
+The coordinator infrastructure, bridge routing, and parsing are implemented and tested. Visual testing confirmed nested grids render and the tree is readable. But **the following need work**:
 
-- **#651 — Builder chrome contrast**: tree view, properties panel use hardcoded colors with poor contrast. Design tokens protocol exists but builder shell doesn't use them consistently.
-- **Cross-grid drag wiring**: the coordinator methods exist and are tested, but the controller's `handlePointerMove` doesn't call the coordinator during drag to detect grid boundary crossings. The pointer handoff needs wiring.
-- **Pre-existing `isNestedGrid` test failure**: uses `items` instead of `grid` (post-#640 format mismatch).
-- **Demo YAML**: updated to use nested grid layout for manual testing (`packages/pages-builder/demo/main.ts`).
+- **Cross-grid drag wiring**: the coordinator methods exist and are tested, but the controller's `handlePointerMove` doesn't call the coordinator during drag to detect grid boundary crossings. The pointer handoff from controller to coordinator needs wiring.
+- **Pre-existing `isNestedGrid` test failure**: uses `items` instead of `grid` (post-#640 format mismatch in grid-compaction.test.ts).
+- **Toolbar contrast**: the Source/Split/Visual tab bar and +Page/+Dataset buttons still use light-mode fallbacks. These sit above the dock workbench and aren't covered by the token override.
+- **Grid item visual boundaries**: items in the preview have no visible borders/shadows — hard to tell where one item ends and another begins without hovering.
 
 ### Test counts
 
 | Package | Tests | Status |
 |---------|-------|--------|
-| pages-component coordinator | 10 | all pass |
-| pages-component controller | 23 | all pass |
-| pages-component scale | 6 | all pass |
-| pages-builder bridge | 17 | all pass |
-| pages-ui desugar | 703 | all pass |
+| pages-component (coordinator, controller, scale) | 39 new | all pass |
+| pages-builder (bridge) | 17 total (3 new) | all pass |
+| pages-ui (desugar, parser) | 703 total | all pass |
 
 ## Branch State
 
-Branch: `issue-639-nested-grid-dnd-cross-grid-drag` — 8 commits ahead of main. Clean working tree.
-
-## Open Issues
-
-| # | Title | Scale | Notes |
-|---|-------|-------|-------|
-| #650 | Nested grid items render as type 'unknown' | S | **Fixed this session** |
-| #651 | Builder chrome poor contrast | S | Filed, not started |
+Branch: `issue-639-nested-grid-dnd-cross-grid-drag` — 10 commits ahead of main. Clean working tree.
 
 ## References
 
-- Spec: `specs/issue-639-nested-grid-dnd-cross-grid-drag/2026-11-10-nested-grid-dnd-cross-grid-drag-design.md` (in workspace)
-- Decisions: `specs/issue-639-nested-grid-dnd-cross-grid-drag/decisions.md` (in workspace)
+- Spec: `specs/issue-639-nested-grid-dnd-cross-grid-drag/` (in workspace)
 - Plan: `plans/2026-11-10-nested-grid-dnd-cross-grid-drag.md` (in workspace)
-- Demo: `packages/pages-builder/demo/main.ts` (nested grid YAML)
-- Next issue: #651 (builder chrome contrast)
+- Demo: `packages/pages-builder/demo/main.ts` (nested grid YAML, `yarn --cwd packages/pages-builder dev`)
