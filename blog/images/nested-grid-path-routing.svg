@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#4ade80"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="320" rx="8" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="360" y="28" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Path-Routed Bridge: DOM → YAML</text>
+
+  <!-- Left side: DOM tree -->
+  <text x="180" y="56" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">DOM HIERARCHY</text>
+
+  <rect x="80" y="70" width="200" height="30" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="180" y="90" text-anchor="middle" fill="#e2e8f0" font-size="11">page [data-component-type]</text>
+
+  <line x1="180" y1="100" x2="180" y2="116" stroke="#475569"/>
+
+  <rect x="80" y="116" width="200" height="30" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="180" y="136" text-anchor="middle" fill="#e2e8f0" font-size="11">panel [data-item-id="2"]</text>
+
+  <line x1="180" y1="146" x2="180" y2="162" stroke="#475569"/>
+
+  <rect x="80" y="162" width="200" height="30" rx="4" fill="#162032" stroke="#60a5fa" stroke-dasharray="3,2"/>
+  <text x="180" y="182" text-anchor="middle" fill="#60a5fa" font-size="11">nested grid element</text>
+
+  <line x1="140" y1="192" x2="140" y2="208" stroke="#475569"/>
+  <line x1="220" y1="192" x2="220" y2="208" stroke="#475569"/>
+
+  <rect x="80" y="208" width="100" height="26" rx="3" fill="#334155"/>
+  <text x="130" y="225" text-anchor="middle" fill="#e2e8f0" font-size="10">[data-item-id="0"]</text>
+
+  <rect x="200" y="208" width="100" height="26" rx="3" fill="#334155"/>
+  <text x="250" y="225" text-anchor="middle" fill="#e2e8f0" font-size="10">[data-item-id="1"]</text>
+
+  <!-- Right side: YAML path -->
+  <text x="540" y="56" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">YAML PATH</text>
+
+  <rect x="420" y="70" width="240" height="30" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="540" y="90" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="monospace">pages[0]</text>
+
+  <line x1="540" y1="100" x2="540" y2="116" stroke="#475569"/>
+
+  <rect x="420" y="116" width="240" height="30" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="540" y="136" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="monospace">pages[0].grid[2]</text>
+
+  <line x1="540" y1="146" x2="540" y2="162" stroke="#475569"/>
+
+  <rect x="420" y="162" width="240" height="30" rx="4" fill="#162032" stroke="#60a5fa" stroke-dasharray="3,2"/>
+  <text x="540" y="182" text-anchor="middle" fill="#60a5fa" font-size="11" font-family="monospace">pages[0].grid[2].grid</text>
+
+  <line x1="500" y1="192" x2="500" y2="208" stroke="#475569"/>
+  <line x1="580" y1="192" x2="580" y2="208" stroke="#475569"/>
+
+  <rect x="440" y="208" width="100" height="26" rx="3" fill="#334155"/>
+  <text x="490" y="225" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="monospace">.grid[2].grid[0]</text>
+
+  <rect x="560" y="208" width="100" height="26" rx="3" fill="#334155"/>
+  <text x="610" y="225" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="monospace">.grid[2].grid[1]</text>
+
+  <!-- Mapping arrows -->
+  <line x1="280" y1="85" x2="418" y2="85" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+  <line x1="280" y1="131" x2="418" y2="131" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+  <line x1="280" y1="177" x2="418" y2="177" stroke="#4ade80" stroke-width="1.5" marker-end="url(#arr-green)"/>
+
+  <!-- Coordinator resolves label -->
+  <rect x="310" y="250" width="210" height="50" rx="6" fill="#1e293b" stroke="#4ade80" stroke-width="1"/>
+  <text x="415" y="270" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="500">Coordinator resolves</text>
+  <text x="415" y="288" text-anchor="middle" fill="#94a3b8" font-size="10">DOM ancestry → YAML path</text>
+
+  <!-- Arrow from coordinator to mapping -->
+  <line x1="415" y1="250" x2="350" y2="185" stroke="#4ade80" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-green)"/>
+</svg>
