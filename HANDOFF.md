@@ -2,52 +2,39 @@
 
 ## Last Session
 
-Fixed visual selection, hover, drag handle anchoring, and cross-grid DnD for nested grids. 25 commits on `issue-639-nested-grid-dnd-cross-grid-drag`. Core infrastructure (coordinator, path-routed bridge, cross-grid lifecycle) was already built — this session wired it end-to-end and fixed every visual/interaction bug exposed by Playwright testing with real mouse events.
+Implemented cross-grid displace with displacement preview, pinned nested panels, and extensive UI polish. Branch `issue-639-nested-grid-dnd-cross-grid-drag` is functionally complete — 16 commits (11 from semantic squash + 5 post-squash fixes). Needs one more squash pass before landing.
 
-Key decisions: theme system wired via `pages-ui-tokens` (replaces hardcoded hex); panel title rendered as flex-column header above grid wrapper; selection overlay uses path-based DOM index (not type-counting); cross-grid displace shows a floating ghost rectangle (not a grid placeholder); cross-grid swap highlights the target item with same style as within-grid swap.
+Key achievements: cross-grid displace works both directions (nested→parent and parent→nested). Pinned panels solve the "chasing problem" where compactAll pushed nested panels away from the cursor. Pin toggle (📌/📍) on panels with nested grids, state on coordinator singleton. Displacement preview with compactDown + hysteresis eliminates visual flickering at cell boundaries.
 
-Critical lesson: Vite caches `pages-component` in `node_modules/.vite/deps/` — after editing controller/coordinator source, **must** `rm -rf packages/pages-builder/node_modules/.vite` or changes don't take effect. This burned significant debugging time.
+Key design decisions: panels with nested grids are pinned by default during displace drags. Dwell-to-unpin was explored and rejected (cursor-based signal doesn't match item-position-based displacement). compactAll switched from push+compact to compactDown to prevent gravity-compact-induced oscillation. FLIP animation removed during drag (200ms transition fought 16ms pointer events). Hysteresis tracks displaced positions to prevent snap-back at cell boundaries.
 
-## How to Run the Example
+## How to Run
 
 ```bash
 yarn --cwd packages/pages-builder dev
-# Opens http://localhost:5176 — Visual mode shows nested grid layout
+# Or: cd packages/pages-builder && npx vite --config demo/vite.config.ts --port 5176
 # If Vite serves stale code: rm -rf packages/pages-builder/node_modules/.vite
 ```
 
-Demo YAML (`packages/pages-builder/demo/main.ts`): 12-col root grid with Revenue Overview, Markdown, a Panel containing a 6-col nested grid (Nested A, B, C), Panel D, and a full-width item. Theme injected via `injectTheme(DEFAULT_THEME)` + `applyThemeMode(document.documentElement, 'dark')`.
+Demo at http://localhost:5176/ — nested grid layout with cross-grid drag.
 
-## Architecture — How Cross-Grid Drag Works
+## Architecture
 
-1. **GridEditController** (`grid-edit-controller.ts`) — attached to each grid element via `activation.ts`. Handles within-grid drag/resize/swap. On `handlePointerMove`, checks if pointer left grid bounds OR entered a deeper grid (`coord.deepestGridAt`). If so, sets `_crossGridActive` and delegates to coordinator.
+1. **GridEditController** — per-grid instance. Within-grid drag/resize/swap/displace. Pointer events, snap-to-cell, compactDown with hysteresis. Pinned panel detection via `_getPinnedIds()`. `pointerleave` clears hover. `clearInteractionState()` for parent-child coordination.
 
-2. **GridEditCoordinator** (`grid-edit-coordinator.ts`) — singleton. Tracks all controllers in a parent-child tree built from DOM containment. Cross-grid drag lifecycle: `startCrossGridDrag` → `handleCrossGridMove` (shows swap highlight or ghost) → `completeCrossGridDrag` (returns `CrossGridEditDetail` with source/target paths and optional `swapTargetIndex`).
+2. **GridEditCoordinator** — singleton. Cross-grid lifecycle: `startCrossGridDrag` → `handleCrossGridMove` (displacement preview with compactAll + FLIP) → `completeCrossGridDrag` (returns `CrossGridEditDetail` with `targetItemPlacements`). Pin state: `isPinned()`/`togglePin()` keyed by grid path, survives controller recreation. `_buildTargetPinnedIds()` for cross-grid preview.
 
-3. **GridEditBridge** (`grid-edit-bridge.ts`) — `applyCrossGridEdit` mutates YAML. With `swapTargetIndex`: two-way exchange (delete both, append each to the other's grid). Without: one-way move (delete from source, append to target).
+3. **GridEditBridge** — `applyCrossGridEdit` mutates YAML. Applies `targetItemPlacements` to compact existing items, then appends moved item.
 
-4. **Builder Shell** (`builder-shell.ts`) — listens for `pages-grid-cross-edit` (composed, bubbles out of shadow DOM). Uses `'toolbar'` origin so `_syncViews` triggers `_refreshPreview()` (unlike within-grid edits which skip preview refresh). Clears stale selection after cross-grid edits, then selects the moved item at its new path.
+4. **Builder Shell** — `_crossGridEditHandler` applies edit, sets selection, dispatches synthetic pointerdown/pointermove after 400ms for auto-select. `_highlightPreviewNode` with pad=0 aligns selection overlay with item outlines.
 
-5. **Panel grid wrapper** — `render.ts` wraps panel grid items in a `[data-grid-wrapper]` div inside a flex-column panel. `activation.ts` uses `el.querySelector('[data-grid-wrapper]')` to attach the controller to the wrapper, not the flex container.
+## Before Landing
 
-## Known Issues for Next Session
+- Re-squash: 5 post-squash commits need folding into the 11 semantic commits. Run `/git-squash` with range covering the new commits.
+- Remove console.log in grid-edit-controller.ts (search for `[drag]`)
+- Artifact sweep: 9 workspace artifacts not yet promoted to project
 
-- **Tree path mismatch after swap** — tree sorts nodes by position but `_selectedPath` uses YAML array index. After cross-grid swap, the tree highlights the wrong node. `_resolveClickedPath` (visual→path) works; the tree's path→node mapping needs the same fix.
-- **Cross-grid displace doesn't compact target items** — the ghost follows the cursor but items in the target grid don't move out of the way. Would need the target controller to run `compactAll` for a virtual foreign item.
-- **5 pre-existing builder test failures** — in palette (inline-picker, position-picker, palette-filter), tree (builder-tree-grid, builder-tree insertion points). Not caused by this session's changes.
-- **`pages-runtime/dist/activation.js` needs rebuild** — source fix for `[data-grid-wrapper]` lookup was manually patched in dist but dist is gitignored. A proper build step is needed.
+## Next Work
 
-## Immediate Next Step
-
-Fix the tree path-to-node mismatch so tree selection syncs correctly after cross-grid swaps.
-
-## References
-
-- Issue: #639 (nested grid DnD), #652 (tree-visual linkage)
-- Plan: `plans/2026-11-10-nested-grid-dnd-cross-grid-drag.md`
-- Demo: `packages/pages-builder/demo/main.ts`
-- Coordinator: `packages/pages-component/src/renderer/grid-edit-coordinator.ts`
-- Controller: `packages/pages-component/src/renderer/grid-edit-controller.ts`
-- Bridge: `packages/pages-builder/src/shell/grid-edit-bridge.ts`
-- Scope collector: `packages/pages-builder/src/shell/scope-collector.ts`
-- Render (panel wrapper): `packages/pages-component/src/renderer/render.ts`
+- Split/merge issue — user has a plan
+- Migration scripts for dependent repos in ~/claude/casehub — find repos that depend on pages and migrate their grids/tables from old approach. Existing script: `scripts/migrate-to-grid-flat.mjs`
