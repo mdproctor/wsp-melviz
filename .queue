@@ -18,11 +18,11 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#639 — Nested grid DnD controller scope
 - [x] casehubio/casehub-pages#652 — Tree-to-visual selection broken for nested grid items
 - [ ] casehubio/casehub-pages#653 — move split/merge from tree context menu to visual overlay toolbar ← active
-  - [ ] Batch 1: Overlay toolbar
-    - [ ] Task 1: Add spatial buttons to overlay
-    - [ ] Task 2: Remove split from tree
-  - [ ] Batch 2: Merge activation
-    - [ ] Task 3: Add merge state and CSS overlay
-    - [ ] Task 4: Implement drag-to-absorb
-    - [ ] Task 5: Wire merge activation end-to-end
+  - [x] Batch 1: Overlay toolbar
+    - [x] Task 1: Add spatial buttons to overlay
+    - [x] Task 2: Remove split from tree
+  - [x] Batch 2: Merge activation
+    - [x] Task 3: Add merge state and CSS overlay
+    - [x] Task 4: Implement drag-to-absorb
+    - [x] Task 5: Wire merge activation end-to-end
 - [ ] casehubio/casehub-pages#654 — merge sub-mode — minimap with drag-to-merge from colored root
