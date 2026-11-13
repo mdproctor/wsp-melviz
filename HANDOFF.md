@@ -2,25 +2,39 @@
 
 ## Last Session
 
-Landed #644 (drag handles, resize edges, swap drag) as `fc27a2ac` and #640 (grid:/flat:/at: YAML unification) as `f27ad72e`. Both on main. Net -7,907 lines from the format migration.
+Implemented cross-grid displace with displacement preview, pinned nested panels, and extensive UI polish. Branch `issue-639-nested-grid-dnd-cross-grid-drag` is functionally complete — 16 commits (11 from semantic squash + 5 post-squash fixes). Needs one more squash pass before landing.
 
-Key fixes during #640: 20+ `=== 'items'` checks in builder-shell, scope-collector, builder-tree, yaml-path needed updating to also accept `'grid'` — these controlled selection overlay, tree view, context menus, and insertion flows. Also fixed drag handles to show/hide on hover of the selected panel.
+Key achievements: cross-grid displace works both directions (nested→parent and parent→nested). Pinned panels solve the "chasing problem" where compactAll pushed nested panels away from the cursor. Pin toggle (📌/📍) on panels with nested grids, state on coordinator singleton. Displacement preview with compactDown + hysteresis eliminates visual flickering at cell boundaries.
 
-### Immediate Next Step
+Key design decisions: panels with nested grids are pinned by default during displace drags. Dwell-to-unpin was explored and rejected (cursor-based signal doesn't match item-position-based displacement). compactAll switched from push+compact to compactDown to prevent gravity-compact-induced oscillation. FLIP animation removed during drag (200ms transition fought 16ms pointer events). Hysteresis tracks displaced positions to prevent snap-back at cell boundaries.
 
-#639 — nested grid DnD. The user's requirement goes beyond the issue description: not just independent controllers per nested grid, but **cross-grid drag** — dragging items between parent and nested grids. The dragged item should displace whichever grid it's currently over. This is a controller architecture change, not just "attach more controllers."
+## How to Run
 
-Design questions for brainstorming:
-- How does displacement work across grid boundaries?
-- Does the item's size adapt to the target grid's column count?
-- How does the YAML mutation work (remove from one `grid:` array, insert into another)?
-- Does the drag system need awareness of the full grid hierarchy?
+```bash
+yarn --cwd packages/pages-builder dev
+# Or: cd packages/pages-builder && npx vite --config demo/vite.config.ts --port 5176
+# If Vite serves stale code: rm -rf packages/pages-builder/node_modules/.vite
+```
 
-## References
+Demo at http://localhost:5176/ — nested grid layout with cross-grid drag.
 
-- Branch: main (both landed)
-- Migration script: `scripts/migrate-to-grid-flat.mjs` (kept for cross-repo slot)
-- Blog: `blog/2026-11-10-mdp01-when-the-key-tells-you-the-layout.md`
-- Spec: `docs/specs/issue-640-redundant-items-components/2026-11-10-flat-grid-at-unification-design.md`
-- Next issue: casehubio/casehub-pages#639
-- Closed this session: #644, #648, #649, #640
+## Architecture
+
+1. **GridEditController** — per-grid instance. Within-grid drag/resize/swap/displace. Pointer events, snap-to-cell, compactDown with hysteresis. Pinned panel detection via `_getPinnedIds()`. `pointerleave` clears hover. `clearInteractionState()` for parent-child coordination.
+
+2. **GridEditCoordinator** — singleton. Cross-grid lifecycle: `startCrossGridDrag` → `handleCrossGridMove` (displacement preview with compactAll + FLIP) → `completeCrossGridDrag` (returns `CrossGridEditDetail` with `targetItemPlacements`). Pin state: `isPinned()`/`togglePin()` keyed by grid path, survives controller recreation. `_buildTargetPinnedIds()` for cross-grid preview.
+
+3. **GridEditBridge** — `applyCrossGridEdit` mutates YAML. Applies `targetItemPlacements` to compact existing items, then appends moved item.
+
+4. **Builder Shell** — `_crossGridEditHandler` applies edit, sets selection, dispatches synthetic pointerdown/pointermove after 400ms for auto-select. `_highlightPreviewNode` with pad=0 aligns selection overlay with item outlines.
+
+## Before Landing
+
+- Re-squash: 5 post-squash commits need folding into the 11 semantic commits. Run `/git-squash` with range covering the new commits.
+- Remove console.log in grid-edit-controller.ts (search for `[drag]`)
+- Artifact sweep: 9 workspace artifacts not yet promoted to project
+
+## Next Work
+
+- Split/merge issue — user has a plan
+- Migration scripts for dependent repos in ~/claude/casehub — find repos that depend on pages and migrate their grids/tables from old approach. Existing script: `scripts/migrate-to-grid-flat.mjs`
