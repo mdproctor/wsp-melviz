@@ -1,40 +1,48 @@
 # HANDOFF — casehub-pages
 
-## Last Session
+## Status
 
-Implemented cross-grid displace with displacement preview, pinned nested panels, and extensive UI polish. Branch `issue-639-nested-grid-dnd-cross-grid-drag` is functionally complete — 16 commits (11 from semantic squash + 5 post-squash fixes). Needs one more squash pass before landing.
+On main. #653 (split/merge visual overlay) and #654 (drag-to-absorb merge) landed and closed. #608 (TS/Java YAML Runtime Parity) epic continues — next items in queue.
 
-Key achievements: cross-grid displace works both directions (nested→parent and parent→nested). Pinned panels solve the "chasing problem" where compactAll pushed nested panels away from the cursor. Pin toggle (📌/📍) on panels with nested grids, state on coordinator singleton. Displacement preview with compactDown + hysteresis eliminates visual flickering at cell boundaries.
+## What just shipped
 
-Key design decisions: panels with nested grids are pinned by default during displace drags. Dwell-to-unpin was explored and rejected (cursor-based signal doesn't match item-position-based displacement). compactAll switched from push+compact to compactDown to prevent gravity-compact-induced oscillation. FLIP animation removed during drag (200ms transition fought 16ms pointer events). Hysteresis tracks displaced positions to prevent snap-back at cell boundaries.
+#653/#654 — Split/merge visual overlay + drag-to-absorb merge. 43 commits compacted to 7 via semantic squash, landed as 5e0e868d.
 
-## How to Run
+Key features:
+- Grid-item overlay toolbar: 2x3 spatial action grid (split-h, split-v, merge, delete, add-empty) with hover expand/collapse
+- Drag-to-absorb merge: progressive targeting, CSS overlay for root/target highlighting, click-outside exit
+- 60px grid row enforcement with visible split items (markdown content instead of typeless empty)
+- Multi-page demo with pill tab switcher (Color Grid, Content Layout, Two Forms)
+- Unified grid-item controls: ⋮ trigger and action buttons moved from SelectionOverlay into controller's drag handle bar — one DOM element, one display toggle, zero timing gaps
+- Selection rectangle snaps on click (immediate `_applyPreviewHighlight`, 150ms handle delay to match slide)
 
-```bash
-yarn --cwd packages/pages-builder dev
-# Or: cd packages/pages-builder && npx vite --config demo/vite.config.ts --port 5176
-# If Vite serves stale code: rm -rf packages/pages-builder/node_modules/.vite
-```
+Key decisions:
+- Single ownership: grid-item controls belong to the controller, not the overlay. The overlay keeps only the selection outline for grid items.
+- Event bridge pattern: controller dispatches `pages-grid-action` (bubbles, composed), shell translates to existing `selection-*` handlers on overlay-root.
+- 150ms handle delay on new selection to roughly sync with the overlay's 150ms CSS transition. Not perfectly synchronized (different event sources), accepted as good enough.
 
-Demo at http://localhost:5176/ — nested grid layout with cross-grid drag.
+## Filed Issues
 
-## Architecture
+| # | Title | Scale | Notes |
+|---|-------|-------|-------|
+| #660 | Sync handle bar and selection rectangle timing | S/Med | Enhancement — shared orchestrator for perfect sync |
+| #661 | Tree selection doesn't show grid-item controls | S/Low | Bug — tree click doesn't trigger controller's _setSelectedEl |
+| #662 | Overlay outline flashes at old position after cross-grid drag | S/Med | Bug — showBuilderOverlay 50ms setTimeout |
+| #663 | Grid controller and selection overlay tests need DOM environment | S/Low | Testing — jsdom/happy-dom for vitest |
 
-1. **GridEditController** — per-grid instance. Within-grid drag/resize/swap/displace. Pointer events, snap-to-cell, compactDown with hysteresis. Pinned panel detection via `_getPinnedIds()`. `pointerleave` clears hover. `clearInteractionState()` for parent-child coordination.
+## Queue
 
-2. **GridEditCoordinator** — singleton. Cross-grid lifecycle: `startCrossGridDrag` → `handleCrossGridMove` (displacement preview with compactAll + FLIP) → `completeCrossGridDrag` (returns `CrossGridEditDetail` with `targetItemPlacements`). Pin state: `isPinned()`/`togglePin()` keyed by grid path, survives controller recreation. `_buildTargetPinnedIds()` for cross-grid preview.
+| # | Issue | Scale | Notes |
+|---|-------|-------|-------|
+| #647 | Phase 6 — phase-aware agent simulation | M/Med | P6 from audit |
+| #645 | Streaming simulation API | S/Low | Chunked corpus responses |
+| #646 | Agent session showcase | S/Low | Multi-turn demo |
 
-3. **GridEditBridge** — `applyCrossGridEdit` mutates YAML. Applies `targetItemPlacements` to compact existing items, then appends moved item.
+## Blog
 
-4. **Builder Shell** — `_crossGridEditHandler` applies edit, sets selection, dispatches synthetic pointerdown/pointermove after 400ms for auto-select. `_highlightPreviewNode` with pad=0 aligns selection overlay with item outlines.
+`blog/2026-11-14-mdp01-overlay-dual-ownership.md` — "One Element, One Toggle": dual-ownership anti-pattern in overlay UIs, event bridge pattern, architectural lessons.
 
-## Before Landing
+## References
 
-- Re-squash: 5 post-squash commits need folding into the 11 semantic commits. Run `/git-squash` with range covering the new commits.
-- Remove console.log in grid-edit-controller.ts (search for `[drag]`)
-- Artifact sweep: 9 workspace artifacts not yet promoted to project
-
-## Next Work
-
-- Split/merge issue — user has a plan
-- Migration scripts for dependent repos in ~/claude/casehub — find repos that depend on pages and migrate their grids/tables from old approach. Existing script: `scripts/migrate-to-grid-flat.mjs`
+- Audit: `docs/specs/2026-11-07-ts-platform-parity-audit.md`
+- Epic: casehubio/casehub-pages#608
