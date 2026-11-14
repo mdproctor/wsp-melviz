@@ -23,3 +23,5 @@ flyway-next-v: none
   - [x] Batch 3: 652-3
     - [x] Task 3: panel title renders above grid content
 - [ ] casehubio/casehub-pages#652 — Tree-to-visual selection broken for nested grid items
+- [ ] casehubio/casehub-pages#664 — fix: revise component palette entries for grid editing
+- [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
