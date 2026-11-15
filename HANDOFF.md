@@ -84,3 +84,14 @@ Key decisions:
 
 - Audit: `docs/specs/2026-11-07-ts-platform-parity-audit.md`
 - Epic: casehubio/casehub-pages#608
+
+## Changes made from the soredium session (2026-11-15)
+
+Recorded per the cross-repo handoff rule. Context: casehubio/casehub-pages#666, Hortora/soredium#515.
+
+- **Recovered diary "One Element, One Toggle"** (`blog/2026-11-14-mdp01-overlay-dual-ownership.md` plus `blog/images/overlay-dual-ownership.svg` and `overlay-event-bridge.svg`). It existed only as orphaned commit `bb30ff9`: it was committed while this workspace was stopped in a `pull --rebase` started by `work pause`, and a later `git rebase --abort` left it on no branch.
+  - Workspace: commit `488a67f` on `issue-665-add-grid-editing-demo-showcase-gallery` (entry, images, INDEX row).
+  - Project: commit `67d7b9ad` on the same branch, promoting to `docs/blog/`. It lands when #665 closes.
+  - Publication: committed locally in `~/claude/mdproctor.github.io` (`4a45875`) and `~/claude/casehub/casehubio.github.io` (`8cce709`). **Not pushed**: both repos hold other unpushed publish commits.
+- Three other commits from the same stopped rebase are still orphaned and were not recovered: `b00507d` (session wrap), `0b46a5f` (queue branch update), `478c03a` (`.work-progress`). They hold lifecycle state only.
+- `close.py` changed on this machine: it refuses a stamped branch, a branch the queue does not name, and any repo that is mid-rebase or detached; it never squashes; a multi-commit branch needs a git-squash review recorded at its tip. A session started before 2026-11-15 needs `/clear` to load the updated skills.
