@@ -1,26 +1,39 @@
-# HANDOFF — casehub-pages
+# HANDOFF — casehub-pages (slot 218)
 
-## Status
+## Status: CLOSED — ready for archive
 
-On main. #643 landed and closed. #624 (duplicate) also closed. Epic #608 (TS/Java YAML Runtime Parity) Phases 1-5 complete. Phase 6 (#647) remains open.
+All work in this slot is complete and landed on main.
 
-## What just shipped
+## Completed Issues
 
-#643 — Phase 5: step-viewer visual parity. Refactored decorator badges from hardcoded 9-kind if-chain to data-driven config map covering all 36 DECORATOR_KEYS with semantic color groups (Catppuccin Mocha). Added 6 missing action icons (rest-request, process, agent-invoke, mcp, emit-event, verify-simulation). New Lit components for ControlStep (pause/resume card) and FusedPipelineStep (vertical stage chain with connectors). Eliminated duplicate renderDecorators code in step-card and invoke-card. 5 commits squashed to e2efb480, 88 tests green.
+### #390 — Scenario format refinements (TS side)
+Extracted dispatch protocol types to `playbook/types.ts`. Renamed CommandPayload.target to element, added DispatchStep.delay, made speed opt-in, added REST action definition. Landed on main.
 
-Key decisions: data-driven config map over hardcoded if-chain (D6); semantic color groups over individual colors (D7); minimal card components following existing visual language (D8).
+### #531 — Inferred method-call dispatch for playbook steps
+Added secure inferred dispatch so unrecognised step names resolve as method calls on target elements (TS) or beans (Java). Key deliverables:
+- `PLAYBOOK_ACTIONS` Symbol SPI in pages-primitives
+- `Catalog.resolveInferred()` in yaml-core (Walker accepts unknown step keys)
+- Secure `invokePlaybookMethod` replacing raw `invokeMethod` in command-executor.ts
+- `InferredMethodHandler` + catalog factory wiring in pages-aria
+- `playbook-handler.ts` default case extended for server-dispatched path
+- `pages-document-diff` as first adopter (9 methods declared)
+- `@PlaybookInterface` annotation + `ActionRegistry` fallback on Java side
+- Post-audit fix: `ElementMethodBinding` export, `executeAriaAction` made async
+Landed on main, issue closed.
 
-## Queue
+## Design Artifacts (workspace)
 
-| # | Issue | Scale | Notes |
-|---|-------|-------|-------|
-| #647 | Phase 6 — phase-aware agent simulation | M/Med | P6 from audit |
-| #645 | Streaming simulation API | S/Low | Chunked corpus responses |
-| #646 | Agent session showcase | S/Low | Multi-turn demo |
+- `specs/issue-531-inferred-method-dispatch/` — design spec, decisions, pipeline state
+- `plans/2026-10-20-inferred-method-dispatch.md` — implementation plan
+- `specs/issue-571-decorator-structural-keys/` — prior work spec
+- `plans/2026-10-20-scenario-format-refinements.md` — prior work plan
 
 ## References
 
-- Spec: `docs/specs/2026-11-09-step-viewer-visual-parity-design.md` (in workspace)
-- Audit: `docs/specs/2026-11-07-ts-platform-parity-audit.md`
-- Plan: `plans/2026-11-09-step-viewer-visual-parity.md` (in workspace)
-- Epic: casehubio/casehub-pages#608
+- `packages/pages-primitives/src/playbook/` — PLAYBOOK_ACTIONS SPI
+- `packages/pages-aria/src/executor/playbook-resolve.ts` — shared dispatch utilities
+- `packages/pages-aria/src/playbook/invoke/inferred-method-handler.ts` — InferredMethodHandler
+- `packages/pages-aria/src/playbook/catalog-factory.ts` — resolveInferred on catalog
+- `packages/pages-document-diff/src/pages-document-diff.ts` — first PLAYBOOK_ACTIONS adopter
+- `backend/playbook-client/src/main/java/.../PlaybookInterface.java` — Java annotation
+- `backend/playbook-client/src/main/java/.../ActionRegistry.java` — interface scanning fallback
