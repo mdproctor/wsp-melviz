@@ -1,7 +1,7 @@
-# Work Plan — Work Plan —
+# Work Plan —
 
 ## State
-branch: issue-665-add-grid-editing-demo-showcase-gallery
+branch: issue-674-remove-old-grid-model
 issue-repo: casehubio/casehub-pages
 status: active
 covers: 665
@@ -13,3 +13,4 @@ flyway-next-v: none
 
 ## Queue
 - [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
+- [ ] casehubio/casehub-pages#674 — Remove old rows/columns grid model
