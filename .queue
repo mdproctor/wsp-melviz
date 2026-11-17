@@ -14,3 +14,6 @@ flyway-next-v: none
 ## Queue
 - [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [ ] casehubio/casehub-pages#674 — Remove old rows/columns grid model
+- [ ] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
+- [ ] casehubio/casehub-pages#676 — Paste indicators for grid/items layout mode
+- [ ] casehubio/casehub-pages#675 — Migrate examples repo dash.yaml files
