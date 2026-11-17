@@ -1,39 +1,39 @@
-# Session Handover
+# HANDOFF — casehub-pages
 
-**Branch:** `main` (issue-437-lsp4ij-completions closed)
-**Issue:** #437 — fix(intellij): LSP4IJ not delivering completions
-**Date:** 2026-09-14
+## Status
 
-## What happened
+On main. #674 (remove old rows/columns grid model) landed and closed. #665 (grid editing demo) was already closed in a prior session.
 
-Debugged and fixed LSP4IJ completion delivery for the IntelliJ plugin. Root cause was a dual-plugin conflict: `io.casehub.pages` (CaseHub Pages, from pages repo) and `io.casehub.yaml` (CaseHub YAML, from blocks-ui repo) were both installed, both registering LSP servers for the same YAML file patterns. LSP4IJ couldn't route documents with two competing servers.
+## What just shipped
 
-Secondary issues fixed: stale bundle cache (extractServer never re-extracted), TextDocumentSync bare number form (LSP4IJ needs object form with `openClose: true`), missing Node.js macOS fallback paths in blocks-ui plugin, CompletionWeigher for YAML `{}` item deprioritization.
+**#674 — Remove old rows/columns grid model.** Complete removal of the old `rows:` / `columns:` page-level layout and `type: "columns"` / `type: "rows"` layout components from the TypeScript runtime. 8 commits compacted to 4 via semantic squash.
 
-Verified end-to-end: file-based logging at `/tmp/casehub-lsp.log` confirms initialize → didOpen → completion handshake completes. Page completions appear in IntelliJ.
+Key changes:
+- 7 YAML files migrated from rows/columns to `grid:` with `at: {x, y, w, h}` placement
+- `RowNode`, `ColumnNode` classes deleted from pages-document
+- `LayoutMode` narrowed from 5 values to 3 (`'grid' | 'flat' | 'items'`)
+- Schema validators (`rowSchema`, `columnSchema`) and type guards (`isColumns`, `isRows`) removed
+- Columns desugaring branch removed from parser
+- `grid-migration.ts` migration script deleted (job done)
+- Builder: row/column tree nodes, scope collection, paste indicators, path resolution, property panels all removed
+- Dock-workbench DSL helpers (`rows()`, `columns()`) converted from exported layout-type functions to local panel+inline-style helpers
+- Component catalog cleaned: `LEGACY_LAYOUT_TYPES`, `layoutRelevance`, `LAYOUT_BLOCKED_PARENTS` dead code removed
 
-## Decisions / gotchas
+## Filed Issues
 
-- **Two plugins must never coexist.** CaseHub Pages (`io.casehub.pages`) and CaseHub YAML (`io.casehub.yaml`) have different plugin IDs but claim the same files. IntelliJ treats them as independent plugins. The rename from `io.casehub.yaml` → `io.casehub.pages` left the old installation behind.
-- CaseHub YAML is the superset plugin (all 5 formats) but its bundle build fails — `.casehub-packages` in blocks-ui is stale (missing `lookupSchema`, `externalDataSetDefSchema` from pages-data).
-- Currently CaseHub YAML is installed (without CaseHub Pages). It uses a pages-lsp bundle with Page schemas only — SWF/Case/HTN/Org return empty completions.
-- Indentation bug: completion selection inserts text at column 0, losing YAML context indentation.
-- File-based diagnostic logging (`/tmp/casehub-lsp.log`) is committed to pages main — remove after debugging is complete.
+| # | Title | Notes |
+|---|-------|-------|
+| #675 | Migrate examples repo .dash.yaml files from rows/columns to grid format | 19 domain samples in external repo |
+| #676 | Paste indicators for grid/items layout mode in code editor | Pre-existing limitation surfaced during review |
+| #677 | Visual verification: dock-workbench after rows/columns removal | Inline-style helpers untested visually |
 
-## Follow-up (3 items for next session)
+## Pre-existing test failures
 
-1. **Sync `.casehub-packages` in blocks-ui** — rebuild from current pages source so lsp-schemas bundle builds. Then rebuild + reinstall CaseHub YAML with domain schemas.
-2. **Fix indentation bug** — completion insertText doesn't preserve YAML indent context.
-3. **Apply pages fixes to blocks-ui plugin** — TextDocumentSync object form, serverInfo, CompletionWeigher, stale cache removal. The blocks-ui `CaseHubLspServerDescriptor.kt` already has Node.js fallback paths and stale cache fix from this session.
+6 tests in `selection-overlay.test.ts` fail due to jsdom not rendering custom element shadow DOM. Not caused by #674. Tracked in #663.
 
 ## References
 
-| Artifact | Path |
-|----------|------|
-| Diary | `blog/2026-09-14-mdp01-lsp4ij-silent-server.md` |
-| Garden: CompletionWeigher | `GE-20260914-54f581` |
-| Garden: TextDocumentSync | `GE-20260914-330473` |
-| Build integration issue | #438 |
-| Diagnostic log | `/tmp/casehub-lsp.log` |
-| blocks-ui plugin | `blocks-ui/plugins/intellij-casehub/` |
-| pages plugin | `pages/plugins/intellij/` |
+- Design spec: `docs/specs/issue-674-remove-old-grid-model/2026-11-17-remove-old-grid-model-design.md`
+- Decisions: `docs/specs/issue-674-remove-old-grid-model/decisions.md`
+- Blog: `docs/blog/2026-11-17-mdp02-finishing-what-the-grid-started.md`
+- Prior: #625 (unified grid layout model — the design decision this implements)
