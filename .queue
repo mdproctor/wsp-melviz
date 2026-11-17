@@ -1,12 +1,12 @@
 # Work Plan —
 
 ## State
-branch: issue-674-remove-old-grid-model
+branch: issue-670-cleanup-orphaned-overlay-handlers
 issue-repo: casehubio/casehub-pages
 status: active
-covers: 674
+covers: 670
 project-sha: 
-date: 2026-11-15
+date: 2026-11-17
 design-repo: 
 design-section-hashes: 
 flyway-next-v: none
