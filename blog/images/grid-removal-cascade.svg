@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" font-family="system-ui, -apple-system, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#666" stroke-width="1.2"/>
+    </marker>
+    <style>
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: #1a1a2e }
+        .pkg { fill: #16213e; stroke: #334155 }
+        .pkg-label { fill: #e2e8f0 }
+        .item { fill: #0f3460; stroke: #1e40af }
+        .item-text { fill: #93c5fd }
+        .deleted { fill: #3b1219; stroke: #991b1b }
+        .deleted-text { fill: #fca5a5 }
+        .arrow-line { stroke: #64748b }
+        .title-text { fill: #f1f5f9 }
+        .note-text { fill: #94a3b8 }
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="720" height="420" rx="8" fill="#f8fafc"/>
+
+  <text class="title-text" x="360" y="28" text-anchor="middle" font-size="15" font-weight="600" fill="#1e293b">Removal cascade: rows/columns across 6 packages</text>
+
+  <!-- pages-document -->
+  <rect class="pkg" x="20" y="50" width="210" height="160" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <text class="pkg-label" x="125" y="70" text-anchor="middle" font-weight="600" fill="#334155">pages-document</text>
+  <rect class="deleted" x="32" y="82" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="125" y="96" text-anchor="middle" font-size="11" fill="#dc2626">RowNode, ColumnNode</text>
+  <rect class="deleted" x="32" y="108" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="125" y="122" text-anchor="middle" font-size="11" fill="#dc2626">getRows(), getColumns()</text>
+  <rect class="deleted" x="32" y="134" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="125" y="148" text-anchor="middle" font-size="11" fill="#dc2626">'rows' | 'columns' LayoutMode</text>
+  <rect class="deleted" x="32" y="160" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="125" y="174" text-anchor="middle" font-size="11" fill="#dc2626">insertion-constraints 'column'</text>
+
+  <!-- pages-schema -->
+  <rect class="pkg" x="255" y="50" width="210" height="130" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <text class="pkg-label" x="360" y="70" text-anchor="middle" font-weight="600" fill="#334155">pages-schema</text>
+  <rect class="deleted" x="267" y="82" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="360" y="96" text-anchor="middle" font-size="11" fill="#dc2626">rowSchema, columnSchema</text>
+  <rect class="deleted" x="267" y="108" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="360" y="122" text-anchor="middle" font-size="11" fill="#dc2626">columnsPropsSchema, rowsPropsSchema</text>
+  <rect class="deleted" x="267" y="134" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="360" y="148" text-anchor="middle" font-size="11" fill="#dc2626">"columns"/"rows" in union</text>
+
+  <!-- pages-component -->
+  <rect class="pkg" x="490" y="50" width="210" height="160" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <text class="pkg-label" x="595" y="70" text-anchor="middle" font-weight="600" fill="#334155">pages-component</text>
+  <rect class="deleted" x="502" y="82" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="595" y="96" text-anchor="middle" font-size="11" fill="#dc2626">ColumnsProps, RowsProps</text>
+  <rect class="deleted" x="502" y="108" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="595" y="122" text-anchor="middle" font-size="11" fill="#dc2626">isColumns(), isRows()</text>
+  <rect class="deleted" x="502" y="134" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="595" y="148" text-anchor="middle" font-size="11" fill="#dc2626">LAYOUT_TYPES entries</text>
+  <rect class="deleted" x="502" y="160" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="595" y="174" text-anchor="middle" font-size="11" fill="#dc2626">grid-migration.ts (whole file)</text>
+
+  <!-- pages-ui -->
+  <rect class="pkg" x="20" y="240" width="210" height="100" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <text class="pkg-label" x="125" y="260" text-anchor="middle" font-weight="600" fill="#334155">pages-ui</text>
+  <rect class="deleted" x="32" y="272" width="186" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="125" y="286" text-anchor="middle" font-size="11" fill="#dc2626">columns desugaring branch</text>
+  <rect class="item" x="32" y="298" width="186" height="20" rx="3" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text class="item-text" x="125" y="312" text-anchor="middle" font-size="11" fill="#1d4ed8">rows()/columns() → local helpers</text>
+
+  <!-- pages-builder -->
+  <rect class="pkg" x="255" y="240" width="445" height="160" rx="6" fill="#fff" stroke="#cbd5e1"/>
+  <text class="pkg-label" x="477" y="260" text-anchor="middle" font-weight="600" fill="#334155">pages-builder</text>
+  <rect class="deleted" x="267" y="272" width="140" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="337" y="286" text-anchor="middle" font-size="11" fill="#dc2626">buildRowNode()</text>
+  <rect class="deleted" x="413" y="272" width="140" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="483" y="286" text-anchor="middle" font-size="11" fill="#dc2626">buildColumnNode()</text>
+  <rect class="deleted" x="559" y="272" width="128" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="623" y="286" text-anchor="middle" font-size="11" fill="#dc2626">'row'/'column' tree</text>
+  <rect class="deleted" x="267" y="298" width="140" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="337" y="312" text-anchor="middle" font-size="11" fill="#dc2626">scope-collector r/c</text>
+  <rect class="deleted" x="413" y="298" width="140" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="483" y="312" text-anchor="middle" font-size="11" fill="#dc2626">paste-indicators r/c</text>
+  <rect class="deleted" x="559" y="298" width="128" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="623" y="312" text-anchor="middle" font-size="11" fill="#dc2626">preview-transform</text>
+  <rect class="deleted" x="267" y="324" width="420" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="477" y="338" text-anchor="middle" font-size="11" fill="#dc2626">builder-shell: path resolution, insert handlers, property panel, catalog entry (~254 lines)</text>
+  <rect class="deleted" x="267" y="350" width="420" height="20" rx="3" fill="#fef2f2" stroke="#fecaca"/>
+  <text class="deleted-text" x="477" y="364" text-anchor="middle" font-size="11" fill="#dc2626">grid-edit-bridge: rows/columns migration branches</text>
+
+  <!-- Arrows showing dependency cascade -->
+  <line class="arrow-line" x1="125" y1="210" x2="125" y2="236" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line class="arrow-line" x1="230" y1="130" x2="253" y2="130" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line class="arrow-line" x1="465" y1="130" x2="488" y2="130" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line class="arrow-line" x1="360" y1="180" x2="360" y2="236" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line class="arrow-line" x1="595" y1="210" x2="595" y2="236" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <text class="note-text" x="360" y="410" text-anchor="middle" font-size="11" fill="#64748b">Red = deleted  |  Blue = converted  |  Arrows = import dependency</text>
+</svg>
