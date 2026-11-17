@@ -1,21 +1,15 @@
 # Work Plan — Work Plan —
 
 ## State
-branch: 
+branch: issue-665-add-grid-editing-demo-showcase-gallery
 issue-repo: casehubio/casehub-pages
 status: active
-covers: 664
+covers: 665
 project-sha: 
-date: 
+date: 2026-11-15
 design-repo: 
 design-section-hashes: 
 flyway-next-v: none
 
 ## Queue
-- [x] casehubio/casehub-pages#625 — Issue #625
-- [x] casehubio/casehub-pages#644 — Always-on drag handles and resize edges
-- [x] casehubio/casehub-pages#640 — Redundant items/components key distinction
-- [x] casehubio/casehub-pages#639 — Nested grid DnD controller scope
-- [x] casehubio/casehub-pages#652 — Tree-to-visual selection broken for nested grid items
-- [x] casehubio/casehub-pages#664 — fix: revise component palette entries for grid editing
-- [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode ← active
+- [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
