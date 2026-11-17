@@ -1,0 +1,15 @@
+# Work Plan — Work Plan —
+
+## State
+branch: issue-665-add-grid-editing-demo-showcase-gallery
+issue-repo: casehubio/casehub-pages
+status: active
+covers: 665
+project-sha: 
+date: 2026-11-15
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [ ] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
