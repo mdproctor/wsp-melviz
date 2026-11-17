@@ -17,3 +17,4 @@
 | [2026-09-14-mdp02-lsp-completions-column-zero.md](2026-09-14-mdp02-lsp-completions-column-zero.md) | 2026-09-14 | LSP4IJ inserts completions at column 0 when textEdit is absent — fixed server-side with explicit ranges |
 | [2026-11-17-mdp01-when-events-miss-their-target.md](2026-11-17-mdp01-when-events-miss-their-target.md) | 2026-11-17 | Silent event failures when grid hover bar actions bypassed _selectedPath — two subsystems with invisible assumptions about shared state |
 | [2026-11-17-mdp02-finishing-what-the-grid-started.md](2026-11-17-mdp02-finishing-what-the-grid-started.md) | 2026-11-17 | Completing the #625 grid migration — removing every row/column remnant from the TS runtime across 6 packages |
+| [2026-11-17-mdp03-the-small-things.md](2026-11-17-mdp03-the-small-things.md) | 2026-11-17 | Four builder chrome fixes: dead overlay handlers, tree-to-controller coordination, DOM test environment, design token contrast |
