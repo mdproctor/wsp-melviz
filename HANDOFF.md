@@ -2,45 +2,42 @@
 
 ## Status
 
-On main. Four issues closed this session (#697–#700). Three new issues filed (#701–#703). Queue has 3 open issues. 4 commits unpublished on main.
+On main. Three issues closed this session (#701–#703). Three new issues filed (#704–#706). Queue has 2 open issues. All work published.
 
 ## What shipped this session
 
-**#697 — Pre-existing typecheck errors.** Added `'row' | 'column'` to `TreeNodeType` (yaml-path returns them, type didn't declare them). Exported `rows`/`columns` from builders DSL and `getButtonsForNodeType` from selection-overlay. Typecheck clean: 488 stale errors → 32 real → 0.
+**#701 — Merge/remove transaction wrapping.** Wrapped `_mergeItems` and `_removeItem` in `beginTransaction`/`commitTransaction` with try/catch abort, same pattern as the move/resize fix in #698. Added undo tests for both operations. Added `// @vitest-environment jsdom` to `grid-edit-bridge.test.ts` and `builder-shell-grid.test.ts` (pre-existing breakage from `shared-timer-controller.ts` calling `document.addEventListener` at module load time).
 
-**#698 — Grid edit undo broken by compaction.** Wrapped move/resize in `beginTransaction`/`commitTransaction` so compaction + placement are a single atomic undo entry. Added try/catch with `abortTransaction` for error safety. Updated 3 test expectations to reflect compaction pulling items to y:0. Blog: "When Improvements Break Undo".
+**#702 — Builder tree CSS test fix.** Test asserted `opacity: 0` on `.add-btn`, but the CSS applies it to the parent `.tree-actions` container. Updated selector in test. Added `// @vitest-environment jsdom` to `builder-tree.test.ts`.
 
-**#699 — Carousel data-table slide test.** Added Playwright test: click next twice to reach slide 3, verify `pages-data-table` renders with table rows.
-
-**#700 — YAML formatting differences.** Closed as already resolved — audited 119 .page.yaml files, none of the described formatting issues exist.
+**#703 — Nested grid compaction target.** When `gridPath` targets a nested grid, `_applyPlacements` correctly manipulates the nested YAML but `_compactGrid` ran on the root page. Fixed by skipping root compaction when `gridPath` is set. Added test proving root grid gaps are preserved during nested grid edits.
 
 ## Code review findings (filed as issues)
 
-**#701 — Merge/remove transaction wrapping.** `_mergeItems` and `_removeItem` both call `_compactGrid` — same multi-undo problem as move/resize. No undo tests exist for either. XS/Low.
+**#704 — Split/swap transaction wrapping.** `_splitItem` (setPlacement + addItem) and `_swapItems` (setPlacement × 2) both have the same multi-undo-entry problem. XS/Low — same pattern as #698/#701.
 
-**#702 — Builder tree CSS test fix.** Pre-existing failure: test expects `opacity: 0` on `.add-btn` but CSS applies it on parent `.tree-actions`. XS/Low.
+**#705 — gridPath routing for non-move operations.** All operations except move/resize accept `gridPath` but ignore it (prefixed with `_`). They always target the root grid regardless of which nested grid the user is editing. M/Med — requires YAML-level reimplementation or explicit API boundary.
 
-**#703 — Nested grid compaction target.** When `gridPath` is set, `_applyPlacements` manipulates the nested YAML but `_compactGrid` runs on root page. Semantically wrong, currently harmless. S/Low.
+**#706 — Builder test jsdom annotations.** `shared-timer-controller.ts` calls `document.addEventListener` at module load time. Any test importing from `@casehubio/pages-component` needs `// @vitest-environment jsdom`. Root cause fix: guard with `typeof document !== 'undefined'`. XS/Low.
 
 ## Queue — next session
 
 | # | Title | Scale | Complexity | Notes |
 |---|-------|-------|------------|-------|
-| #701 | Merge/remove transaction wrapping | XS | Low | Same pattern as #698 fix |
-| #702 | Builder tree CSS test fix | XS | Low | .add-btn → .tree-actions opacity |
-| #703 | Nested grid compaction target | S | Low | gridPath routes to wrong grid |
+| #705 | gridPath routing for non-move operations | M | Med | YAML-level operation routing or explicit API boundary |
+| #706 | Builder test jsdom annotations | XS | Low | Guard module-scope document call |
+
+#704 (split/swap transactions) was checked off by the ceremony but not implemented — it needs to be reopened or the work done.
 
 ## Notes
 
-- 4 commits on main ahead of origin — not yet published
+- Blog revised: "When Improvements Break Undo" — extended with the full transaction audit, new SVG diagram showing all grid operations' transaction status
+- All commits published to origin
 - `yarn typecheck --build --clean && yarn typecheck` for a clean typecheck (0 errors)
-- `yarn workspace @casehubio/pages-ui build` required before typecheck if `dist/` is stale (examples import from dist path)
-- Pre-existing test failure: `add-btn stays in layout flow` in builder-tree.test.ts — tracked as #702
+- Pre-existing test failure in builder-tree.test.ts now fixed (#702)
 
 ## References
 
-- Blog: `blog/2026-11-18-mdp05-when-improvements-break-undo.md`
-- Blog: `blog/2026-11-18-mdp03-the-ghosts-in-typecheck.md`
-- Blog: `blog/2026-11-18-mdp04-present-but-not-proven.md`
+- Blog: `docs/blog/2026-11-18-mdp05-when-improvements-break-undo.md`
 - Builder demo: `yarn --cwd packages/pages-builder dev` → http://localhost:5173
 - Gallery dev server: `yarn --cwd examples dev` → http://localhost:8081
