@@ -29,6 +29,9 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#698 — Grid edit integration tests fail after compaction changes
 - [x] casehubio/casehub-pages#699 — Gallery Carousel data-table slide not tested
 - [x] casehubio/casehub-pages#700 — Remaining YAML indentation and quoting differences
-- [ ] casehubio/casehub-pages#701 — Merge/remove transaction wrapping ← active
-- [ ] casehubio/casehub-pages#702 — Builder tree CSS test fix
-- [ ] casehubio/casehub-pages#703 — Nested grid compaction target
+- [x] casehubio/casehub-pages#701 — Merge/remove transaction wrapping
+- [x] casehubio/casehub-pages#702 — Builder tree CSS test fix
+- [x] casehubio/casehub-pages#703 — Nested grid compaction target
+- [ ] casehubio/casehub-pages#704 — Split/swap transaction wrapping ← active
+- [ ] casehubio/casehub-pages#705 — gridPath routing for non-move operations
+- [ ] casehubio/casehub-pages#706 — Builder test jsdom annotations
