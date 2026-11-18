@@ -23,3 +23,4 @@
 | [2026-11-18-mdp03-the-ghosts-in-typecheck.md](2026-11-18-mdp03-the-ghosts-in-typecheck.md) | 2026-11-18 | Stale .typecheck directories leave ghost type references in IDE — tsc --build doesn't clean up after deleted source files, fixed across 34 packages |
 | [2026-11-18-mdp04-present-but-not-proven.md](2026-11-18-mdp04-present-but-not-proven.md) | 2026-11-18 | Carousel tests verified DOM presence without data, YAML migration preserved semantics without readability — both fixed by going one layer deeper |
 | [2026-11-18-mdp05-when-improvements-break-undo.md](2026-11-18-mdp05-when-improvements-break-undo.md) | 2026-11-18 | Composite grid operations broke undo by pushing multiple snapshots; transaction wrapping fixes atomicity |
+| [2026-11-18-mdp06-the-parameter-nobody-read.md](2026-11-18-mdp06-the-parameter-nobody-read.md) | 2026-11-18 | Six grid operations accepted gridPath but ignored it — the underscore prefix silenced the compiler, not the contract |
