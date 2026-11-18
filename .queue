@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: wip/705-gridpath-routing
+branch: 
 issue-repo: casehubio/casehub-pages
-status: drained
-covers: casehubio/casehub-pages#705
+status: active
+covers: casehubio/casehub-pages#684
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -35,7 +35,7 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#704 — Split/swap transaction wrapping
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
-- [ ] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal
+- [ ] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal ← active
 - [ ] casehubio/casehub-pages#685 — pages-grid-select multi-selection model
 - [ ] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
 - [ ] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
