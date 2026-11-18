@@ -2,48 +2,44 @@
 
 ## Status
 
-On main. Three issues landed this session. Queue has 4 open issues.
+On main. Four issues closed this session (#697–#700). Three new issues filed (#701–#703). Queue has 3 open issues. 4 commits unpublished on main.
 
 ## What shipped this session
 
-**#688 — Stale .typecheck directories.** Updated clean scripts across all 34 packages so `yarn clean` removes `.typecheck/` alongside `dist/`. Added clean scripts to 8 packages that lacked them, added `rimraf` devDependency to 4. Blog: "The Ghosts in .typecheck".
+**#697 — Pre-existing typecheck errors.** Added `'row' | 'column'` to `TreeNodeType` (yaml-path returns them, type didn't declare them). Exported `rows`/`columns` from builders DSL and `getButtonsForNodeType` from selection-overlay. Typecheck clean: 488 stale errors → 32 real → 0.
 
-**#689 — Gallery Carousel test gaps.** Added 2 Playwright tests to `gallery.spec.ts`: carousel next-slide verifies pie chart canvas renders with data, Stack tab-switch verifies metric component has `dataSet`. Blog: "Present but Not Proven".
+**#698 — Grid edit undo broken by compaction.** Wrapped move/resize in `beginTransaction`/`commitTransaction` so compaction + placement are a single atomic undo entry. Added try/catch with `abortTransaction` for error safety. Updated 3 test expectations to reflect compaction pulling items to y:0. Blog: "When Improvements Break Undo".
 
-**#690 — YAML roundtrip formatting (cross-repo).** Targeted fix in casehubio/examples: restored block scalar style (`|`, `|-`) for 7 dash.yaml files where PyYAML's `dump()` had converted multi-line strings to escaped `\n` sequences. All files verified semantically identical.
+**#699 — Carousel data-table slide test.** Added Playwright test: click next twice to reach slide 3, verify `pages-data-table` renders with table rows.
 
-## Cross-repo changes
+**#700 — YAML formatting differences.** Closed as already resolved — audited 119 .page.yaml files, none of the described formatting issues exist.
 
-| Repo | Branch | Commit | What |
-|------|--------|--------|------|
-| `casehubio/examples` | main | `57e8ec81` | 7 dash.yaml files: escaped string literals → block scalars |
+## Code review findings (filed as issues)
 
-## Issues filed this session
+**#701 — Merge/remove transaction wrapping.** `_mergeItems` and `_removeItem` both call `_compactGrid` — same multi-undo problem as move/resize. No undo tests exist for either. XS/Low.
 
-| # | Title | Scale | Complexity | Notes |
-|---|-------|-------|------------|-------|
-| #697 | Pre-existing typecheck errors | S | Low | TS7006/TS2307 in pipeline-stencils, playbook-connection-controller |
-| #698 | Grid edit integration tests fail after compaction | S | Med | builder-shell-grid.test.ts placement assertions |
-| #699 | Gallery Carousel data-table slide not tested | XS | Low | Slide 3 test gap |
-| #700 | Remaining YAML indentation and quoting differences | S | Low | Cosmetic, 23 files in examples repo |
+**#702 — Builder tree CSS test fix.** Pre-existing failure: test expects `opacity: 0` on `.add-btn` but CSS applies it on parent `.tree-actions`. XS/Low.
+
+**#703 — Nested grid compaction target.** When `gridPath` is set, `_applyPlacements` manipulates the nested YAML but `_compactGrid` runs on root page. Semantically wrong, currently harmless. S/Low.
 
 ## Queue — next session
 
-| Priority | # | Title | Scale | Complexity | Notes |
-|----------|---|-------|-------|------------|-------|
-| 1 | #697 | Pre-existing typecheck errors | S | Low | TS7006 implicit any, TS2307 missing module |
-| 2 | #698 | Grid edit integration tests fail | S | Med | Placement coordinates after round-trip |
-| 3 | #699 | Gallery Carousel data-table slide not tested | XS | Low | Test gap |
-| 4 | #700 | Remaining YAML indentation/quoting differences | S | Low | Cosmetic |
+| # | Title | Scale | Complexity | Notes |
+|---|-------|-------|------------|-------|
+| #701 | Merge/remove transaction wrapping | XS | Low | Same pattern as #698 fix |
+| #702 | Builder tree CSS test fix | XS | Low | .add-btn → .tree-actions opacity |
+| #703 | Nested grid compaction target | S | Low | gridPath routes to wrong grid |
 
 ## Notes
 
-- `yarn clean` now removes `.typecheck/` dirs — run `yarn clean && yarn typecheck` to fix ghost IntelliJ references
-- The examples repo has 5 unpublished commits on main (4 prior + 1 this session)
-- Pre-existing test failures in `packages/pages-builder/src/shell/builder-shell-grid.test.ts` — tracked as #698
+- 4 commits on main ahead of origin — not yet published
+- `yarn typecheck --build --clean && yarn typecheck` for a clean typecheck (0 errors)
+- `yarn workspace @casehubio/pages-ui build` required before typecheck if `dist/` is stale (examples import from dist path)
+- Pre-existing test failure: `add-btn stays in layout flow` in builder-tree.test.ts — tracked as #702
 
 ## References
 
+- Blog: `blog/2026-11-18-mdp05-when-improvements-break-undo.md`
 - Blog: `blog/2026-11-18-mdp03-the-ghosts-in-typecheck.md`
 - Blog: `blog/2026-11-18-mdp04-present-but-not-proven.md`
 - Builder demo: `yarn --cwd packages/pages-builder dev` → http://localhost:5173
