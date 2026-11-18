@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: wip/704-split-swap-transaction
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#704
@@ -33,5 +33,5 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#702 — Builder tree CSS test fix
 - [x] casehubio/casehub-pages#703 — Nested grid compaction target
 - [ ] casehubio/casehub-pages#704 — Split/swap transaction wrapping
-- [ ] casehubio/casehub-pages#705 — gridPath routing for non-move operations ← active
+- [ ] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [ ] casehubio/casehub-pages#706 — Builder test jsdom annotations
