@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#685
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -22,7 +36,7 @@
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
 - [x] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal
-- [ ] casehubio/casehub-pages#685 — pages-grid-select multi-selection model        ← active
+- [ ] casehubio/casehub-pages#685 — pages-grid-select multi-selection model ← active
 - [ ] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
 - [ ] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
 - [ ] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync
@@ -33,14 +47,3 @@
 - [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
 - [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params
-
-## State
-branch: wip/684-remove-row-column-type
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#684
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
