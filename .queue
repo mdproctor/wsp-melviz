@@ -22,3 +22,6 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#661 — Tree selection doesnt show grid-item controls
 - [ ] casehubio/casehub-pages#651 — Builder chrome poor contrast
 - [ ] casehubio/casehub-pages#670 — Clean up orphaned selection overlay event handlers
+- [ ] casehubio/casehub-pages#688 — Stale typecheck dirs
+- [ ] casehubio/casehub-pages#689 — Gallery Carousel test gaps
+- [ ] casehubio/casehub-pages#690 — YAML roundtrip formatting
