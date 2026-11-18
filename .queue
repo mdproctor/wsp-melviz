@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: issue-689-carousel-test-gaps
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#689
@@ -23,7 +23,7 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#651 — Builder chrome poor contrast
 - [x] casehubio/casehub-pages#670 — Clean up orphaned selection overlay event handlers
 - [x] casehubio/casehub-pages#688 — Stale typecheck dirs
-- [ ] casehubio/casehub-pages#689 — Gallery Carousel test gaps ← active
-- [ ] casehubio/casehub-pages#690 — YAML roundtrip formatting
-- [ ] casehubio/casehub-pages#697 — Pre-existing typecheck errors
+- [x] casehubio/casehub-pages#689 — Gallery Carousel test gaps
+- [x] casehubio/casehub-pages#690 — YAML roundtrip formatting
+- [ ] casehubio/casehub-pages#697 — Pre-existing typecheck errors ← active
 - [ ] casehubio/casehub-pages#698 — Grid edit integration tests fail after compaction changes
