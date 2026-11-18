@@ -2,15 +2,19 @@
 
 ## Status
 
-On branch `issue-674-remove-old-rows-columns-grid`. Queue position 5/10, active issue #675. Three issues completed this session (#665 was pre-done, #674 was 3-line fix, #676 was 8-line feature).
+On main. Branch `issue-674-remove-old-rows-columns-grid` closed. Five issues landed this session. Queue has 8 open issues (5 pre-existing + 3 newly filed).
 
 ## What shipped this session
 
-**#674 — Remove old rows/columns grid model.** Nearly all removal was already done in prior sessions. Only remaining source artifact was a stale `ColumnsProps` test import in `component-props.test.ts`. Removed the import and test block. Cleaned stale `.typecheck` directories.
+**#674 — Remove old rows/columns grid model (final remnant).** Only a stale `ColumnsProps` test import remained in `component-props.test.ts`. Removed. Stale `.typecheck` dirs cleaned.
 
-**#676 — Paste indicators for grid/items layout mode.** `computeValidPasteLines()` only generated sibling paste indicators for `mode === 'flat'` pages. Added `else if (mode === 'grid' || mode === 'items')` branch that iterates `page.getItems()` and generates before/after entries for each grid item. 4 new tests covering both `items:` and `grid:` formats.
+**#676 — Paste indicators for grid/items layout mode.** `computeValidPasteLines()` now generates sibling before/after entries for grid items in both `items:` and `grid:` page formats. 4 new tests.
 
-**#675 — Migrate examples repo dash.yaml files.** Mechanical conversion of 23 `.dash.yaml`/`.dash.yml` files in `casehubio/examples` from old `rows:/columns:/span:` layout to `grid:` with `at: {x,y,w,h}` placement. Displayer components converted to new type/properties format. Committed to examples repo main as `e1e141c6`.
+**#675 — Migrate examples repo dash.yaml files.** 23 `.dash.yaml` files in `casehubio/examples` converted from `rows:/columns:/span:` to `grid:` with `at: {x,y,w,h}`. Cross-repo commit `e1e141c6` on examples main.
+
+**#682 — Verify Carousel and Stack sample renders.** Confirmed the sample works after #681's targetPage fix. 2 Playwright tests added to gallery.spec.ts.
+
+**#663 — DOM environment for renderer tests.** Added `// @vitest-environment jsdom` to 9 test files in `pages-component/src/renderer/`. 560 tests now pass (was 288 failing).
 
 ## Cross-repo changes
 
@@ -18,17 +22,27 @@ On branch `issue-674-remove-old-rows-columns-grid`. Queue position 5/10, active 
 |------|--------|--------|------|
 | `casehubio/examples` | main | `e1e141c6` | 23 dash.yaml files migrated from rows/columns to grid format |
 
+## Issues filed this session
+
+| # | Title | Scale | Complexity | Notes |
+|---|-------|-------|------------|-------|
+| #688 | Stale .typecheck directories contain removed types | XS | Low | IntelliJ indexes ghost results |
+| #689 | Gallery: Carousel test doesn't verify data in slides | XS | Low | Test coverage gap |
+| #690 | examples repo: yaml library reformats string scalars | XS | Low | Cosmetic — semantically correct |
+
 ## Queue — next session
 
 | Priority | # | Title | Scale | Complexity | Notes |
 |----------|---|-------|-------|------------|-------|
-| 1 | #682 | Verify Carousel/Stack sample renders | XS | Low | Was blocked by #681 — now unblocked |
-| 2 | #663 | Selection overlay tests need DOM environment | S | Low | — |
-| 3 | #661 | Tree selection doesn't show grid-item controls | — | — | — |
-| 4 | #651 | Builder chrome poor contrast | — | — | — |
-| 5 | #670 | Clean up orphaned selection overlay event handlers | — | — | — |
+| 1 | #661 | Tree selection doesn't show grid-item controls | S | Med | Overlay/controller coordination |
+| 2 | #651 | Builder chrome poor contrast | S | Low | Design token fix |
+| 3 | #670 | Clean up orphaned selection overlay event handlers | S | Low | Dead code removal |
+| 4 | #688 | Stale .typecheck directories | XS | Low | New this session |
+| 5 | #689 | Gallery Carousel test gaps | XS | Low | New this session |
+| 6 | #690 | YAML roundtrip formatting | XS | Low | New this session |
 
 ## References
 
+- Blog: `blog/2026-11-17-mdp02-finishing-what-the-grid-started.md` (revised this session)
 - Builder demo: `yarn --cwd packages/pages-builder dev` → http://localhost:5173
 - Gallery dev server: `yarn --cwd examples dev` → http://localhost:8081
