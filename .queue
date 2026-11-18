@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: wip/701-merge-remove-transaction
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#701
