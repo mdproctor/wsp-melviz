@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 480" font-family="Inter, system-ui, sans-serif">
+  <style>
+    .box { rx: 8; ry: 8; stroke-width: 1.5; }
+    .source { fill: #1e293b; stroke: #3b82f6; }
+    .stale { fill: #1e1b2e; stroke: #ef4444; }
+    .output { fill: #1e293b; stroke: #22c55e; }
+    .fix { fill: #1e293b; stroke: #a78bfa; }
+    .label { fill: #f1f5f9; font-size: 13px; text-anchor: middle; }
+    .sublabel { fill: #94a3b8; font-size: 10px; text-anchor: middle; }
+    .arrow { stroke: #64748b; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .arrow-red { stroke: #ef4444; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-red); }
+    .arrow-green { stroke: #22c55e; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-green); }
+    .phase { fill: #94a3b8; font-size: 11px; font-weight: 600; text-anchor: start; }
+    .strike { text-decoration: line-through; fill: #64748b; font-size: 13px; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#22c55e"/>
+    </marker>
+  </defs>
+
+  <!-- Phase 1: Normal build -->
+  <text x="20" y="30" class="phase">1. NORMAL BUILD — tsc --build</text>
+
+  <rect x="30" y="45" width="150" height="50" class="box source"/>
+  <text x="105" y="67" class="label">grid-model.ts</text>
+  <text x="105" y="82" class="sublabel">exports RowNode, ColumnNode</text>
+
+  <line x1="180" y1="70" x2="240" y2="70" class="arrow"/>
+
+  <rect x="240" y="45" width="180" height="50" class="box output"/>
+  <text x="330" y="67" class="label">grid-model.d.ts</text>
+  <text x="330" y="82" class="sublabel">.typecheck/grid-model.d.ts</text>
+
+  <line x1="420" y1="70" x2="480" y2="70" class="arrow"/>
+
+  <rect x="480" y="45" width="250" height="50" class="box source"/>
+  <text x="605" y="67" class="label">IntelliJ indexes .d.ts</text>
+  <text x="605" y="82" class="sublabel">RowNode: 3 usages ✓</text>
+
+  <!-- Phase 2: Source deleted -->
+  <text x="20" y="140" class="phase">2. REFACTOR — source file deleted</text>
+
+  <rect x="30" y="155" width="150" height="50" class="box stale"/>
+  <text x="105" y="177" class="strike">grid-model.ts</text>
+  <text x="105" y="192" class="sublabel" style="fill: #ef4444;">deleted in #674</text>
+
+  <line x1="180" y1="180" x2="240" y2="180" class="arrow-red"/>
+  <text x="210" y="172" style="fill: #ef4444; font-size: 10px; text-anchor: middle;">no-op</text>
+
+  <rect x="240" y="155" width="180" height="50" class="box stale"/>
+  <text x="330" y="177" class="label">grid-model.d.ts</text>
+  <text x="330" y="192" class="sublabel" style="fill: #ef4444;">still exists — tsc doesn't clean</text>
+
+  <line x1="420" y1="180" x2="480" y2="180" class="arrow-red"/>
+
+  <rect x="480" y="155" width="250" height="50" class="box stale"/>
+  <text x="605" y="177" class="label">IntelliJ indexes stale .d.ts</text>
+  <text x="605" y="192" class="sublabel" style="fill: #ef4444;">RowNode: 3 usages — all ghosts</text>
+
+  <!-- Phase 3: Before fix -->
+  <text x="20" y="250" class="phase">3. BEFORE FIX — yarn clean misses .typecheck</text>
+
+  <rect x="30" y="265" width="200" height="50" class="box source"/>
+  <text x="130" y="287" class="label">yarn clean</text>
+  <text x="130" y="302" class="sublabel">rimraf dist</text>
+
+  <line x1="230" y1="290" x2="290" y2="290" class="arrow"/>
+
+  <rect x="290" y="265" width="130" height="50" class="box output"/>
+  <text x="355" y="287" class="label">dist/ removed ✓</text>
+
+  <rect x="480" y="265" width="250" height="50" class="box stale"/>
+  <text x="605" y="287" class="label">.typecheck/ untouched</text>
+  <text x="605" y="302" class="sublabel" style="fill: #ef4444;">stale .d.ts files persist</text>
+
+  <!-- Phase 4: After fix -->
+  <text x="20" y="360" class="phase">4. AFTER FIX — yarn clean removes both</text>
+
+  <rect x="30" y="375" width="200" height="50" class="box fix"/>
+  <text x="130" y="397" class="label">yarn clean</text>
+  <text x="130" y="412" class="sublabel">rimraf dist .typecheck</text>
+
+  <line x1="230" y1="400" x2="290" y2="400" class="arrow-green"/>
+
+  <rect x="290" y="375" width="130" height="50" class="box fix"/>
+  <text x="355" y="397" class="label">dist/ removed ✓</text>
+
+  <line x1="420" y1="400" x2="480" y2="400" class="arrow-green"/>
+
+  <rect x="480" y="375" width="250" height="50" class="box fix"/>
+  <text x="605" y="397" class="label">.typecheck/ removed ✓</text>
+  <text x="605" y="412" class="sublabel" style="fill: #22c55e;">ghosts eliminated</text>
+
+  <!-- Connecting arrow between phase 2 and 3 -->
+  <line x1="605" y1="205" x2="605" y2="265" class="arrow-red" style="stroke-dasharray: 4;"/>
+</svg>
