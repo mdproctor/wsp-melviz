@@ -2,39 +2,41 @@
 
 ## Status
 
-On main. Three issues closed this session (#701–#703). Three new issues filed (#704–#706). Queue has 2 open issues. All work published.
+On main. Two issues closed this session (#704, #706). Queue has 1 open issue (#705). All work published.
 
 ## What shipped this session
 
-**#701 — Merge/remove transaction wrapping.** Wrapped `_mergeItems` and `_removeItem` in `beginTransaction`/`commitTransaction` with try/catch abort, same pattern as the move/resize fix in #698. Added undo tests for both operations. Added `// @vitest-environment jsdom` to `grid-edit-bridge.test.ts` and `builder-shell-grid.test.ts` (pre-existing breakage from `shared-timer-controller.ts` calling `document.addEventListener` at module load time).
+**#704 — Split/swap transaction wrapping.** Wrapped `_splitItem` (setPlacement + addItem) and `_swapItems` (setPlacement × 2) in `beginTransaction`/`commitTransaction` with try/catch abort. Added undo tests for both. This completes the transaction audit — every compound operation in `GridEditBridge` now has atomic undo.
 
-**#702 — Builder tree CSS test fix.** Test asserted `opacity: 0` on `.add-btn`, but the CSS applies it to the parent `.tree-actions` container. Updated selector in test. Added `// @vitest-environment jsdom` to `builder-tree.test.ts`.
+**#706 — Guard module-scope document access.** `shared-timer-controller.ts` called `document.addEventListener` at module load time, causing `ReferenceError` in non-DOM test environments. All three `document` references now guarded with `typeof document !== 'undefined'`. Root cause fix — the `// @vitest-environment jsdom` annotations added in #701/#702 are no longer needed for this import chain (but remain since those test files also use `document` directly).
 
-**#703 — Nested grid compaction target.** When `gridPath` targets a nested grid, `_applyPlacements` correctly manipulates the nested YAML but `_compactGrid` ran on the root page. Fixed by skipping root compaction when `gridPath` is set. Added test proving root grid gaps are preserved during nested grid edits.
+## Transaction audit — complete
 
-## Code review findings (filed as issues)
+All compound operations in `GridEditBridge.applyGridEdit` are now wrapped:
 
-**#704 — Split/swap transaction wrapping.** `_splitItem` (setPlacement + addItem) and `_swapItems` (setPlacement × 2) both have the same multi-undo-entry problem. XS/Low — same pattern as #698/#701.
+| Operation | Issue | Mutations |
+|-----------|-------|-----------|
+| move/resize | #698 | N × setPlacement + compaction |
+| merge | #701 | N × removeItem + setPlacement + compaction |
+| remove | #701 | removeItem + compaction |
+| split | #704 | setPlacement + addItem |
+| swap | #704 | setPlacement × 2 |
 
-**#705 — gridPath routing for non-move operations.** All operations except move/resize accept `gridPath` but ignore it (prefixed with `_`). They always target the root grid regardless of which nested grid the user is editing. M/Med — requires YAML-level reimplementation or explicit API boundary.
-
-**#706 — Builder test jsdom annotations.** `shared-timer-controller.ts` calls `document.addEventListener` at module load time. Any test importing from `@casehubio/pages-component` needs `// @vitest-environment jsdom`. Root cause fix: guard with `typeof document !== 'undefined'`. XS/Low.
+Single-mutation operations (insert, add-empty) need no wrapping.
 
 ## Queue — next session
 
 | # | Title | Scale | Complexity | Notes |
 |---|-------|-------|------------|-------|
-| #705 | gridPath routing for non-move operations | M | Med | YAML-level operation routing or explicit API boundary |
-| #706 | Builder test jsdom annotations | XS | Low | Guard module-scope document call |
+| #705 | gridPath routing for non-move operations | M | Med | All ops except move/resize ignore gridPath — design decision needed |
 
-#704 (split/swap transactions) was checked off by the ceremony but not implemented — it needs to be reopened or the work done.
+#705 requires a design decision: implement full YAML-level routing for all operations (merge, remove, split, swap, insert target nested grid), or make the API boundary explicit (remove `gridPath` param from operations that don't support it, throw if unexpectedly provided). Option 2 is safer for now.
 
 ## Notes
 
-- Blog revised: "When Improvements Break Undo" — extended with the full transaction audit, new SVG diagram showing all grid operations' transaction status
+- Blog revised: "When Improvements Break Undo" — all operations now green in the SVG audit diagram
 - All commits published to origin
 - `yarn typecheck --build --clean && yarn typecheck` for a clean typecheck (0 errors)
-- Pre-existing test failure in builder-tree.test.ts now fixed (#702)
 
 ## References
 
