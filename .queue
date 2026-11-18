@@ -15,8 +15,8 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
-- [ ] casehubio/casehub-pages#676 — Paste indicators for grid/items layout mode ← active
-- [ ] casehubio/casehub-pages#675 — Migrate examples repo dash.yaml files
+- [x] casehubio/casehub-pages#676 — Paste indicators for grid/items layout mode
+- [ ] casehubio/casehub-pages#675 — Migrate examples repo dash.yaml files ← active
 - [ ] casehubio/casehub-pages#682 — Verify Carousel and Stack sample renders
 - [ ] casehubio/casehub-pages#663 — Selection overlay tests need DOM environment
 - [ ] casehubio/casehub-pages#661 — Tree selection doesnt show grid-item controls
