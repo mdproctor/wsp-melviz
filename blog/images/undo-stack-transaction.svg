@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#64748b" stroke-width="1.5"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" fill="#fafafa" rx="8"/>
+
+  <!-- Left panel: Without transaction -->
+  <text x="195" y="30" text-anchor="middle" font-size="14" font-weight="600" fill="#334155">Without transaction</text>
+
+  <!-- Undo stack boxes - left -->
+  <rect x="40" y="50" width="310" height="50" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="50" y="72" font-size="11" fill="#94a3b8">S0</text>
+  <text x="80" y="72" font-size="12" fill="#334155">chart (0,0) table (6,0)</text>
+  <text x="300" y="72" font-size="10" fill="#64748b">original</text>
+  <text x="50" y="90" font-size="10" fill="#94a3b8">pushed by setPlacement #1</text>
+
+  <rect x="40" y="110" width="310" height="50" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="50" y="132" font-size="11" fill="#94a3b8">S1</text>
+  <text x="80" y="132" font-size="12" fill="#334155">chart (3,0) table (6,0)</text>
+  <text x="300" y="132" font-size="10" fill="#64748b">moved</text>
+  <text x="50" y="150" font-size="10" fill="#94a3b8">pushed by compaction setPlacement</text>
+
+  <!-- Current state -->
+  <rect x="40" y="175" width="310" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="50" y="200" font-size="12" font-weight="500" fill="#92400e">current: chart (3,0) table (6,2)</text>
+
+  <!-- Undo arrow -->
+  <line x1="195" y1="220" x2="195" y2="250" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="210" y="240" font-size="11" fill="#64748b">undo()</text>
+
+  <!-- After first undo -->
+  <rect x="40" y="255" width="310" height="40" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="50" y="280" font-size="12" font-weight="500" fill="#991b1b">result: chart (3,0) table (6,0)</text>
+  <text x="50" y="300" font-size="10" fill="#ef4444">⚠ intermediate state — not what the user expects</text>
+
+  <!-- Second undo -->
+  <line x1="195" y1="305" x2="195" y2="330" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="210" y="323" font-size="11" fill="#64748b">undo() again</text>
+
+  <rect x="40" y="340" width="310" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="50" y="365" font-size="12" font-weight="500" fill="#166534">result: chart (0,0) table (6,0)</text>
+  <text x="50" y="380" font-size="10" fill="#16a34a">✓ original — but took two undos</text>
+
+  <!-- Divider -->
+  <line x1="400" y1="15" x2="400" y2="405" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6,4"/>
+
+  <!-- Right panel: With transaction -->
+  <text x="595" y="30" text-anchor="middle" font-size="14" font-weight="600" fill="#334155">With transaction</text>
+
+  <!-- Single undo entry -->
+  <rect x="440" y="50" width="310" height="50" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="450" y="72" font-size="11" fill="#94a3b8">S0</text>
+  <text x="480" y="72" font-size="12" fill="#334155">chart (0,0) table (6,0)</text>
+  <text x="700" y="72" font-size="10" fill="#64748b">original</text>
+  <text x="450" y="90" font-size="10" fill="#94a3b8">pushed by beginTransaction()</text>
+
+  <!-- Current state -->
+  <rect x="440" y="115" width="310" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="450" y="140" font-size="12" font-weight="500" fill="#92400e">current: chart (3,0) table (6,2)</text>
+
+  <!-- Note: setPlacement calls skipped -->
+  <rect x="460" y="165" width="270" height="30" rx="4" fill="#f1f5f9" stroke="none"/>
+  <text x="475" y="184" font-size="10" fill="#64748b">setPlacement undo pushes → skipped (in transaction)</text>
+
+  <!-- Undo arrow -->
+  <line x1="595" y1="205" x2="595" y2="250" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <text x="610" y="233" font-size="11" fill="#16a34a" font-weight="500">undo()</text>
+
+  <!-- After undo -->
+  <rect x="440" y="260" width="310" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="450" y="285" font-size="12" font-weight="500" fill="#166534">result: chart (0,0) table (6,0)</text>
+  <text x="450" y="300" font-size="10" fill="#16a34a">✓ original — single undo, correct result</text>
+</svg>
