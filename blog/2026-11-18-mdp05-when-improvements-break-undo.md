@@ -54,17 +54,17 @@ Then the audit found a subtler bug. When `gridPath` is set — meaning the user 
 
 Currently harmless because root items rarely have vertical gaps. But "currently harmless" and "correct" are different things. The fix: skip root compaction when `gridPath` is set. The nested grid edit touches only the nested YAML; compacting the root is wrong regardless of whether it changes anything.
 
-## What's still exposed
+## Closing the last two
 
-The audit turned up two more operations with the same multi-undo problem:
-
-![Grid operations — transaction audit](images/grid-operation-transaction-audit.svg)
+The audit turned up two more operations with the same multi-undo problem: split and swap.
 
 **Split** calls `setPlacement` to resize the original item, then `addItem` to insert the new half. Two undo entries. The user splits a panel, hits undo, and only the new half disappears — the original item keeps its halved dimensions.
 
 **Swap** calls `setPlacement` twice, once for each item. Two undo entries. The user swaps items A and B, hits undo, and only B returns to its original position — both items end up at B's original location.
 
-Neither has compaction. Neither currently produces visible glitches in most cases — swap is rare and split always feels like two operations anyway. But the undo contract is clear: one user action, one undo step. Filed as #704.
+Same fix, same pattern. Every compound operation in the bridge now has transaction wrapping:
+
+![Grid operations — transaction audit](images/grid-operation-transaction-audit.svg)
 
 ## The principle
 
