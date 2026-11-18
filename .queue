@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: issue-688-stale-typecheck-dirs
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#651
+covers: casehubio/casehub-pages#688
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -25,3 +25,5 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#688 — Stale typecheck dirs ← active
 - [ ] casehubio/casehub-pages#689 — Gallery Carousel test gaps
 - [ ] casehubio/casehub-pages#690 — YAML roundtrip formatting
+- [ ] casehubio/casehub-pages#697 — Pre-existing typecheck errors
+- [ ] casehubio/casehub-pages#698 — Grid edit integration tests fail after compaction changes
