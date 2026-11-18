@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" font-family="system-ui, -apple-system, sans-serif" font-size="13">
+  <style>
+    .box { rx: 6; ry: 6; stroke-width: 1.5; }
+    .page { fill: #e8f0fe; stroke: #4285f4; }
+    .nav { fill: #fef7e0; stroke: #f9ab00; }
+    .comp { fill: #e6f4ea; stroke: #34a853; }
+    .vpage { fill: #e8f0fe; stroke: #4285f4; stroke-dasharray: 6 3; }
+    .label { font-size: 11px; fill: #5f6368; }
+    .title { font-size: 14px; font-weight: 600; fill: #202124; }
+    .arrow { stroke: #80868b; stroke-width: 1.2; fill: none; marker-end: url(#arrowhead); }
+    .divider { stroke: #dadce0; stroke-width: 1; stroke-dasharray: 4 4; }
+    .scope { font-size: 11px; fill: #1a73e8; font-style: italic; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#80868b"/>
+    </marker>
+  </defs>
+
+  <!-- Left side: Before -->
+  <text x="170" y="24" class="title" text-anchor="middle">Without targetPage</text>
+
+  <rect x="100" y="40" width="140" height="30" class="box page"/>
+  <text x="170" y="60" text-anchor="middle">root (page)</text>
+  <text x="170" y="78" class="scope" text-anchor="middle">scope[""] = {sales}</text>
+
+  <path d="M170,70 L170,95" class="arrow"/>
+
+  <rect x="90" y="95" width="160" height="30" class="box page"/>
+  <text x="170" y="115" text-anchor="middle">Content (page)</text>
+  <text x="170" y="133" class="scope" text-anchor="middle">scope["content"] = {sales}</text>
+
+  <path d="M170,125 L170,150" class="arrow"/>
+
+  <rect x="105" y="150" width="130" height="30" class="box nav"/>
+  <text x="170" y="170" text-anchor="middle">tabs</text>
+
+  <path d="M130,180 L90,210" class="arrow"/>
+  <path d="M210,180 L250,210" class="arrow"/>
+
+  <rect x="30" y="210" width="120" height="28" class="box comp"/>
+  <text x="90" y="228" text-anchor="middle" font-size="11">chart</text>
+  <text x="90" y="248" class="label" text-anchor="middle">path = "content"</text>
+
+  <rect x="190" y="210" width="120" height="28" class="box comp"/>
+  <text x="250" y="228" text-anchor="middle" font-size="11">table</text>
+  <text x="250" y="248" class="label" text-anchor="middle">path = "content"</text>
+
+  <text x="30" y="264" class="label">"Tab A"</text>
+  <text x="190" y="264" class="label">"Tab B"</text>
+
+  <!-- scope note -->
+  <text x="170" y="290" class="label" text-anchor="middle">Both resolve from scope["content"]</text>
+  <text x="170" y="304" class="label" text-anchor="middle">Same scope, same path</text>
+
+  <!-- Divider -->
+  <line x1="370" y1="10" x2="370" y2="410" class="divider"/>
+
+  <!-- Right side: After -->
+  <text x="560" y="24" class="title" text-anchor="middle">With targetPage: true</text>
+
+  <rect x="490" y="40" width="140" height="30" class="box page"/>
+  <text x="560" y="60" text-anchor="middle">root (page)</text>
+  <text x="560" y="78" class="scope" text-anchor="middle">scope[""] = {sales}</text>
+
+  <path d="M560,70 L560,95" class="arrow"/>
+
+  <rect x="480" y="95" width="160" height="30" class="box page"/>
+  <text x="560" y="115" text-anchor="middle">Content (page)</text>
+  <text x="560" y="133" class="scope" text-anchor="middle">scope["content"] = {sales}</text>
+
+  <path d="M560,125 L560,150" class="arrow"/>
+
+  <rect x="495" y="150" width="130" height="30" class="box nav"/>
+  <text x="560" y="170" text-anchor="middle">tabs</text>
+
+  <path d="M520,180 L470,205" class="arrow"/>
+  <path d="M600,180 L650,205" class="arrow"/>
+
+  <!-- Virtual pages -->
+  <rect x="400" y="205" width="140" height="30" class="box vpage"/>
+  <text x="470" y="225" text-anchor="middle" font-size="11">Tab A (page)</text>
+  <text x="470" y="245" class="scope" text-anchor="middle">scope["content/Tab A"]</text>
+
+  <rect x="580" y="205" width="140" height="30" class="box vpage"/>
+  <text x="650" y="225" text-anchor="middle" font-size="11">Tab B (page)</text>
+  <text x="650" y="245" class="scope" text-anchor="middle">scope["content/Tab B"]</text>
+
+  <path d="M470,235 L470,265" class="arrow"/>
+  <path d="M650,235 L650,265" class="arrow"/>
+
+  <rect x="410" y="265" width="120" height="28" class="box comp"/>
+  <text x="470" y="283" text-anchor="middle" font-size="11">chart</text>
+  <text x="470" y="303" class="label" text-anchor="middle">path = "content/Tab A"</text>
+
+  <rect x="590" y="265" width="120" height="28" class="box comp"/>
+  <text x="650" y="283" text-anchor="middle" font-size="11">table</text>
+  <text x="650" y="303" class="label" text-anchor="middle">path = "content/Tab B"</text>
+
+  <!-- scope note -->
+  <text x="560" y="330" class="label" text-anchor="middle">Each tab has its own scope entry</text>
+  <text x="560" y="344" class="label" text-anchor="middle">inheriting from scope["content"]</text>
+
+  <!-- Legend -->
+  <rect x="20" y="370" width="16" height="12" class="box page"/>
+  <text x="42" y="381" class="label">page</text>
+  <rect x="90" y="370" width="16" height="12" class="box nav"/>
+  <text x="112" y="381" class="label">nav</text>
+  <rect x="155" y="370" width="16" height="12" class="box comp"/>
+  <text x="177" y="381" class="label">component</text>
+  <rect x="260" y="370" width="16" height="12" class="box vpage"/>
+  <text x="282" y="381" class="label">virtual page</text>
+</svg>
