@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: wip/705-gridpath-routing
+issue-repo: casehubio/casehub-pages
+status: drained
+covers: casehubio/casehub-pages#705
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -21,14 +35,15 @@
 - [x] casehubio/casehub-pages#704 — Split/swap transaction wrapping
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
-
-## State
-branch: wip/705-gridpath-routing
-issue-repo: casehubio/casehub-pages
-status: drained
-covers: casehubio/casehub-pages#705
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal
+- [ ] casehubio/casehub-pages#685 — pages-grid-select multi-selection model
+- [ ] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
+- [ ] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
+- [ ] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync
+- [ ] casehubio/casehub-pages#671 — Automated tests for grid hover bar actions
+- [ ] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder
+- [ ] casehubio/casehub-pages#672 — Verify full-bleed CSS no regression
+- [ ] casehubio/casehub-pages#687 — E2E test dataset scope for targetPage tabs
+- [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
+- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
+- [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params
