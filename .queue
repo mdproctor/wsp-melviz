@@ -27,3 +27,5 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#690 — YAML roundtrip formatting
 - [ ] casehubio/casehub-pages#697 — Pre-existing typecheck errors ← active
 - [ ] casehubio/casehub-pages#698 — Grid edit integration tests fail after compaction changes
+- [ ] casehubio/casehub-pages#699 — Gallery Carousel data-table slide not tested
+- [ ] casehubio/casehub-pages#700 — Remaining YAML indentation and quoting differences
