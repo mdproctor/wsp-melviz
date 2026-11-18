@@ -2,47 +2,32 @@
 
 ## Status
 
-On main. Branch `issue-674-remove-old-rows-columns-grid` closed. Five issues landed this session. Queue has 8 open issues (5 pre-existing + 3 newly filed).
+On main. Branch `issue-688-stale-typecheck-dirs` closed and landed as `e22da3ab`. Queue has 4 open issues.
 
 ## What shipped this session
 
-**#674 — Remove old rows/columns grid model (final remnant).** Only a stale `ColumnsProps` test import remained in `component-props.test.ts`. Removed. Stale `.typecheck` dirs cleaned.
+**#688 — Stale .typecheck directories.** Updated clean scripts across all 34 packages so `yarn clean` removes `.typecheck/` alongside `dist/`. Added clean scripts to 8 packages that lacked them, added `rimraf` devDependency to 4 packages. Verified: `yarn clean` removes all .typecheck dirs, clean rebuild works. Blog: "The Ghosts in .typecheck".
 
-**#676 — Paste indicators for grid/items layout mode.** `computeValidPasteLines()` now generates sibling before/after entries for grid items in both `items:` and `grid:` page formats. 4 new tests.
-
-**#675 — Migrate examples repo dash.yaml files.** 23 `.dash.yaml` files in `casehubio/examples` converted from `rows:/columns:/span:` to `grid:` with `at: {x,y,w,h}`. Cross-repo commit `e1e141c6` on examples main.
-
-**#682 — Verify Carousel and Stack sample renders.** Confirmed the sample works after #681's targetPage fix. 2 Playwright tests added to gallery.spec.ts.
-
-**#663 — DOM environment for renderer tests.** Added `// @vitest-environment jsdom` to 9 test files in `pages-component/src/renderer/`. 560 tests now pass (was 288 failing).
-
-## Cross-repo changes
-
-| Repo | Branch | Commit | What |
-|------|--------|--------|------|
-| `casehubio/examples` | main | `e1e141c6` | 23 dash.yaml files migrated from rows/columns to grid format |
+**#670 — Clean up orphaned selection overlay event handlers.** Already closed on GitHub before this session started. Queue advanced past it.
 
 ## Issues filed this session
 
 | # | Title | Scale | Complexity | Notes |
 |---|-------|-------|------------|-------|
-| #688 | Stale .typecheck directories contain removed types | XS | Low | IntelliJ indexes ghost results |
-| #689 | Gallery: Carousel test doesn't verify data in slides | XS | Low | Test coverage gap |
-| #690 | examples repo: yaml library reformats string scalars | XS | Low | Cosmetic — semantically correct |
+| #697 | Pre-existing typecheck errors in pipeline-stencils and playbook-connection-controller | S | Low | TS7006 implicit any, TS2307 missing module |
+| #698 | Grid edit integration tests fail after compaction changes | S | Med | builder-shell-grid.test.ts placement assertions |
 
 ## Queue — next session
 
 | Priority | # | Title | Scale | Complexity | Notes |
 |----------|---|-------|-------|------------|-------|
-| 1 | #661 | Tree selection doesn't show grid-item controls | S | Med | Overlay/controller coordination |
-| 2 | #651 | Builder chrome poor contrast | S | Low | Design token fix |
-| 3 | #670 | Clean up orphaned selection overlay event handlers | S | Low | Dead code removal |
-| 4 | #688 | Stale .typecheck directories | XS | Low | New this session |
-| 5 | #689 | Gallery Carousel test gaps | XS | Low | New this session |
-| 6 | #690 | YAML roundtrip formatting | XS | Low | New this session |
+| 1 | #689 | Gallery Carousel test gaps | XS | Low | Add data assertions, tab-switch test |
+| 2 | #690 | YAML roundtrip formatting | XS | Low | String scalar reformatting |
+| 3 | #697 | Pre-existing typecheck errors | S | Low | Filed this session |
+| 4 | #698 | Grid edit integration tests fail | S | Med | Filed this session |
 
 ## References
 
-- Blog: `blog/2026-11-17-mdp02-finishing-what-the-grid-started.md` (revised this session)
+- Blog: `blog/2026-11-18-mdp03-the-ghosts-in-typecheck.md`
 - Builder demo: `yarn --cwd packages/pages-builder dev` → http://localhost:5173
 - Gallery dev server: `yarn --cwd examples dev` → http://localhost:8081
