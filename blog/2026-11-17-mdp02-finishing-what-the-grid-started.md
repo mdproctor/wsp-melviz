@@ -5,7 +5,7 @@ date: 2026-11-17
 entry_type: note
 subtype: diary
 projects: [casehubio/casehub-pages]
-tags: [casehub-pages, grid, migration, layout-model, cleanup]
+tags: [casehub-pages, grid, migration, layout-model, cleanup, paste-indicators, test-infrastructure]
 issue: 674
 branch: issue-674-remove-old-grid-model
 series: issue-674-remove-old-grid-model
@@ -78,8 +78,26 @@ Worse, the `pageEntrySchema` Zod validator accepted `rows:` and `columns:` in YA
 
 After the removal, `LayoutMode = 'grid' | 'flat' | 'items'` — three values, all reachable, all rendered. The schema rejects old-format YAML with a validation error. The type system matches reality.
 
-## What's left
+## The last mile
 
-The examples repo (`casehubio/examples`) has 19 `.dash.yaml` domain samples (clinical, IoT, sales, etc.) still on the old format. Those are in a separate repo and will render as empty grids until migrated. The `.casehub-packages` vendored copies in the app repos will pick up the type changes on their next refresh.
+The runtime was clean. The types were honest. But two things still used the old vocabulary.
 
-Neither blocks this work. The runtime is clean. The types are honest. The vocabulary is singular.
+The examples repo (`casehubio/examples`) had 23 `.dash.yaml` domain samples — clinical dashboards, IoT fleet monitors, sales analytics, Prometheus metrics, Backstage integration — all still using `rows:` / `columns:` / `span:`. With the runtime removal landed, these files would render as empty grids. No error, no fallback, just nothing.
+
+The conversion is mechanical but not trivial. Each `rows:` block maps to a `grid:` block where the row index becomes the `y` coordinate, column spans become widths in the 12-column grid, and the old `displayer:` wrapper unwraps into the new `type:` / `properties:` format. A Python migration script handled the structural transformation. The yaml library reformats whitespace and string styles on round-trip — semantically identical output, just tidied.
+
+The other gap was in the builder itself. `yaml-paste-indicators.ts` — the code that marks valid paste locations in the YAML code editor — only handled `mode === 'flat'` pages. Grid and items mode pages got a child entry on the page node but no sibling entries alongside individual items. If you were editing a grid page's YAML and tried to paste a component, the paste location markers wouldn't appear next to existing items.
+
+The fix is seven lines. The function already knew how to generate sibling entries — it just needed an `else if (mode === 'grid' || mode === 'items')` branch that iterates `page.getItems()` instead of `page.getComponents()`. The path construction mirrors the document model: `['pages', pi, key, ii]` where `key` is `'grid'` or `'items'` depending on the layout mode.
+
+## The invisible infrastructure
+
+Nine renderer test files in `pages-component` — covering grid editing, slot swapping, layout CSS, interactive wiring, split panels, grid merging, and grid coordinate math — all used raw DOM APIs but ran without a DOM environment. Every test in these files failed with `ReferenceError: document is not defined` when invoked from the repo root.
+
+Two files (`grid-edit-controller.test.ts` and `selection-overlay.test.ts`) already had the `// @vitest-environment jsdom` directive from a prior fix. The other nine didn't. The fix was one line per file, applied across all nine. The renderer test suite went from 288 failures to zero — 560 tests passing.
+
+This is the kind of infrastructure gap that compounds silently. The tests existed, the assertions were correct, the coverage was real. But running `npx vitest run packages/pages-component/src/renderer/` from the repo root reported twenty failing test files, and anyone who saw that output would reasonably conclude the renderer was broken. It wasn't. The tests just couldn't see the DOM.
+
+![Grid model migration — before and after](images/grid-migration-before-after.svg)
+
+The unified grid model is now genuinely landed. Not just merged — the old format is rejected by the schema, absent from the type system, absent from the examples, and every test that covers the new model actually runs.
