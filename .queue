@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: issue-715-lsp-for-each-completion
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#715
@@ -36,5 +36,5 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
 - [x] casehubio/casehub-pages#714 — Rename forEach test describe strings
-- [ ] casehubio/casehub-pages#715 — Verify LSP for-each completion ← active
+- [x] casehubio/casehub-pages#715 — Verify LSP for-each completion
 - [ ] casehubio/casehub-pages#716 — Category-level playbook execution tests
