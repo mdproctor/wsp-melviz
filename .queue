@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: wip/685-grid-select-selection-model
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#685
@@ -36,8 +36,8 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
 - [x] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal
-- [ ] casehubio/casehub-pages#685 — pages-grid-select multi-selection model ← active
-- [ ] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
+- [x] casehubio/casehub-pages#685 — pages-grid-select multi-selection model
+- [ ] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block ← active
 - [ ] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
 - [ ] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync
 - [ ] casehubio/casehub-pages#671 — Automated tests for grid hover bar actions
