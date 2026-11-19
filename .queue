@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: issue-687-e2e-dataset-scope-tabs
+branch: issue-619-fixed-width-panel-columns
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#687
+covers: casehubio/casehub-pages#619
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -44,11 +44,14 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder
 - [x] casehubio/casehub-pages#672 — Verify full-bleed CSS no regression
 - [x] casehubio/casehub-pages#687 — E2E test dataset scope for targetPage tabs
-- [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out ← active
+- [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out ← done on issue-687-e2e-dataset-scope-tabs
   - [x] Batch 1: Padding removal
     - [x] Task 1: Remove padding from virtual pages
-- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
+- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← active
 - [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params
 - [ ] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
 - [ ] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
 - [ ] casehubio/casehub-pages#713 — lineWidth monitoring for YAML scalars
+
+## Deferred
+- [ ] Fixed-width panels auto-size column allocation (M / High) [casehubio/casehub-pages] — Root cause is uniform column model vs pixel widths. All solutions have trade-offs — best option (mixed grid template) needs UX prototyping before committing. Detailed analysis posted to issue #619.
