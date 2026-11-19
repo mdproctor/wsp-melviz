@@ -1,3 +1,16 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -36,18 +49,8 @@
 - [x] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
 - [x] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
 - [x] casehubio/casehub-pages#713 — lineWidth monitoring for YAML scalars
-- [ ] casehubio/casehub-pages#717 — Add @Description to ParamDescriptorResolver GraphQL methods        ← active
+- [ ] casehubio/casehub-pages#717 — Add @Description to ParamDescriptorResolver GraphQL methods ← active
 - [ ] casehubio/casehub-pages#718 — classifyPath defensive test for non-numeric page index
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
 
 ## Deferred
 - [ ] Fixed-width panels auto-size column allocation (M / High) [casehubio/casehub-pages] — Root cause is uniform column model vs pixel widths. All solutions have trade-offs — best option (mixed grid template) needs UX prototyping before committing. Detailed analysis posted to issue #619.
