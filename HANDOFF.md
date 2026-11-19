@@ -4,17 +4,13 @@
 
 ### What was done
 
-**Dual-mode datasets (#719):** Built `fallback-source.ts` — a DataSource combinator that tries a primary source (REST), falls back to a secondary (inline) on error. Updated the data pipeline to allow `url + content` together on dataset definitions. All app samples (helpdesk, contacts, tasks) now carry both — one YAML works in gallery (content fallback) and with backend (REST data). Removed apps-management and platform from Client tab (server-only via "Apps Within Apps").
+**Parallel address inconsistency fix (#724):** `StepPositionScanner.scanNamedBranches` now handles unnamed parallel lanes — list items at `nameIndent` when `label === 'lane'`. Each unnamed step gets scanned via `scanBlock` with `lane.N` prefix, producing `0.lane.0.0` addresses matching `assignStepAddresses`. Tests cover two-lane, single-lane, and nested control flow (if-else inside unnamed lane). Code review clean — no findings beyond the two sibling issues below.
 
-**Playbook split-view editor (#720):** Built the web component foundation:
-- `StepPositionScanner` enhanced for hierarchical nesting (`"1.then.0"`, `"2.catch.1"`) with `findByLine`/`findByAddress` helpers
-- `EditableTextBridge.onCursorChange()` callback added
-- Step viewer click events with `data-step-address` attributes and `step-click` CustomEvent
-- `<playbook-split-view>` container with bidirectional sync, gallery demo
+**Issues filed from code review:**
+- #726 — race step scanner gap (same pattern: `scanNamedBranches` skips array-format race children)
+- #727 — select step scanner gap (same pattern: `scanNamedBranches` skips array-format select children)
 
-**Form pages fleshed out:** Helpdesk, contacts, tasks, apps-management — all empty grid stubs replaced with working `components:` form fields and `schema-form:` create forms.
-
-**Apps-demo catalogue fix:** Converted from unsupported `rows:` layout to `grid:` format.
+Both are S/Low and queued.
 
 ### What's next
 
@@ -22,15 +18,20 @@
 
 | # | Title | Scale | Notes |
 |---|-------|-------|-------|
-| #722 | Match step address mismatch | S | Scanner vs step-click use different address formats for match arms |
-| #723 | Extract demoCatalog | XS | DRY — duplicated between split-view and gallery |
-| #724 | Parallel lane address inconsistency | S | Same mismatch as #722 but for parallel lanes |
-| #725 | IntelliJ JCEF preview | M | FileEditorProvider with JCEF step viewer — plan exists at `plans/2026-11-19-playbook-split-view.md` (Batch 4) |
+| #716 | Category-level playbook execution tests | M | Already closed |
+| #725 | IntelliJ JCEF preview | M | FileEditorProvider with JCEF step viewer — Kotlin/Gradle, plan at `plans/2026-11-19-playbook-split-view.md` (Batch 4) |
+| #726 | Race scanner address mismatch | S | Same fix pattern as #724 but for `label === 'race'`, flat indices |
+| #727 | Select scanner address mismatch | S | Same fix pattern but needs channel name extraction from YAML list items |
+
+### Key context for next session
+
+- The `label === 'lane'` guard in `scanNamedBranches` is deliberate: race and select have different address conventions and need their own fixes (#726, #727).
+- `scanNamedBranches` line 188 has a pre-existing cosmetic issue: `containerKey ? contentIndent + 2 : contentIndent + 2` — both branches are identical. Not a bug, not in scope.
+- #716 is closed but still unchecked in the queue — `work.py continue` should skip it automatically.
 
 ### Key files
 
-- `packages/pages-data/src/datasource/sources/fallback-source.ts` — dual-mode combinator
-- `packages/yaml-core/src/annotation/step-position-scanner.ts` — hierarchical position scanner
-- `packages/pages-step-viewer/src/playbook-split-view.ts` — split-view container
-- `specs/wip-helpdesk-form-pages/2026-11-19-playbook-split-view-design.md` — design spec
-- `plans/2026-11-19-playbook-split-view.md` — implementation plan (Batch 4 remaining)
+- `packages/yaml-core/src/annotation/step-position-scanner.ts:191-210` — the fix (unnamed lane handling)
+- `packages/pages-step-viewer/src/step-click.ts:54-66` — the reference implementation addresses must match
+- `specs/issue-724-parallel-address-inconsistency/` — design spec and decisions
+- `blog/2026-11-19-mdp05-the-address-that-didnt-exist.md` — session blog
