@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: wip/685-grid-select-selection-model
 issue-repo: casehubio/casehub-pages
 status: active
 covers: casehubio/casehub-pages#685
