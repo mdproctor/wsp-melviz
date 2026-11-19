@@ -4,6 +4,8 @@ date: 2026-06-30
 author: mdp
 projects: [casehub-pages]
 tags: [architecture, web-components, workbench, event-bus]
+entry_type: note
+subtype: diary
 ---
 
 casehub-pages started as a dashboard renderer — YAML in, charts out. DraftHouse, Claudony, and DevTown each needed more: a workspace shell with panels, docking, and inter-panel communication. Each hand-coded its own shell. DraftHouse's `panel-registry.js` had a comment at the top: "First draft of what `@casehub/ui`'s component type registry will be." Time to make that real.

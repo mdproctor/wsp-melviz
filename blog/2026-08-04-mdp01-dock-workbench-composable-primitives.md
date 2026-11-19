@@ -1,3 +1,12 @@
+---
+layout: post
+title: "Dock Workbench: Composable Primitives Over Monolithic Controllers"
+date: 2026-08-04
+entry_type: note
+subtype: diary
+projects: [casehubio/casehub-pages]
+---
+
 # Dock Workbench: Composable Primitives Over Monolithic Controllers
 
 **Date:** 2026-08-04

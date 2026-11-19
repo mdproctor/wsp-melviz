@@ -3,7 +3,7 @@ layout: post
 title: "Backlog sweep and navigation rebinding"
 date: 2026-06-21
 type: build-log
-entry_type: diary
+entry_type: note
 subtype: diary
 projects: [casehub-pages]
 tags: [forms, navigation, tree, tiles, sidebar, menu, data-pipeline, prometheus]

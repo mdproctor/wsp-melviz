@@ -1,3 +1,12 @@
+---
+layout: post
+title: "Three Issues, One Pipeline"
+date: 2026-08-03
+entry_type: note
+subtype: diary
+projects: [casehubio/casehub-pages]
+---
+
 # Three Issues, One Pipeline
 
 *2026-08-03 · casehub-pages · graph-renderer Phase 1B*

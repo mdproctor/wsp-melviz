@@ -3,6 +3,9 @@ title: "TypeScript Strict Enforcement — Maximum Type Safety Across All Package
 date: 2026-06-21
 author: Mark Proctor
 tags: [typescript, type-safety, architecture, casehub-pages]
+entry_type: note
+subtype: diary
+projects: [casehubio/casehub-pages]
 ---
 
 # TypeScript Strict Enforcement

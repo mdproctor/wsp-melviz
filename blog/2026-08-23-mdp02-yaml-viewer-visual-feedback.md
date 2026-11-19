@@ -3,6 +3,9 @@ title: "YAML Viewer and Visual Feedback — the audience can follow along"
 date: 2026-08-23
 type: diary
 tags: [scenario-engine, yaml, visual-feedback, lit]
+entry_type: note
+subtype: diary
+projects: [casehubio/casehub-pages]
 ---
 
 # YAML Viewer and Visual Feedback
