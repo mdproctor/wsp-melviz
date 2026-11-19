@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#657
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -44,14 +30,25 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder
 - [x] casehubio/casehub-pages#672 — Verify full-bleed CSS no regression
 - [x] casehubio/casehub-pages#687 — E2E test dataset scope for targetPage tabs
-- [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out ← done on issue-687-e2e-dataset-scope-tabs
+- [x] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
   - [x] Batch 1: Padding removal
     - [x] Task 1: Remove padding from virtual pages
 - [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← done on issue-619-fixed-width-panel-columns
-- [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params ← active
+- [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params        ← active
 - [ ] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
 - [ ] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
 - [ ] casehubio/casehub-pages#713 — lineWidth monitoring for YAML scalars
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#657
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
 
 ## Deferred
 - [ ] Fixed-width panels auto-size column allocation (M / High) [casehubio/casehub-pages] — Root cause is uniform column model vs pixel widths. All solutions have trade-offs — best option (mixed grid template) needs UX prototyping before committing. Detailed analysis posted to issue #619.
