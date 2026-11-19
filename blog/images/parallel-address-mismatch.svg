@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="'Segoe UI', system-ui, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="360" y="28" text-anchor="middle" font-size="15" font-weight="600" fill="#1e293b">Address Generation: Two Paths, One Invariant</text>
+
+  <!-- YAML source (left) -->
+  <rect x="20" y="50" width="200" height="130" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="120" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#475569">YAML Source</text>
+  <text x="36" y="96" font-size="11" fill="#334155" font-family="monospace">- parallel:</text>
+  <text x="36" y="114" font-size="11" fill="#334155" font-family="monospace">    - action: step-1</text>
+  <text x="36" y="132" font-size="11" fill="#334155" font-family="monospace">    - action: step-2</text>
+  <text x="36" y="156" font-size="10" fill="#94a3b8" font-style="italic">array format (unnamed)</text>
+
+  <!-- Scanner path (top right) -->
+  <rect x="280" y="50" width="200" height="100" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="380" y="72" text-anchor="middle" font-size="12" font-weight="600" fill="#92400e">Scanner (YAML text)</text>
+  <text x="296" y="96" font-size="11" fill="#78350f" font-family="monospace">scanNamedBranches()</text>
+  <text x="296" y="114" font-size="11" fill="#dc2626" font-family="monospace">skips list items!</text>
+  <text x="296" y="136" font-size="10" fill="#92400e">Output: only "0" (no children)</text>
+
+  <!-- step-click path (bottom right) -->
+  <rect x="280" y="175" width="200" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="380" y="197" text-anchor="middle" font-size="12" font-weight="600" fill="#1e40af">step-click (resolved steps)</text>
+  <text x="296" y="221" font-size="11" fill="#1e3a8a" font-family="monospace">assignStepAddresses()</text>
+  <text x="296" y="241" font-size="11" fill="#16a34a" font-family="monospace">0.lane.0.0, 0.lane.1.0</text>
+  <text x="296" y="261" font-size="10" fill="#1e40af">Output: full address tree</text>
+
+  <!-- Arrows from YAML to both paths -->
+  <line x1="220" y1="100" x2="278" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="220" y1="140" x2="260" y2="220" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Mismatch indicator -->
+  <rect x="520" y="100" width="180" height="80" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="610" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">MISMATCH</text>
+  <text x="610" y="148" text-anchor="middle" font-size="10" fill="#991b1b">Click step card in viewer</text>
+  <text x="610" y="164" text-anchor="middle" font-size="10" fill="#991b1b">Scanner can't find the line</text>
+
+  <!-- Arrows to mismatch -->
+  <line x1="480" y1="130" x2="518" y2="135" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="480" y1="210" x2="518" y2="155" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Fix box -->
+  <rect x="250" y="295" width="260" height="36" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="380" y="318" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">Fix: teach scanner to handle list items</text>
+</svg>
