@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: wip/685-grid-select-selection-model
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#685
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -40,8 +26,8 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
 - [x] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
 - [x] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync
-- [ ] casehubio/casehub-pages#671 — Automated tests for grid hover bar actions ← active
-- [ ] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder
+- [x] casehubio/casehub-pages#671 — Automated tests for grid hover bar actions
+- [ ] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder        ← active
 - [ ] casehubio/casehub-pages#672 — Verify full-bleed CSS no regression
 - [ ] casehubio/casehub-pages#687 — E2E test dataset scope for targetPage tabs
 - [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
@@ -50,3 +36,14 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
 - [ ] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
 - [ ] casehubio/casehub-pages#713 — lineWidth monitoring for YAML scalars
+
+## State
+branch: wip/685-grid-select-selection-model
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#685
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
