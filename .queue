@@ -47,3 +47,6 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
 - [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params
+- [ ] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
+- [ ] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
+- [ ] casehubio/casehub-pages#713 — lineWidth monitoring for YAML scalars
