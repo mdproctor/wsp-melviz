@@ -4,7 +4,7 @@
 branch: 
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#723
+covers: casehubio/casehub-pages#724
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -40,6 +40,6 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#716 — Category-level playbook execution tests
 - [ ] casehubio/casehub-pages#720 — issue 720 ← done on wip/playbook-split-view
 - [ ] casehubio/casehub-pages#722 — match address mismatch ← done on wip/playbook-split-view
-- [ ] casehubio/casehub-pages#723 — extract demoCatalog ← active
-- [ ] casehubio/casehub-pages#724 — parallel address inconsistency
+- [ ] casehubio/casehub-pages#723 — extract demoCatalog ← done on wip/playbook-split-view
+- [ ] casehubio/casehub-pages#724 — parallel address inconsistency ← active
 - [ ] casehubio/casehub-pages#725 — IntelliJ JCEF preview
