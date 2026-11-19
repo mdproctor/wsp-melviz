@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: issue-707-playbook-sync
+issue-repo: casehubio/casehub-pages
+status: drained
+covers: casehubio/casehub-pages#705
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -21,14 +35,6 @@
 - [x] casehubio/casehub-pages#704 — Split/swap transaction wrapping
 - [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
-
-## State
-branch: wip/705-gridpath-routing
-issue-repo: casehubio/casehub-pages
-status: drained
-covers: casehubio/casehub-pages#705
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#714 — Rename forEach test describe strings
+- [ ] casehubio/casehub-pages#715 — Verify LSP for-each completion
+- [ ] casehubio/casehub-pages#716 — Category-level playbook execution tests

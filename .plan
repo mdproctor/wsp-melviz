@@ -1,0 +1,15 @@
+# Work Plan — issue-707-playbook-sync
+
+## State
+branch: issue-707-playbook-sync
+state: scaffolded
+project-sha: slot-creation
+date: 2026-11-18
+issue-repo: casehubio/casehub-pages
+covers: casehubio/casehub-pages#707
+design-repo: project
+design-section-hashes: 
+flyway-next-v: unknown
+
+## Queue
+- [ ] casehubio/casehub-pages#707 — Issue #707 ← active
