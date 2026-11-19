@@ -38,8 +38,8 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#684 — Pre-existing type errors from rows/columns removal
 - [x] casehubio/casehub-pages#685 — pages-grid-select multi-selection model
 - [x] casehubio/casehub-pages#691 — setPlacement converts flow-style YAML to block
-- [ ] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag ← active
-- [ ] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync
+- [x] casehubio/casehub-pages#662 — Overlay outline flashes after cross-grid drag
+- [ ] casehubio/casehub-pages#660 — Grid-item controls handle bar and selection sync ← active
 - [ ] casehubio/casehub-pages#671 — Automated tests for grid hover bar actions
 - [ ] casehubio/casehub-pages#683 — Preview item outlines toggleable in builder
 - [ ] casehubio/casehub-pages#672 — Verify full-bleed CSS no regression
