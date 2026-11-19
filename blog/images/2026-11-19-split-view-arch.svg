@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" font-family="Inter, system-ui, sans-serif">
+  <style>
+    .box { fill: #1e293b; stroke: #3b82f6; stroke-width: 1.5; rx: 6; }
+    .box-secondary { fill: #1e293b; stroke: #64748b; stroke-width: 1; rx: 6; }
+    .label { fill: #e2e8f0; font-size: 13px; font-weight: 600; }
+    .sublabel { fill: #94a3b8; font-size: 11px; }
+    .arrow { stroke: #3b82f6; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .arrow-dashed { stroke: #64748b; stroke-width: 1; fill: none; stroke-dasharray: 4 3; marker-end: url(#arrowhead-dim); }
+    .bridge { fill: #0f172a; stroke: #22c55e; stroke-width: 1.5; rx: 4; }
+    .bridge-label { fill: #22c55e; font-size: 11px; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrowhead-dim" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="320" fill="#0f172a" rx="8"/>
+
+  <!-- Title -->
+  <text x="360" y="28" text-anchor="middle" class="label" font-size="14">Split-View Playbook Editor</text>
+
+  <!-- Web row -->
+  <text x="20" y="62" class="sublabel">Web</text>
+
+  <!-- Code Editor -->
+  <rect x="60" y="48" width="140" height="50" class="box"/>
+  <text x="130" y="70" text-anchor="middle" class="label">Code Editor</text>
+  <text x="130" y="84" text-anchor="middle" class="sublabel">pages-code-editor</text>
+
+  <!-- Position Scanner (bridge) -->
+  <rect x="260" y="48" width="180" height="50" class="bridge"/>
+  <text x="350" y="70" text-anchor="middle" class="bridge-label">StepPositionScanner</text>
+  <text x="350" y="84" text-anchor="middle" class="sublabel">line ↔ address</text>
+
+  <!-- Step Viewer -->
+  <rect x="500" y="48" width="160" height="50" class="box"/>
+  <text x="580" y="70" text-anchor="middle" class="label">Step Viewer</text>
+  <text x="580" y="84" text-anchor="middle" class="sublabel">read-only, 16 types</text>
+
+  <!-- Arrows web row -->
+  <path d="M200,73 L260,73" class="arrow"/>
+  <path d="M440,73 L500,73" class="arrow"/>
+
+  <!-- Sync labels -->
+  <text x="225" y="66" text-anchor="middle" class="sublabel">cursor</text>
+  <text x="468" y="66" text-anchor="middle" class="sublabel">click</text>
+
+  <!-- IntelliJ row -->
+  <text x="20" y="162" class="sublabel">IntelliJ</text>
+
+  <!-- IntelliJ Editor -->
+  <rect x="60" y="148" width="140" height="50" class="box-secondary"/>
+  <text x="130" y="170" text-anchor="middle" class="label">IntelliJ Editor</text>
+  <text x="130" y="184" text-anchor="middle" class="sublabel">native text editor</text>
+
+  <!-- JCEF bridge -->
+  <rect x="260" y="148" width="180" height="50" class="bridge"/>
+  <text x="350" y="170" text-anchor="middle" class="bridge-label">JCEF Bridge</text>
+  <text x="350" y="184" text-anchor="middle" class="sublabel">JS ↔ Kotlin</text>
+
+  <!-- JCEF Step Viewer -->
+  <rect x="500" y="148" width="160" height="50" class="box-secondary"/>
+  <text x="580" y="170" text-anchor="middle" class="label">Step Viewer</text>
+  <text x="580" y="184" text-anchor="middle" class="sublabel">same Lit components</text>
+
+  <!-- Arrows IntelliJ row -->
+  <path d="M200,173 L260,173" class="arrow-dashed"/>
+  <path d="M440,173 L500,173" class="arrow-dashed"/>
+
+  <text x="225" y="166" text-anchor="middle" class="sublabel">caret</text>
+  <text x="468" y="166" text-anchor="middle" class="sublabel">query</text>
+
+  <!-- Shared component annotation -->
+  <rect x="500" y="108" width="160" height="30" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="3 2" rx="4"/>
+  <text x="580" y="128" text-anchor="middle" class="bridge-label" font-size="10">same component</text>
+
+  <!-- Data flow row -->
+  <text x="20" y="252" class="sublabel">Data</text>
+
+  <!-- URL source -->
+  <rect x="120" y="238" width="120" height="44" class="box-secondary"/>
+  <text x="180" y="258" text-anchor="middle" class="label" font-size="12">restSource</text>
+  <text x="180" y="272" text-anchor="middle" class="sublabel">url: /api/...</text>
+
+  <!-- Fallback -->
+  <rect x="290" y="238" width="120" height="44" class="bridge"/>
+  <text x="350" y="258" text-anchor="middle" class="bridge-label" font-size="12">fallback()</text>
+  <text x="350" y="272" text-anchor="middle" class="sublabel">try → catch</text>
+
+  <!-- Inline source -->
+  <rect x="460" y="238" width="120" height="44" class="box-secondary"/>
+  <text x="520" y="258" text-anchor="middle" class="label" font-size="12">inlineSource</text>
+  <text x="520" y="272" text-anchor="middle" class="sublabel">content: [...]</text>
+
+  <!-- Component -->
+  <rect x="250" y="290" width="200" height="24" fill="none" stroke="#94a3b8" stroke-width="1" rx="4"/>
+  <text x="350" y="306" text-anchor="middle" class="sublabel">component never knows which</text>
+
+  <!-- Arrows data row -->
+  <path d="M240,260 L290,260" class="arrow-dashed"/>
+  <path d="M410,260 L460,260" class="arrow-dashed"/>
+  <path d="M350,282 L350,290" class="arrow-dashed"/>
+</svg>
