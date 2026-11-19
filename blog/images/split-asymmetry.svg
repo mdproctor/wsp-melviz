@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" style="max-width:720px;">
+  <style>
+    text { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #e2e8f0; }
+    .label { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; }
+    .dim { fill: #6b7280; font-size: 10px; }
+    .accent { fill: #93c5fd; }
+    .green { fill: #86efac; }
+    .warn { fill: #fbbf24; }
+  </style>
+
+  <text x="180" y="18" text-anchor="middle" class="label" fill="#94a3b8">Before split</text>
+  <rect x="40" y="30" width="280" height="50" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="180" y="60" text-anchor="middle" class="accent">Panel A: w=3 columns</text>
+
+  <line x1="360" y1="55" x2="400" y2="55" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="380" y="48" text-anchor="middle" class="dim">split</text>
+
+  <text x="560" y="18" text-anchor="middle" class="label" fill="#94a3b8">After split</text>
+  <rect x="420" y="30" width="93" height="50" rx="4" fill="#1a2332" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="466" y="60" text-anchor="middle" class="green">w=1</text>
+
+  <rect x="517" y="30" width="186" height="50" rx="4" fill="#1a2332" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="610" y="60" text-anchor="middle" class="warn">w=2</text>
+
+  <text x="560" y="100" text-anchor="middle" class="dim">Math.floor(3/2) = 1, remainder = 2</text>
+
+  <text x="360" y="135" text-anchor="middle" class="label" fill="#94a3b8">The split is 33/67, not 50/50</text>
+  <text x="360" y="160" text-anchor="middle" class="dim">Every odd column count produces an asymmetric split.</text>
+  <text x="360" y="178" text-anchor="middle" class="dim">The user can manually resize after — but the first impression is unequal.</text>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+</svg>

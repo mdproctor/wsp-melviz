@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 220" style="max-width:720px;">
+  <style>
+    text { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #e2e8f0; }
+    .label { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; }
+    .dim { fill: #6b7280; font-size: 10px; }
+    .accent { fill: #93c5fd; }
+    .warn { fill: #fbbf24; }
+  </style>
+
+  <text x="360" y="18" text-anchor="middle" class="label" fill="#94a3b8">12-column grid at 1280px viewport</text>
+
+  <rect x="20" y="30" width="680" height="40" rx="4" fill="none" stroke="#334155" stroke-width="1"/>
+
+  <rect x="20" y="30" width="113" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="133" y="30" width="113" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="246" y="30" width="113" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="359" y="30" width="113" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="472" y="30" width="113" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <rect x="585" y="30" width="115" height="40" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+
+  <text x="76" y="55" text-anchor="middle" class="accent">1</text>
+  <text x="189" y="55" text-anchor="middle" class="accent">2</text>
+  <text x="302" y="55" text-anchor="middle" class="accent">3</text>
+  <text x="415" y="55" text-anchor="middle" class="accent">4</text>
+  <text x="528" y="55" text-anchor="middle" class="accent">5</text>
+  <text x="642" y="55" text-anchor="middle" class="accent">6</text>
+  <text x="360" y="85" text-anchor="middle" class="dim">~107px per column × 2 = 214px allocated</text>
+
+  <text x="360" y="115" text-anchor="middle" class="label" fill="#94a3b8">Panel needs 160px — allocated 2 columns (214px)</text>
+
+  <rect x="20" y="130" width="226" height="50" rx="4" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <rect x="20" y="130" width="160" height="50" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="100" y="160" text-anchor="middle" class="accent">Panel: 160px</text>
+
+  <rect x="180" y="130" width="66" height="50" rx="0" fill="#2d1810" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="213" y="155" text-anchor="middle" class="warn" style="font-size:9px">54px</text>
+  <text x="213" y="168" text-anchor="middle" class="warn" style="font-size:9px">dead</text>
+
+  <rect x="246" y="130" width="454" height="50" rx="4" fill="#1a2332" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="473" y="160" text-anchor="middle" class="accent">Adjacent content: 4 columns</text>
+
+  <text x="360" y="210" text-anchor="middle" class="dim">The 54px gap is inside the panel's grid allocation — adjacent panels can't reclaim it.</text>
+</svg>
