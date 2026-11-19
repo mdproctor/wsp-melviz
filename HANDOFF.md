@@ -1,32 +1,36 @@
 # HANDOFF — casehub-pages
 
-## Last Session
+## Last Session: 2026-11-19
 
-Closed 4 issues on branch `issue-657-graphql-object-params`, landed as `ec56b9d7`:
+### What was done
 
-**#657 — Playbook GraphQL schema fails for Object-valued params.** `ParamDescriptor.defaultValue` (Object) and `enumValues` (List<Object>) caused SmallRye `InvalidSchemaException` at boot. Fix: `@Ignore` on those record components + `@Source`-based `ParamDescriptorResolver` exposing them as JSON strings. Added `microprofile-graphql-api` as optional dep to playbook module. REST API unchanged. 11 new tests.
+**Dual-mode datasets (#719):** Built `fallback-source.ts` — a DataSource combinator that tries a primary source (REST), falls back to a secondary (inline) on error. Updated the data pipeline to allow `url + content` together on dataset definitions. All app samples (helpdesk, contacts, tasks) now carry both — one YAML works in gallery (content fallback) and with backend (REST data). Removed apps-management and platform from Client tab (server-only via "Apps Within Apps").
 
-**#711 — Simplify classifyPath page-length guards.** Two redundant guards collapsed to `return 'page'`.
+**Playbook split-view editor (#720):** Built the web component foundation:
+- `StepPositionScanner` enhanced for hierarchical nesting (`"1.then.0"`, `"2.catch.1"`) with `findByLine`/`findByAddress` helpers
+- `EditableTextBridge.onCursorChange()` callback added
+- Step viewer click events with `data-step-address` attributes and `step-click` CustomEvent
+- `<playbook-split-view>` container with bidirectional sync, gallery demo
 
-**#712 — 160 test failures missing jsdom.** Added `// @vitest-environment jsdom` to 4 test files in pages-builder.
+**Form pages fleshed out:** Helpdesk, contacts, tasks, apps-management — all empty grid stubs replaced with working `components:` form fields and `schema-form:` create forms.
 
-**#713 — lineWidth: 0 monitoring.** Added 3 regression tests confirming `lineWidth: 0` preserves long scalars, block scalars, and flow maps.
+**Apps-demo catalogue fix:** Converted from unsupported `rows:` layout to `grid:` format.
 
-Filed 2 follow-up issues from code review:
-- #717 — Add `@Description` to ParamDescriptorResolver GraphQL methods (XS/Low)
-- #718 — classifyPath defensive test for non-numeric page index (XS/Low)
+### What's next
 
-Blog written: "When Object Meets GraphQL" — `@Ignore` + `@Source` pattern for bridging Java Object to GraphQL String.
+**Queue (4 items):**
 
-## Immediate Next Step
+| # | Title | Scale | Notes |
+|---|-------|-------|-------|
+| #722 | Match step address mismatch | S | Scanner vs step-click use different address formats for match arms |
+| #723 | Extract demoCatalog | XS | DRY — duplicated between split-view and gallery |
+| #724 | Parallel lane address inconsistency | S | Same mismatch as #722 but for parallel lanes |
+| #725 | IntelliJ JCEF preview | M | FileEditorProvider with JCEF step viewer — plan exists at `plans/2026-11-19-playbook-split-view.md` (Batch 4) |
 
-Queue active item is #717 (Add `@Description` to ParamDescriptorResolver). XS/Low, same files as #657 fix. Straightforward follow-on.
+### Key files
 
-## Deferred
-
-- #619 — Fixed-width panels auto-size column allocation (M/High). Best option is mixed grid template, needs UX prototyping. Analysis on the issue.
-
-## References
-
-- Blog: `docs/blog/2026-11-19-mdp03-when-object-meets-graphql.md`
-- Queue: position 39/40, active #717, 2 remaining (#717, #718), 1 deferred (#619)
+- `packages/pages-data/src/datasource/sources/fallback-source.ts` — dual-mode combinator
+- `packages/yaml-core/src/annotation/step-position-scanner.ts` — hierarchical position scanner
+- `packages/pages-step-viewer/src/playbook-split-view.ts` — split-view container
+- `specs/wip-helpdesk-form-pages/2026-11-19-playbook-split-view-design.md` — design spec
+- `plans/2026-11-19-playbook-split-view.md` — implementation plan (Batch 4 remaining)
