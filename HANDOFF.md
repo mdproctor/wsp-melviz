@@ -12,7 +12,7 @@ Blog written: "The Grid Resolution Problem" — design tension between discrete 
 
 ## Immediate Next Step
 
-Queue active item is #657 (Playbook GraphQL schema Object-valued params). No branch created yet — next session should `work start 657` to scaffold.
+Queue active item is #657 (Playbook GraphQL schema Object-valued params) on branch `issue-657-graphql-object-params`. Different domain from grid work — playbook/schema. Fresh session recommended.
 
 ## Deferred
 
@@ -23,4 +23,4 @@ Queue active item is #657 (Playbook GraphQL schema Object-valued params). No bra
 - Blog: `docs/blog/2026-11-19-mdp02-the-grid-resolution-problem.md`
 - Spec: `docs/specs/issue-687-e2e-dataset-scope-tabs/2026-11-19-virtual-page-padding-design.md`
 - Code review: all clean, no gaps
-- Queue: position 32/38, active #657
+- Queue: position 33/38, active #657, 4 remaining (#657, #711, #712, #713), 1 deferred (#619)
