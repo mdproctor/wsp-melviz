@@ -33,7 +33,7 @@
 - [x] casehubio/casehub-pages#686 — targetPage virtual pages padding opt-out
   - [x] Batch 1: Padding removal
     - [x] Task 1: Remove padding from virtual pages
-- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← done on issue-619-fixed-width-panel-columns
+- [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [ ] casehubio/casehub-pages#657 — Playbook GraphQL schema Object-valued params        ← active
 - [ ] casehubio/casehub-pages#711 — Simplify classifyPath page-length guards
 - [ ] casehubio/casehub-pages#712 — Pre-existing test failures missing jsdom
