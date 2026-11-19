@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#726
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -41,9 +27,20 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#720 — issue 720
 - [x] casehubio/casehub-pages#722 — match address mismatch
 - [x] casehubio/casehub-pages#723 — extract demoCatalog
-- [ ] casehubio/casehub-pages#724 — parallel address inconsistency ← done on issue-724-parallel-address-inconsistency
+- [x] casehubio/casehub-pages#724 — parallel address inconsistency
   - [x] Batch 1: Scanner fix
     - [x] Task 1: Add unnamed parallel lane scanning
-- [ ] casehubio/casehub-pages#725 — IntelliJ JCEF preview ← done on issue-724-parallel-address-inconsistency
-- [ ] casehubio/casehub-pages#726 — race-scanner-address-mismatch ← active
+- [x] casehubio/casehub-pages#725 — IntelliJ JCEF preview
+- [ ] casehubio/casehub-pages#726 — race-scanner-address-mismatch        ← active
 - [ ] casehubio/casehub-pages#727 — select-scanner-address-mismatch
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#726
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
