@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+covers: 
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -23,7 +37,7 @@
 - [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
 - [x] casehubio/casehub-pages#714 — Rename forEach test describe strings
 - [x] casehubio/casehub-pages#715 — Verify LSP for-each completion
-- [ ] casehubio/casehub-pages#716 — Category-level playbook execution tests        ← active
+- [x] casehubio/casehub-pages#716 — Category-level playbook execution tests
 - [x] casehubio/casehub-pages#720 — issue 720
 - [x] casehubio/casehub-pages#722 — match address mismatch
 - [x] casehubio/casehub-pages#723 — extract demoCatalog
@@ -33,19 +47,6 @@
 - [x] casehubio/casehub-pages#727 — select-scanner-address-mismatch
 - [x] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe
 - [x] casehubio/casehub-pages#721 — issue 721
-  - [x] Batch 1: Publish endpoint
-    - [x] Task 1: POM deps + Resource + happy-path test
-  - [x] Batch 2: Error handling
-    - [x] Task 2: Error and auth tests
-- [ ] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
-- [ ] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource ← done on issue-729-json-validation-push-publish
+- [ ] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions ← done on issue-730-flaky-seq-assertions
+- [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource
