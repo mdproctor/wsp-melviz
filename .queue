@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: main
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#728
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -31,15 +45,4 @@
 - [x] casehubio/casehub-pages#725 — IntelliJ JCEF preview
 - [x] casehubio/casehub-pages#726 — race-scanner-address-mismatch
 - [x] casehubio/casehub-pages#727 — select-scanner-address-mismatch
-- [ ] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe        ← active
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#728
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe ← active
