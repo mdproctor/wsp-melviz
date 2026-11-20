@@ -11,7 +11,7 @@ series: playbook-editor
 
 # The Address That Didn't Exist
 
-Two components, two packages, one invariant they were supposed to share: a hierarchical address scheme for steps inside a playbook. Click a step card in the viewer, it emits an address. The scanner looks up that address to find the YAML line. Except for unnamed parallel lanes, the scanner had no idea what the viewer was talking about.
+Two components, two packages, one invariant they were supposed to share: a hierarchical address scheme for steps inside a playbook. Click a step card in the viewer, it emits an address. The scanner looks up that address to find the YAML line. Except for three of its four control flow types, the scanner had no idea what the viewer was talking about.
 
 ## Two representations of the same thing
 
@@ -60,32 +60,52 @@ The split-view playbook editor (#720) landed with named-branch test playbooks �
 
 This is the pattern that makes addressing bugs insidious. Each component is correct in isolation. The scanner scans all the YAML structures it was designed for. The step-click assigns addresses to all the resolved types it receives. The contract between them — "these two functions produce identical strings for the same step" — exists only as an assumption.
 
-## The fix
+## Three fixes, three address conventions
 
-Seven lines in `scanNamedBranches`. When the label is `'lane'` (unique to parallel), list items aren't noise to skip — they're unnamed lanes to scan:
+The skip-list-items line in `scanNamedBranches` affects parallel, race, and select — every control flow type whose YAML uses array format. Each has a different address convention.
+
+**Parallel unnamed lanes** (`0.lane.0.0`) — each list item is a lane containing a single step. The `.0` suffix comes from `scanBlock` treating the lane as a block of one. Fix: iterate list items, call `scanBlock` per lane.
+
+**Race** (`0.race.0`, `0.race.1`) — flat sequential indices. Each list item is a direct child step. Fix: delegate to `scanBlock` for the entire children region. `scanBlock` already numbers list items sequentially and recurses into control flow:
 
 ```typescript
-if (stripped.startsWith('- ')) {
-  if (label === 'lane') {
-    const laneEnd = findNextSibling(lines, i, nameIndent, stepEnd);
-    scanBlock(lines, i, laneEnd, nameIndent,
-      `${address}.${label}.${laneIndex}`, results);
-    laneIndex++;
-    i = laneEnd;
-    continue;
-  }
-  i++; continue;
+if (label === 'race') {
+  scanBlock(lines, i, stepEnd, nameIndent,
+    `${address}.race`, results);
+  return;
 }
 ```
 
-`scanBlock` does the heavy lifting. It finds the list item, assigns `0.lane.0.0`, descends into nested control flow if the lane contains an `if` or `try`. The unnamed lane gets the same treatment as any other step block — just addressed under a numeric lane identifier instead of a name.
+The `return` is deliberate — `scanBlock` processes all children in one pass, so there's no reason to continue the per-line loop.
 
-The `label === 'lane'` guard matters. `scanNamedBranches` is also called for `race`, `select`, and `match`. Race and select have their own array-format mismatches (#726, #727), but their address conventions differ — race uses flat indices (`0.race.0`), select uses channel names (`0.select.events.0`). Each needs its own fix. The guard keeps this change scoped to what it actually fixes.
+**Select** (`0.select.events.0`) — named branches, but the names come from channel values, not YAML keys. Each list item starts with `subscribe: channelName` or `wait: signalName`. The channel name goes in the address:
+
+```typescript
+if (label === 'select') {
+  const childEnd = findNextSibling(lines, i, nameIndent, stepEnd);
+  const name = selectBranchName(line);
+  if (name) {
+    const stepAddr = `${address}.select.${name}.0`;
+    results.push({ line: i, endLine: childEnd, address: stepAddr });
+    // scan for nested control flow in the branch body
+  }
+  i = childEnd;
+  continue;
+}
+```
+
+Select needed a helper to extract the name — `selectBranchName` strips the list item prefix, identifies `subscribe:` or `wait:` as the key, and returns the value. It also strips surrounding YAML quotes, since the runtime parser does the same.
+
+## What the review caught
+
+The first select implementation registered the branch step and moved on. The code review flagged the missing recursion: if a select branch contains an `if:` or `try:`, the inner addresses (`0.select.events.0.then.0`) would never appear. The fix scans sibling keys of the branch for control flow keywords and recurses when found.
+
+The review also identified a gap I chose not to fix: the object form of `subscribe:` where the channel name is a child key (`subscribe:\n  channel: events`). The walker supports both string and object forms. The scanner currently handles only the inline string form. No existing YAML in the repo uses the object form, so it's tracked as a known limitation rather than a blocker.
 
 ## The broader pattern
 
-The code review surfaced the same gap in race and select. `scanNamedBranches` was written for the named-key case — object-format YAML where branches are dictionary keys. Three of its four callers pass array-format YAML. The function is correct for its original design. The callers evolved past it.
+`scanNamedBranches` was written for the named-key case — object-format YAML where branches are dictionary keys. Three of its four callers pass array-format YAML. The function was correct for its original design. The callers evolved past it.
 
 This is worth watching in any system where two components independently produce identifiers for the same entity. The contract is invisible — no shared type, no shared function, no compile-time check. The only way to catch a mismatch is a test that runs both paths on the same input and compares. For the named case, the existing tests happened to cover it. For the unnamed case, they didn't.
 
-The fix is two tests and seven lines of scanner code. The lesson is that addressing invariants across abstraction boundaries don't announce themselves when they break.
+The fix across all three is about 25 lines of scanner code and 10 test cases. The lesson is that addressing invariants across abstraction boundaries don't announce themselves when they break.
