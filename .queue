@@ -38,7 +38,7 @@
 - [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource        ← active
 
 ## State
-branch: 
+branch: issue-731-objectmapper-reuse
 issue-repo: casehubio/casehub-pages
 status: active
 project-sha: 
