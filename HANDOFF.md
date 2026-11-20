@@ -2,25 +2,18 @@
 
 ## Last Session: 2026-11-20
 
-### What was done
+Implemented #721: REST endpoint for publishing to push topics. Added `PushPublishResource` to `push-runtime` — thin JAX-RS wrapper over `EventBroadcaster` with `@Authenticated`. Workers can now broadcast events via `call: http` in `do:` blocks.
 
-**Scanner address mismatch trilogy completed (#726, #727, #728):**
+Filed #729 (JSON body validation) and #730 (flaky seq assertions in shared `@ApplicationScoped` EventStore) from code review. Both queued.
 
-All array-format control flow children in `scanNamedBranches` now produce addresses matching `assignStepAddresses`:
+## Immediate Next Step
 
-- **#726 (race):** `scanBlock` delegation for flat numeric addresses (`0.race.0`)
-- **#727 (select):** `selectBranchName` extracts channel names from `subscribe:`/`wait:` keys; nested control flow recursion added
-- **#728 (object-form subscribe):** `selectBranchName` now scans child lines for `channel:` key when `subscribe:` has no inline value
+`work start 716` — Category-level playbook execution tests.
 
-All four control flow types in `scanNamedBranches` are now fully covered: `match` (named keys — already worked), `lane` (#724), `race` (#726), `select` (#727 + #728).
+## References
 
-Blog entry revised to cover the full arc.
-
-### What's next
-
-No scanner address issues remain. Queue is empty of scanner work.
-
-### Key files
-
-- `packages/yaml-core/src/annotation/step-position-scanner.ts:29-55` — `unquote`, `selectBranchName` with object-form fallback
-- `packages/yaml-core/src/annotation/step-position-scanner.test.ts` — 48 tests covering all control flow types
+- `backend/push-runtime/src/main/java/io/casehub/pages/push/runtime/PushPublishResource.java`
+- `backend/push-runtime/src/test/java/io/casehub/pages/push/runtime/PushPublishResourceTest.java`
+- `specs/issue-721-rest-push-publish/2026-11-20-rest-push-publish-design.md`
+- `plans/2026-11-20-rest-push-publish.md`
+- `blog/2026-11-20-mdp01-rest-push-publish.md`
