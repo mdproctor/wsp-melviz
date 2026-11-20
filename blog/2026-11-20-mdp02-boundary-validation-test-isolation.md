@@ -50,6 +50,8 @@ I went through every seq assertion in both test classes and replaced them all:
 
 The pattern generalises: any `@ApplicationScoped` bean that accumulates state — counters, caches, registries — will carry that state across `@QuarkusTest` classes in the same test run. The safe path is asserting properties (positive, non-empty, monotonic) rather than specific values. The unsafe path is writing `equalTo(1)` and hoping no future test class shares the topic.
 
+And then it showed up again, immediately. `TopicRegistry` — the trie that tracks which connections are listening to which topics — is also `@ApplicationScoped`. Listeners registered by one test class survive into the next. The tests happen to use unique topic names, so nothing fails today. But the fix for `InMemoryEventStore` was about eliminating that "today" qualifier. I added `TopicRegistry.clear()` and wired it into both test classes' `@BeforeEach`, right next to `testConfig.clear()`. Same pattern, same rationale: clean slate per test class, no shared state to reason about.
+
 ## The Object You Don't Need to Build Twice
 
 The guard clause originally created a new `ObjectMapper` on every request:
