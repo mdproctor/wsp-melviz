@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: issue-731-objectmapper-reuse
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
 project-sha: 
@@ -9,6 +9,7 @@ date: 2026-11-18
 design-repo: 
 design-section-hashes: 
 flyway-next-v: none
+covers: 
 
 ## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
@@ -48,5 +49,5 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#721 — issue 721
 - [x] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
 - [x] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
-- [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource ← active
-- [ ] casehubio/casehub-pages#733 — TopicRegistry listeners leak across QuarkusTest classes
+- [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource ← done on issue-731-objectmapper-reuse
+- [ ] casehubio/casehub-pages#733 — TopicRegistry listeners leak across QuarkusTest classes ← done on issue-731-objectmapper-reuse
