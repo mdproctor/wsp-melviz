@@ -2,22 +2,24 @@
 
 ## Last Session: 2026-11-20
 
-Completed #729 and #730, both follow-ups from #721 code review:
+Completed #731 — reuse ObjectMapper instance in PushPublishResource (XS).
 
-- **#729** — Added JSON body validation to `PushPublishResource.publish()`. Guard clause using `ObjectMapper.readTree()` returns 400 on malformed JSON before broadcast. Test added.
-- **#730** — Replaced all exact seq assertions in `BroadcastIntegrationTest` and `PushPublishResourceTest` with relative checks (`greaterThan(0)`, monotonic ordering). Prevents flaky failures from shared `@ApplicationScoped` `InMemoryEventStore` state across `@QuarkusTest` classes.
+- Extracted per-request `new ObjectMapper()` to `private static final ObjectMapper MAPPER`
+- Fixed fully-qualified import in PushProducers (was `new com.fasterxml.jackson.databind.ObjectMapper()`)
+- Fixed inconsistent indentation in PushProducersTest
+- Added `publish_null_body_returns_400` test for missing body branch
+- Revised mdp02 blog entry: "Two Things" → "Three Things Code Review Found in push-runtime" — added ObjectMapper reuse section with SVG diagram
+- Filed #733 (TopicRegistry listeners leak across `@QuarkusTest` classes) and queued it
 
-Filed #731 (reuse ObjectMapper instance — XS improvement). Updated mdp01 blog to correct now-inaccurate claim about `equalTo(1)` safety. Wrote mdp02 blog entry.
-
-Both branches landing via work-end. Queue has #731 as next item.
+All tests pass. Branch squashed to single commit, landing via work-end.
 
 ## Immediate Next Step
 
-`work start 731` — Reuse ObjectMapper instance in PushPublishResource (XS).
+`work start 733` — TopicRegistry listeners leak across `@QuarkusTest` classes (XS).
 
 ## References
 
 - `backend/push-runtime/src/main/java/io/casehub/pages/push/runtime/PushPublishResource.java`
+- `backend/push-runtime/src/main/java/io/casehub/pages/push/runtime/PushProducers.java`
 - `backend/push-runtime/src/test/java/io/casehub/pages/push/runtime/PushPublishResourceTest.java`
-- `backend/push-runtime/src/test/java/io/casehub/pages/push/runtime/BroadcastIntegrationTest.java`
-- `blog/2026-11-20-mdp02-boundary-validation-test-isolation.md`
+- `backend/push-runtime/src/test/java/io/casehub/pages/push/runtime/PushProducersTest.java`
