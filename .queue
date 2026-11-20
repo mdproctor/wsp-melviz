@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: main
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#728
+covers: 
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -45,4 +45,11 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#725 — IntelliJ JCEF preview
 - [x] casehubio/casehub-pages#726 — race-scanner-address-mismatch
 - [x] casehubio/casehub-pages#727 — select-scanner-address-mismatch
-- [ ] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe ← active
+- [x] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe
+- [ ] casehubio/casehub-pages#721 — issue 721 ← done on issue-721-rest-push-publish
+  - [x] Batch 1: Publish endpoint
+    - [x] Task 1: POM deps + Resource + happy-path test
+  - [x] Batch 2: Error handling
+    - [x] Task 2: Error and auth tests
+- [ ] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
+- [ ] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
