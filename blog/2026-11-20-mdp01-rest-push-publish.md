@@ -42,9 +42,9 @@ The interesting part wasn't the resource — it was a test ordering issue.
 
 The event store assigns sequence numbers per topic. One of the new tests published to the topic `nobody:listens` and asserted `seq == 1`. The existing `BroadcastIntegrationTest` also publishes to `nobody:listens`. When the existing test ran first, the seq was already at 1 — so the new test got 2 and failed.
 
-Claude caught this on the first full test run. The fix: assert `greaterThan(0)` instead of `equalTo(1)` for topics that collide with other test classes. For topics unique to a single test class (like `orders:new` in the happy-path test), `equalTo(1)` is safe and reads better.
+Claude caught this on the first full test run. The initial fix: assert `greaterThan(0)` instead of `equalTo(1)` for the specific topic that collided. A follow-up pass (#730) went further — replacing every exact seq assertion across both test classes with relative checks, because any topic could gain a cross-class collision in the future.
 
-This is a general pattern worth knowing with Quarkus `@QuarkusTest`: `@ApplicationScoped` beans survive across test classes within the same test run. If those beans accumulate state — counters, caches, registries — test classes that assert specific values against that state are inherently order-dependent. The safe path is either asserting relative properties (`greaterThan`, `hasSize`) or using topics/keys that are unique to each test class.
+This is a general pattern worth knowing with Quarkus `@QuarkusTest`: `@ApplicationScoped` beans survive across test classes within the same test run. If those beans accumulate state — counters, caches, registries — test classes that assert specific values against that state are inherently order-dependent. The safe path is asserting properties (`greaterThan`, `isNotEmpty`, monotonic ordering) rather than specific values.
 
 ## What This Opens Up
 
