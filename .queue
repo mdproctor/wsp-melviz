@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: 
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -47,6 +33,16 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#727 — select-scanner-address-mismatch
 - [x] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe
 - [x] casehubio/casehub-pages#721 — issue 721
-- [ ] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource ← done on issue-729-json-validation-push-publish
-- [ ] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions ← done on issue-730-flaky-seq-assertions
-- [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource
+- [x] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
+- [x] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
+- [ ] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource        ← active
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
