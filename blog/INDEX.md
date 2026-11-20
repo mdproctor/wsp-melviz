@@ -28,3 +28,4 @@
 | [2026-11-19-mdp02-the-grid-resolution-problem.md](2026-11-19-mdp02-the-grid-resolution-problem.md) | 2026-11-19 | Design tension between discrete 12-column grids and pixel-precise panel sizing — quick fix for virtual page padding, deferred analysis for fixed-width columns |
 | [2026-11-19-mdp04-one-yaml-two-worlds.md](2026-11-19-mdp04-one-yaml-two-worlds.md) | 2026-11-19 | Dual-mode datasets (url+content fallback), data pipeline abstraction, and playbook split-view editor foundation |
 | [2026-11-19-mdp05-the-address-that-didnt-exist.md](2026-11-19-mdp05-the-address-that-didnt-exist.md) | 2026-11-19 | Unnamed parallel lanes produced addresses the scanner couldn't find — invisible contract between two packages, seven-line fix, two sibling bugs filed |
+| [2026-11-20-mdp01-rest-push-publish.md](2026-11-20-mdp01-rest-push-publish.md) | 2026-11-20 | REST endpoint for push topic publishing — why workers needed it, the flaky test discovery, and what it unblocks |
