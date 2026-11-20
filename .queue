@@ -1,7 +1,7 @@
 # Work Plan —
 
 ## State
-branch: issue-733-topicregistry-test-isolation
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
 project-sha: 
@@ -49,4 +49,4 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
 - [x] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
 - [x] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource
-- [ ] casehubio/casehub-pages#733 — TopicRegistry listeners leak across QuarkusTest classes ← active
+- [ ] casehubio/casehub-pages#733 — TopicRegistry listeners leak across QuarkusTest classes ← done on issue-733-topicregistry-test-isolation
