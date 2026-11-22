@@ -55,3 +55,6 @@ flyway-next-v: none
 - [ ] casehubio/casehub-pages#736 — Reject steps: wrapper in playbook documents ← done on issue-736-reject-steps-playbook
 - [ ] casehubio/casehub-pages#737 — Default advance-after to all branches in parallel ← done on issue-737-default-advance-after
 - [ ] casehubio/casehub-pages#738 — Remove stale concurrent keyword from RESERVED_KEYS ← done on issue-738-remove-concurrent-reserved
+- [ ] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
+- [ ] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
+- [ ] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
