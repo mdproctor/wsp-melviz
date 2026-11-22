@@ -1,3 +1,16 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -41,16 +54,6 @@
 - [x] casehubio/casehub-pages#736 — Reject steps: wrapper in playbook documents
 - [x] casehubio/casehub-pages#737 — Default advance-after to all branches in parallel
 - [x] casehubio/casehub-pages#738 — Remove stale concurrent keyword from RESERVED_KEYS
-- [ ] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow        ← active
+- [ ] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow ← active
 - [ ] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
 - [ ] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
-
-## State
-branch: issue-738-remove-concurrent-reserved
-issue-repo: casehubio/casehub-pages
-status: active
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
