@@ -42,7 +42,7 @@
 - [x] casehubio/casehub-pages#737 — Default advance-after to all branches in parallel
 - [x] casehubio/casehub-pages#738 — Remove stale concurrent keyword from RESERVED_KEYS
 - [x] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
-- [ ] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency ← done on issue-741-scanner-match-guard-tests
+- [x] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
 - [ ] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default        ← active
 
 ## State
