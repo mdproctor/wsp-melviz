@@ -2,14 +2,15 @@
 
 ## Last Session: 2026-11-23
 
-**Branch: issue-741-scanner-match-guard-tests** (from issue-722-match-address-mismatch)
-- **#741** — Added two scanner tests for `scanMatchCases`: guard key skipping and nested control flow inside match cases. The control flow test uncovered a real bug — `findBranchEnd` truncated the step boundary at sibling structural keys (`then:`/`else:`) and `scanControlFlow` received the wrong indent level (`caseContentIndent` instead of `caseListIndent`). Fixed with a two-line change: use `caseEnd` as step boundary, pass `caseListIndent` for correct branch indent computation.
+**Branch: issue-739-cancel-remaining-false** (done, awaiting land)
+- **#739** — Fixed `advanceAfter` defaulting: `cancelRemaining !== undefined` → `cancelRemaining === true`. The old check treated `cancel-remaining: false` the same as `true`, routing through the discriminator path unnecessarily. Added test for the missing row in the boolean test matrix. Clarified existing test title.
+- **#742** filed — evaluator-level tests for parallel policy keys (advanceAfter, cancelRemaining, collectionTimeout) are missing. Queued.
 
-Blog: "The Boundary Nobody Tested" — tests as specification: writing tests for assumed-working code uncovered a real boundary computation bug.
+Blog: "Defined Is Not True" — YAML boolean presence vs truthiness in config parsers.
 
 ## Immediate Next Step
 
-Queue has 2 open items (#740, #739). Use `work continue` to pick up #740 (resolve concurrent keyword inconsistency, XS/Low).
+Queue has 1 open item (#742). Use `work continue` to pick up #742 (evaluator tests for parallel policy keys, S/Med).
 
 ## Merge Note
 
@@ -17,7 +18,7 @@ Branches #723 and #736/#738 both modify `playbook-split-view.ts`. The #723 branc
 
 ## Open Issues (by category)
 
-**Quick wins:** #740 (concurrent keyword, XS/Low), #739 (cancel-remaining false, S/Low)
+**Quick wins:** #742 (evaluator parallel policy tests, S/Med)
 **Mid-size:** #671, #619, #646, #719, #735
 **Large:** #669, #616, #92, #94
 **Epics:** #426, #95
