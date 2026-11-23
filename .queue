@@ -44,12 +44,12 @@
 - [x] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
 - [x] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
 - [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
-- [ ] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys ← done on issue-739-cancel-remaining-false
+- [x] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
 
 ## State
 branch: 
 issue-repo: casehubio/casehub-pages
-status: active
+status: drained
 project-sha: 
 date: 2026-11-18
 design-repo: 
