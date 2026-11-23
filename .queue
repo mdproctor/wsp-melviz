@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+covers: 
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -43,15 +57,5 @@
 - [x] casehubio/casehub-pages#738 — Remove stale concurrent keyword from RESERVED_KEYS
 - [x] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
 - [x] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
-- [ ] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default        ← active
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: casehubio/casehub-pages#739
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default ← done on issue-739-cancel-remaining-false
+- [ ] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys ← done on issue-739-cancel-remaining-false
