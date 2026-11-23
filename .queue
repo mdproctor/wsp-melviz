@@ -46,7 +46,7 @@
 - [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
 - [ ] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
-- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← done on issue-742-evaluator-parallel-policy-tests
+- [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [ ] casehubio/casehub-pages#671 — Grid hover bar action button tests ← done on issue-742-evaluator-parallel-policy-tests
 
 ## State
