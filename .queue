@@ -44,10 +44,10 @@
 - [x] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
 - [x] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
 - [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
-- [ ] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
+- [ ] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys        ← active
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
 - [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
-- [ ] casehubio/casehub-pages#671 — Grid hover bar action button tests ← done on issue-742-evaluator-parallel-policy-tests
+- [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
 
 ## State
 branch: 
