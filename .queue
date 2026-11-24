@@ -1,9 +1,10 @@
 # Work Plan —
 
 ## State
-branch: 
+branch: issue-619-fixed-width-panel-autosize
 issue-repo: casehubio/casehub-pages
 status: active
+covers: casehubio/casehub-pages#619
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -59,5 +60,16 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
 - [x] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
-- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
+- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← active
+  - [ ] Batch 1: Type model and formula
+    - [ ] Task 1: effectiveW computation function and tests
+    - [ ] Task 2: Add fixedWidth to GridPlacement type
+  - [ ] Batch 2: YAML round-trip
+    - [ ] Task 3: Parse and persist fixedWidth in GridItemNode
+  - [ ] Batch 3: Render-time auto-sizing
+    - [ ] Task 4: Apply fixedWidth at render time
+  - [ ] Batch 4: Edit bridge preservation
+    - [ ] Task 5: Preserve fixedWidth in grid edit operations
+  - [ ] Batch 5: Integration verification
+    - [ ] Task 6: Full integration test and typecheck
 - [ ] casehubio/casehub-pages#671 — Grid hover bar action button tests
