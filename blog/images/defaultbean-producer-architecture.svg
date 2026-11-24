@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" font-family="system-ui, -apple-system, sans-serif" font-size="13">
+  <style>
+    .box { rx: 6; ry: 6; stroke-width: 1.5; }
+    .label { font-weight: 600; font-size: 13px; }
+    .small { font-size: 11px; fill: #64748b; }
+    .arrow { stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .dashed { stroke-dasharray: 6 3; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Runtime modules column -->
+  <text x="160" y="28" text-anchor="middle" font-weight="700" font-size="14" fill="#334155">Runtime Modules</text>
+  <rect x="40" y="44" width="240" height="150" class="box" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="160" y="66" text-anchor="middle" class="label" fill="#166534">playbook-runtime</text>
+  <text x="60" y="90" class="small">@DefaultBean PlaybookConfig</text>
+  <text x="60" y="108" class="small">@DefaultBean RestDispatcher</text>
+  <text x="60" y="126" class="small">@DefaultBean GraphQLDispatcher</text>
+  <text x="60" y="150" class="small">@ConfigProperty casehub.pages.playbook.*</text>
+  <text x="60" y="172" class="small">ScriptRegistryProducer (injects config)</text>
+
+  <rect x="40" y="210" width="240" height="150" class="box" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="160" y="232" text-anchor="middle" class="label" fill="#1e40af">push-runtime</text>
+  <text x="60" y="256" class="small">@DefaultBean WebSocketSessionSender</text>
+  <text x="60" y="274" class="small">@DefaultBean JsonWriter</text>
+  <text x="60" y="292" class="small">@DefaultBean EventStore</text>
+  <text x="60" y="310" class="small">ConnectionRegistry</text>
+  <text x="60" y="336" class="small" fill="#dc2626">PushWebSocket ← removed (not overridable)</text>
+
+  <!-- App column -->
+  <text x="540" y="28" text-anchor="middle" font-weight="700" font-size="14" fill="#334155">Consumer App</text>
+  <rect x="400" y="44" width="280" height="110" class="box" fill="#fefce8" stroke="#fde047"/>
+  <text x="540" y="66" text-anchor="middle" class="label" fill="#854d0e">helpdesk-yaml (zero Java goal)</text>
+  <text x="420" y="90" class="small">application.properties only</text>
+  <text x="420" y="108" class="small">casehub.pages.playbook.graphql-endpoint=...</text>
+  <text x="420" y="126" class="small">@WebSocket PushWebSocket (app-specific)</text>
+
+  <rect x="400" y="170" width="280" height="90" class="box" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="540" y="192" text-anchor="middle" class="label" fill="#9a3412">helpdesk (custom override)</text>
+  <text x="420" y="216" class="small">@Produces PlaybookConfig (custom endpoints)</text>
+  <text x="420" y="234" class="small">@WebSocket PushWebSocket (subscribe handling)</text>
+
+  <!-- Arrows -->
+  <path d="M 280 120 L 390 90" class="arrow" stroke="#94a3b8"/>
+  <path d="M 280 120 L 390 200" class="arrow dashed" stroke="#94a3b8"/>
+  <path d="M 280 280 L 390 100" class="arrow" stroke="#94a3b8"/>
+  <path d="M 280 280 L 390 215" class="arrow" stroke="#94a3b8"/>
+
+  <!-- Legend -->
+  <line x1="400" y1="300" x2="440" y2="300" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="448" y="304" class="small">uses @DefaultBean (no override)</text>
+  <line x1="400" y1="322" x2="440" y2="322" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arrowhead)"/>
+  <text x="448" y="326" class="small">overrides with own @Produces</text>
+
+  <!-- Key insight callout -->
+  <rect x="400" y="350" width="280" height="50" rx="6" ry="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+  <text x="540" y="372" text-anchor="middle" font-size="11" fill="#991b1b">@WebSocket endpoints cannot be @DefaultBean —</text>
+  <text x="540" y="388" text-anchor="middle" font-size="11" fill="#991b1b">Jandex discovers both, Quarkus rejects the duplicate</text>
+</svg>
