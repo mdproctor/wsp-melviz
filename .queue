@@ -58,12 +58,12 @@
     - [x] Task 5: Preserve fixedWidth in grid edit operations
   - [x] Batch 5: Integration verification
     - [x] Task 6: Full integration test and typecheck
-- [ ] casehubio/casehub-pages#671 — Grid hover bar action button tests ← done on issue-671-grid-hover-bar-tests
+- [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
 
 ## State
 branch: 
 issue-repo: casehubio/casehub-pages
-status: active
+status: drained
 project-sha: 
 date: 2026-11-18
 design-repo: 
