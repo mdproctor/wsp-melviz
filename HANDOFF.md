@@ -1,23 +1,22 @@
 # HANDOFF — casehub-pages
 
-## Last Session: 2026-11-23
+## Last Session: 2026-11-24
 
-Three issues completed across two stacked branches:
+Two issues completed across two stacked branches:
 
-**Branch: issue-739-cancel-remaining-false** (landed on main)
-- **#739** — Fixed `advanceAfter` defaulting: `cancelRemaining !== undefined` → `cancelRemaining === true`. Explicit `false` no longer triggers the discriminator path.
+**Branch: issue-619-fixed-width-panel-autosize** (done, ready to land)
+- **#619** — Added `fixedWidth?: number` to `GridPlacement`. At render time, measures grid container width, computes `effectiveW` using gap-aware formula `ceil((fixedWidth + gap) / (cellWidth + gap))`, clamped to declared `w`. Applies reduced `grid-column` span with `justify-self: start` and explicit `width`. Preserves `fixedWidth` through YAML parse/serialize and all edit bridge operations. Code review caught non-gridPath split dropping fixedWidth — fixed.
 
-**Branch: issue-735-multi-document-test-yaml** (done, stacked on #739)
-- **#735** — Added `YamlTestParser.parseRaw()` for multi-document YAML test format (metadata + `---` + bare step list). Updated vitest-adapter. Migrated 16 category fixtures from bundled `tests:` arrays to individual multi-document files matching platform canonical format. Backward compat preserved for old format.
+**Branch: issue-671-grid-hover-bar-tests** (done, stacked on #619)
+- **#671** — Added 7 tests for hover bar action buttons: split-h, split-v, delete, merge, add-empty dispatch, bubbling/composed flags, merge non-bubbling.
 
-**Branch: issue-742-evaluator-parallel-policy-tests** (done, stacked on #735)
-- **#742** — Added 5 evaluator-level tests for the discriminator path: advanceAfter early return, advanceAfter=branchCount, cancelRemaining true/false tracker signal behavior, allSettled path without advanceAfter.
+Blog: "The Gap in the Gap" — why `ceil(fixedWidth / cellWidth)` is wrong and the gap-aware correction.
 
-Blog: "Defined Is Not True" — YAML boolean presence vs truthiness in config parsers.
+Filed: #743 (full sizing model — widthMode, heightMode, fixedWidth, fixedHeight across all layers).
 
 ## Immediate Next Step
 
-Queue has #619 (fixed-width panels, S/Med) and #671 (grid hover bar tests, S/Med). Use `work continue`.
+Queue is empty. Use `work find` to discover new issues, or `work start #N` with a specific issue.
 
 ## Merge Note
 
@@ -25,7 +24,7 @@ Branches #723 and #736/#738 both modify `playbook-split-view.ts`. The #723 branc
 
 ## Open Issues (by category)
 
-**Quick wins:** #619 (fixed-width panels, S/Med), #671 (grid hover bar tests, S/Med)
+**New:** #743 (full sizing model, M/Med)
 **Mid-size:** #646, #719, #725
 **Large:** #669, #616, #92, #94
 **Epics:** #426, #95
