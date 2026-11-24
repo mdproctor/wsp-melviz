@@ -1,3 +1,16 @@
+# Work Plan —
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: drained
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -47,25 +60,6 @@
 - [x] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
 - [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
-  - [x] Batch 1: Type model and formula
-    - [x] Task 1: effectiveW computation function and tests
-    - [x] Task 2: Add fixedWidth to GridPlacement type
-  - [x] Batch 2: YAML round-trip
-    - [x] Task 3: Parse and persist fixedWidth in GridItemNode
-  - [x] Batch 3: Render-time auto-sizing
-    - [x] Task 4: Apply fixedWidth at render time
-  - [x] Batch 4: Edit bridge preservation
-    - [x] Task 5: Preserve fixedWidth in grid edit operations
-  - [x] Batch 5: Integration verification
-    - [x] Task 6: Full integration test and typecheck
 - [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: drained
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
+- [ ] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry

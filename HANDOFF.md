@@ -2,28 +2,26 @@
 
 ## Last Session: 2026-11-24
 
-Two issues completed across two stacked branches:
+Both #619 and #671 landed on main. Queue repopulated with CDI boilerplate reduction issues.
 
-**Branch: issue-619-fixed-width-panel-autosize** (done, ready to land)
-- **#619** — Added `fixedWidth?: number` to `GridPlacement`. At render time, measures grid container width, computes `effectiveW` using gap-aware formula `ceil((fixedWidth + gap) / (cellWidth + gap))`, clamped to declared `w`. Applies reduced `grid-column` span with `justify-self: start` and explicit `width`. Preserves `fixedWidth` through YAML parse/serialize and all edit bridge operations. Code review caught non-gridPath split dropping fixedWidth — fixed.
+**Landed:**
+- **#619** — `fixedWidth` auto-sizing for grid panels. Gap-aware formula, YAML round-trip, edit bridge preservation. 5 commits.
+- **#671** — 7 hover bar action button tests (split, delete, merge, add-empty dispatch, bubbling). 2 commits.
 
-**Branch: issue-671-grid-hover-bar-tests** (done, stacked on #619)
-- **#671** — Added 7 tests for hover bar action buttons: split-h, split-v, delete, merge, add-empty dispatch, bubbling/composed flags, merge non-bubbling.
-
-Blog: "The Gap in the Gap" — why `ceil(fixedWidth / cellWidth)` is wrong and the gap-aware correction.
-
-Filed: #743 (full sizing model — widthMode, heightMode, fixedWidth, fixedHeight across all layers).
+**Filed:** #743 (full sizing model — widthMode, heightMode, fixedWidth, fixedHeight). M/Med.
 
 ## Immediate Next Step
 
-Queue is empty. Use `work find` to discover new issues, or `work start #N` with a specific issue.
+Queue has #744 (S/Med) then #745 (S/Med). Use `work start`.
 
-## Merge Note
+- **#744** — Auto-provide PlaybookConfig, RestDispatcher, GraphQLDispatcher as `@DefaultBean` producers in `casehub-pages-playbook-runtime`. Eliminates identical CDI boilerplate across Pages apps.
+- **#745** — Auto-provide push infrastructure beans (SessionSender, PushEndpoint, JsonWriter, ConnectionRegistry) as `@DefaultBean` producers in `casehub-pages-push-runtime`.
 
-Branches #723 and #736/#738 both modify `playbook-split-view.ts`. The #723 branch changes imports (demoCatalog extraction) while #736/#738 changes `parseAndResolve` logic. Resolution is mechanical but needs attention during rebase.
+Both block the zero-Java goal for casehubio/examples#212.
 
 ## Open Issues (by category)
 
+**Queued:** #744 (CDI playbook defaults, S/Med), #745 (CDI push defaults, S/Med)
 **New:** #743 (full sizing model, M/Med)
 **Mid-size:** #646, #719, #725
 **Large:** #669, #616, #92, #94
