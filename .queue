@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: 
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -60,7 +46,7 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
 - [x] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
-- [ ] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation ← done on issue-619-fixed-width-panel-autosize
+- [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
   - [x] Batch 1: Type model and formula
     - [x] Task 1: effectiveW computation function and tests
     - [x] Task 2: Add fixedWidth to GridPlacement type
@@ -73,3 +59,13 @@ flyway-next-v: none
   - [x] Batch 5: Integration verification
     - [x] Task 6: Full integration test and typecheck
 - [ ] casehubio/casehub-pages#671 — Grid hover bar action button tests ← done on issue-671-grid-hover-bar-tests
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: active
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
