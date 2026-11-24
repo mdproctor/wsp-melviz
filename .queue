@@ -3,7 +3,8 @@
 ## State
 branch: 
 issue-repo: casehubio/casehub-pages
-status: drained
+status: active
+covers: 
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -61,5 +62,7 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
 - [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
-- [ ] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
-- [ ] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
+- [ ] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers ← done on issue-744-defaultbean-producers
+- [ ] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry ← done on issue-745-push-defaultbean-producers
+- [ ] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
+- [ ] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
