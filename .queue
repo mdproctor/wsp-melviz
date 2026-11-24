@@ -49,8 +49,8 @@
 - [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
 - [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
 - [x] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
-- [ ] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry ← done on issue-745-push-defaultbean-producers
-- [ ] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
+- [x] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
+- [ ] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism        ← active
 - [ ] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
 
 ## State
