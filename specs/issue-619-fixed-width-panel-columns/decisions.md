@@ -22,9 +22,9 @@
 
 ## D3: effectiveW clamping
 
-**Choice:** `effectiveW = Math.min(Math.ceil(fixedWidth / cellWidth), w)` — clamp to the declared `w` as upper bound.
+**Choice:** `effectiveW = Math.min(Math.ceil((fixedWidth + gap) / (cellWidth + gap)), w)` — clamp to the declared `w` as upper bound. Formula accounts for inter-column gaps within the span.
 **Alternatives:**
-- No clamping — `effectiveW = Math.ceil(fixedWidth / cellWidth)` regardless of `w`. Risky: on very narrow screens, `effectiveW` could exceed `w`, meaning the panel grows beyond its YAML-declared span.
+- No clamping — `effectiveW = Math.ceil(...)` regardless of `w`. Risky: on very narrow screens, `effectiveW` could exceed `w`, meaning the panel grows beyond its YAML-declared span.
 **Rationale:** The declared `w` is the author's maximum intent. On narrow screens where `fixedWidth` requires all `w` columns, the panel behaves like a normal panel (no `justify-self`, full span). On wider screens, it shrinks. This is safe and predictable.
 **Trade-offs:** None significant — clamping only prevents unexpected growth.
 **Depends on:** D1 (render-time computation)
