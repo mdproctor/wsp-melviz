@@ -33,3 +33,4 @@
 | [2026-11-22-mdp01-parity-as-forcing-function.md](2026-11-22-mdp01-parity-as-forcing-function.md) | 2026-11-22 | Platform parity audit exposes implicit contracts: match address mismatch, steps wrapper rejection, advance-after defaulting |
 | [2026-11-23-mdp01-the-boundary-nobody-tested.md](2026-11-23-mdp01-the-boundary-nobody-tested.md) | 2026-11-23 | Scanner tests for match guard and nested control flow uncovered a real step boundary bug — findBranchEnd truncated at sibling keys, scanControlFlow got wrong indent |
 | [2026-11-23-mdp02-defined-is-not-true.md](2026-11-23-mdp02-defined-is-not-true.md) | 2026-11-23 | YAML boolean presence check vs truthiness — cancel-remaining: false triggering advance-after default |
+| [2026-11-24-mdp01-the-gap-in-the-gap.md](2026-11-24-mdp01-the-gap-in-the-gap.md) | 2026-11-24 | CSS Grid fixed-width auto-sizing: why the naive column formula is wrong and the gap-aware correction |
