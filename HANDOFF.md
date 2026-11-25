@@ -2,6 +2,13 @@
 
 ## Last Session: 2026-11-25
 
+**Cross-repo scaffold (casehubio/examples#214):** Headless playbook testing.
+Branch `issue-214-headless-playbook-testing` — scaffold only, not ready to land.
+- Added Playwright Java dependency (optional) to `playbook-runtime/pom.xml`
+- Created `HeadlessPlaybookRunner.java` — translates playbook YAML steps to Playwright API calls (fill/click/select/navigate via ARIA locators, verify via REST polling)
+- Created `HeadlessPlaybookRunnerTest.java` — unit tests for config, step results, run result aggregation
+- TODO: implement `checkExpectations()` JSON matching, `executeBootstrap()`, full integration test
+
 **Finished:** #748 — integration test verifying `Optional<Map>` `@ConfigProperty` injection for PlaybookConfig endpoints. Branch `issue-748-verify-optional-map-config`, ready to land.
 
 Changes:
