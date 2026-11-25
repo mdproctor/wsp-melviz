@@ -64,7 +64,7 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
 - [x] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
 - [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
-- [ ] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection ← active
+- [ ] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection ← done on issue-748-verify-optional-map-config
 
 ## Deferred
 - [ ] Conditional WebSocket endpoint mechanism (S / Med) []
