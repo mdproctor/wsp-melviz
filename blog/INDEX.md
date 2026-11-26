@@ -35,3 +35,4 @@
 | [2026-11-23-mdp02-defined-is-not-true.md](2026-11-23-mdp02-defined-is-not-true.md) | 2026-11-23 | YAML boolean presence check vs truthiness — cancel-remaining: false triggering advance-after default |
 | [2026-11-24-mdp01-the-gap-in-the-gap.md](2026-11-24-mdp01-the-gap-in-the-gap.md) | 2026-11-24 | CSS Grid fixed-width auto-sizing: why the naive column formula is wrong and the gap-aware correction |
 | [2026-11-24-mdp02-the-producer-that-was-always-there.md](2026-11-24-mdp02-the-producer-that-was-always-there.md) | 2026-11-24 | Eliminating CDI boilerplate with @DefaultBean producers in playbook-runtime and push-runtime — and why WebSocket endpoints can't follow the same pattern |
+| [2026-11-26-mdp01-the-controller-pattern-pays-off.md](2026-11-26-mdp01-the-controller-pattern-pays-off.md) | 2026-11-26 | ViewerController pattern reused: PlaybookSplitView collapses to 60 lines via ThreeWayViewer, PanelController created for floating panel state |

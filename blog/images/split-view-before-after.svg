@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="'Inter', system-ui, sans-serif">
+  <style>
+    .label { font-size: 11px; fill: #94a3b8; font-weight: 500; letter-spacing: 0.5px; }
+    .component { font-size: 12px; fill: #e2e8f0; font-weight: 600; }
+    .detail { font-size: 10px; fill: #64748b; }
+    .line-count { font-size: 10px; fill: #f87171; font-weight: 600; }
+    .line-count-new { font-size: 10px; fill: #4ade80; font-weight: 600; }
+    .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .arrow-sync { stroke: #38bdf8; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-sync); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#475569"/>
+    </marker>
+    <marker id="arrowhead-sync" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <!-- BEFORE -->
+  <text x="170" y="20" text-anchor="middle" class="label">BEFORE</text>
+  <rect x="40" y="35" width="260" height="120" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <text x="170" y="55" text-anchor="middle" class="component">PlaybookSplitView</text>
+  <text x="170" y="72" text-anchor="middle" class="line-count">175 lines</text>
+  <text x="60" y="92" class="detail">Layout CSS (50 lines)</text>
+  <text x="60" y="106" class="detail">Splitter drag (25 lines)</text>
+  <text x="60" y="120" class="detail">Debounce + parse (20 lines)</text>
+  <text x="60" y="134" class="detail">Cursor sync (10 lines)</text>
+  <text x="60" y="148" class="detail">Step click → line (10 lines)</text>
+
+  <!-- PagesStepViewer BEFORE -->
+  <rect x="80" y="175" width="180" height="50" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="170" y="198" text-anchor="middle" class="component">PagesStepViewer</text>
+  <text x="170" y="212" text-anchor="middle" class="detail">setActiveStep(address) only</text>
+  <line x1="170" y1="155" x2="170" y2="175" class="arrow"/>
+
+  <!-- AFTER -->
+  <text x="540" y="20" text-anchor="middle" class="label">AFTER</text>
+
+  <!-- ThreeWayViewer -->
+  <rect x="410" y="35" width="260" height="55" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <text x="540" y="55" text-anchor="middle" class="component">ThreeWayViewer</text>
+  <text x="540" y="72" text-anchor="middle" class="detail">layout · splitter · mode toggle · CodeMirror</text>
+
+  <!-- PlaybookSplitView AFTER -->
+  <rect x="410" y="105" width="260" height="55" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="540" y="125" text-anchor="middle" class="component">PlaybookSplitView</text>
+  <text x="540" y="142" text-anchor="middle" class="line-count-new">60 lines — parse wiring only</text>
+  <line x1="540" y1="90" x2="540" y2="105" class="arrow"/>
+
+  <!-- PagesStepViewer AFTER -->
+  <rect x="430" y="180" width="220" height="70" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="540" y="200" text-anchor="middle" class="component">PagesStepViewer</text>
+  <text x="540" y="215" text-anchor="middle" class="detail">+ syncLine(line) → setActiveStep</text>
+  <text x="540" y="230" text-anchor="middle" class="detail">+ step-click → viewer-select</text>
+  <text x="540" y="243" text-anchor="middle" class="line-count-new">ViewerSyncTarget</text>
+  <line x1="540" y1="160" x2="540" y2="180" class="arrow"/>
+
+  <!-- Sync arrows -->
+  <path d="M 650,62 Q 680,62 680,205 L 652,205" class="arrow-sync"/>
+  <text x="690" y="135" class="detail" transform="rotate(90, 690, 135)">syncLine</text>
+
+  <path d="M 430,215 Q 400,215 400,62 L 410,62" class="arrow-sync"/>
+  <text x="390" y="135" class="detail" text-anchor="end" transform="rotate(-90, 390, 135)">viewer-select</text>
+
+  <!-- Divider -->
+  <line x1="355" y1="10" x2="355" y2="270" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Net reduction -->
+  <rect x="230" y="290" width="260" height="35" rx="6" fill="none" stroke="#4ade80" stroke-width="1"/>
+  <text x="360" y="312" text-anchor="middle" class="line-count-new">Net: −103 lines, bidirectional cursor sync</text>
+</svg>
