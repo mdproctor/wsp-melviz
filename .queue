@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: issue-750-adopt-viewer-controller
+branch: 
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#750
+covers: 
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -72,10 +72,10 @@ flyway-next-v: none
     - [x] Task 1: Add positionInfos error syncLine to PagesStepViewer
   - [x] Batch 2: Thin consumer
     - [x] Task 2: Rewrite PlaybookSplitView and update gallery
-- [ ] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller ← active
-  - [ ] Batch 1: PanelController
-    - [ ] Task 1: Create PanelController with tests
-    - [ ] Task 2: Adopt PanelController in playbook controller
+- [ ] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller ← done on issue-750-adopt-viewer-controller
+  - [x] Batch 1: PanelController
+    - [x] Task 1: Create PanelController with tests
+    - [x] Task 2: Adopt PanelController in playbook controller
 
 ## Deferred
 - [ ] Conditional WebSocket endpoint mechanism (S / Med) []
