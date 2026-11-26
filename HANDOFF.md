@@ -1,29 +1,22 @@
 # HANDOFF — casehub-pages
 
-## Last Session: 2026-11-25
+## Last Session: 2026-11-26
 
-**Cross-repo scaffold (casehubio/examples#214):** Headless playbook testing.
-Branch `issue-214-headless-playbook-testing` — scaffold only, not ready to land.
-- Added Playwright Java dependency (optional) to `playbook-runtime/pom.xml`
-- Created `HeadlessPlaybookRunner.java` — translates playbook YAML steps to Playwright API calls (fill/click/select/navigate via ARIA locators, verify via REST polling)
-- Created `HeadlessPlaybookRunnerTest.java` — unit tests for config, step results, run result aggregation
-- TODO: implement `checkExpectations()` JSON matching, `executeBootstrap()`, full integration test
+**Finished:** #746 — accent variant added to `PagesStatusDot`. Both badge components (`<pages-badge>` pill, `<pages-status-dot>` dot) now have all 6 semantic variants. Downstream adoption (mosaic toolbar, workbench strip) is in casehub-mosaic.
 
-**Finished:** #748 — integration test verifying `Optional<Map>` `@ConfigProperty` injection for PlaybookConfig endpoints. Branch `issue-748-verify-optional-map-config`, ready to land.
-
-Changes:
-- Added `quarkus-junit5` test dependency to `playbook-runtime` module
-- Created `PlaybookConfigInjectionTest` (`@QuarkusTest`) — 3 tests covering populated maps and default fallback
-- Created `application.properties` for test with endpoint map entries and `quarkus.arc.exclude-types` for simulation beans
-- All 183 module tests green
+Also this session: complete README rewrite landed on main (all 30+ packages, 20+ backend modules documented), `gallery.sh` / `gallery-server.sh` onboarding scripts added, `.yarnrc.yml` token made optional for fresh clones, webpack devServer static dirs fixed.
 
 ## Immediate Next Step
 
-Use `work start` to pick up the next queued item.
+Queue is empty. Use `work find` or `work start #N`.
 
 ## Open Issues (by category)
 
-**New:** #743 (full sizing model, M/Med)
-**Mid-size:** #646, #719, #725
-**Large:** #669, #616, #92, #94
-**Epics:** #426, #95
+**CDI/Backend:** #747 (conditional WebSocket endpoint, S/Med)
+**Grid/Layout:** #743 (full sizing model, M/Med), #619 (fixed-width auto-size, S/Med), #616 (columns+rows DnD, L/High)
+**Data Pipeline:** #719 (dual-mode datasets, M/Med), #91 (Kafka provider, M/High)
+**IntelliJ:** #725 (JCEF playbook preview, M/Med)
+**Playbook:** #669 (TS port parity, L/High), #646 (agent session showcase, M/Med)
+**Tooling:** #666 (close.py bugs, M/High)
+**Quality:** #94 (E2E Playwright suite, L/Med), #92 (Module Federation, L/High)
+**Epics:** #426 (visual builder, XL/High), #95 (platform completion, XL/High)
