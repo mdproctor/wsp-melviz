@@ -1,3 +1,17 @@
+# Work Plan —
+
+## State
+branch: issue-749-migrate-split-view-to-three-way
+issue-repo: casehubio/casehub-pages
+status: active
+covers: casehubio/casehub-pages#749
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -53,16 +67,12 @@
 - [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
 - [x] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
 - [x] casehubio/casehub-pages#746 — issue 746
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: drained
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
+- [ ] casehubio/casehub-pages#749 — Migrate playbook-split-view to pages-three-way-viewer ← active
+  - [ ] Batch 1: ViewerSyncTarget
+    - [ ] Task 1: Add positionInfos error syncLine to PagesStepViewer
+  - [ ] Batch 2: Thin consumer
+    - [ ] Task 2: Rewrite PlaybookSplitView and update gallery
+- [ ] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller
 
 ## Deferred
 - [ ] Conditional WebSocket endpoint mechanism (S / Med) []
