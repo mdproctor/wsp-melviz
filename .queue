@@ -1,17 +1,3 @@
-# Work Plan —
-
-## State
-branch: 
-issue-repo: casehubio/casehub-pages
-status: active
-covers: 
-project-sha: 
-date: 2026-11-18
-design-repo: 
-design-section-hashes: 
-flyway-next-v: none
-
-## Queue
 - [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
 - [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
 - [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
@@ -66,7 +52,17 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
 - [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
 - [x] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
-- [ ] casehubio/casehub-pages#746 — issue 746 ← done on issue-746-variant-badge-component
+- [x] casehubio/casehub-pages#746 — issue 746
+
+## State
+branch: 
+issue-repo: casehubio/casehub-pages
+status: drained
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
 
 ## Deferred
 - [ ] Conditional WebSocket endpoint mechanism (S / Med) []
