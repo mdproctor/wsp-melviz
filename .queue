@@ -1,10 +1,10 @@
 # Work Plan —
 
 ## State
-branch: issue-749-migrate-split-view-to-three-way
+branch: issue-750-adopt-viewer-controller
 issue-repo: casehubio/casehub-pages
 status: active
-covers: casehubio/casehub-pages#749
+covers: casehubio/casehub-pages#750
 project-sha: 
 date: 2026-11-18
 design-repo: 
@@ -67,12 +67,15 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
 - [x] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
 - [x] casehubio/casehub-pages#746 — issue 746
-- [ ] casehubio/casehub-pages#749 — Migrate playbook-split-view to pages-three-way-viewer ← active
-  - [ ] Batch 1: ViewerSyncTarget
-    - [ ] Task 1: Add positionInfos error syncLine to PagesStepViewer
-  - [ ] Batch 2: Thin consumer
-    - [ ] Task 2: Rewrite PlaybookSplitView and update gallery
-- [ ] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller
+- [ ] casehubio/casehub-pages#749 — Migrate playbook-split-view to pages-three-way-viewer ← done on issue-749-migrate-split-view-to-three-way
+  - [x] Batch 1: ViewerSyncTarget
+    - [x] Task 1: Add positionInfos error syncLine to PagesStepViewer
+  - [x] Batch 2: Thin consumer
+    - [x] Task 2: Rewrite PlaybookSplitView and update gallery
+- [ ] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller ← active
+  - [ ] Batch 1: PanelController
+    - [ ] Task 1: Create PanelController with tests
+    - [ ] Task 2: Adopt PanelController in playbook controller
 
 ## Deferred
 - [ ] Conditional WebSocket endpoint mechanism (S / Med) []
