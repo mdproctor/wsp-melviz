@@ -1,0 +1,73 @@
+# Work Plan —
+
+## State
+branch: issue-747-conditional-websocket-endpoint
+issue-repo: casehubio/casehub-pages
+status: drained
+project-sha: 
+date: 2026-11-18
+design-repo: 
+design-section-hashes: 
+flyway-next-v: none
+
+## Queue
+- [x] casehubio/casehub-pages#665 — feat: add grid editing demo to showcase gallery with standalone mode
+- [x] casehubio/casehub-pages#674 — Remove old rows/columns grid model
+- [x] casehubio/casehub-pages#681 — Runtime dataset scoping for targetPage tabs
+- [x] casehubio/casehub-pages#676 — Paste indicators for grid/items layout mode
+- [x] casehubio/casehub-pages#675 — Migrate examples repo dash.yaml files
+- [x] casehubio/casehub-pages#682 — Verify Carousel and Stack sample renders
+- [x] casehubio/casehub-pages#663 — Selection overlay tests need DOM environment
+- [x] casehubio/casehub-pages#661 — Tree selection doesnt show grid-item controls
+- [x] casehubio/casehub-pages#651 — Builder chrome poor contrast
+- [x] casehubio/casehub-pages#670 — Clean up orphaned selection overlay event handlers
+- [x] casehubio/casehub-pages#688 — Stale typecheck dirs
+- [x] casehubio/casehub-pages#689 — Gallery Carousel test gaps
+- [x] casehubio/casehub-pages#690 — YAML roundtrip formatting
+- [x] casehubio/casehub-pages#697 — Pre-existing typecheck errors
+- [x] casehubio/casehub-pages#698 — Grid edit integration tests fail after compaction changes
+- [x] casehubio/casehub-pages#699 — Gallery Carousel data-table slide not tested
+- [x] casehubio/casehub-pages#700 — Remaining YAML indentation and quoting differences
+- [x] casehubio/casehub-pages#701 — Merge/remove transaction wrapping
+- [x] casehubio/casehub-pages#702 — Builder tree CSS test fix
+- [x] casehubio/casehub-pages#703 — Nested grid compaction target
+- [x] casehubio/casehub-pages#704 — Split/swap transaction wrapping
+- [x] casehubio/casehub-pages#705 — gridPath routing for non-move operations
+- [x] casehubio/casehub-pages#706 — Builder test jsdom annotations
+- [x] casehubio/casehub-pages#714 — Rename forEach test describe strings
+- [x] casehubio/casehub-pages#715 — Verify LSP for-each completion
+- [x] casehubio/casehub-pages#716 — Category-level playbook execution tests
+- [x] casehubio/casehub-pages#720 — issue 720
+- [x] casehubio/casehub-pages#722 — match address mismatch
+- [x] casehubio/casehub-pages#723 — extract demoCatalog
+- [x] casehubio/casehub-pages#724 — parallel address inconsistency
+- [x] casehubio/casehub-pages#725 — IntelliJ JCEF preview
+- [x] casehubio/casehub-pages#726 — race-scanner-address-mismatch
+- [x] casehubio/casehub-pages#727 — select-scanner-address-mismatch
+- [x] casehubio/casehub-pages#728 — selectBranchName-object-form-subscribe
+- [x] casehubio/casehub-pages#721 — issue 721
+- [x] casehubio/casehub-pages#729 — Add JSON validation to PushPublishResource
+- [x] casehubio/casehub-pages#730 — Shared ApplicationScoped state flaky seq assertions
+- [x] casehubio/casehub-pages#731 — Reuse ObjectMapper instance in PushPublishResource
+- [x] casehubio/casehub-pages#733 — TopicRegistry listeners leak across QuarkusTest classes
+- [x] casehubio/casehub-pages#734 — Reject steps: wrapper in parallel map form
+- [x] casehubio/casehub-pages#736 — Reject steps: wrapper in playbook documents
+- [x] casehubio/casehub-pages#737 — Default advance-after to all branches in parallel
+- [x] casehubio/casehub-pages#738 — Remove stale concurrent keyword from RESERVED_KEYS
+- [x] casehubio/casehub-pages#741 — scanner match cases with guard and nested control flow
+- [x] casehubio/casehub-pages#740 — resolve concurrent keyword inconsistency
+- [x] casehubio/casehub-pages#739 — cancel-remaining false triggers advance-after default
+- [x] casehubio/casehub-pages#742 — Evaluator tests for parallel policy keys
+- [x] casehubio/casehub-pages#735 — Migrate test YAML to multi-document format
+- [x] casehubio/casehub-pages#619 — Fixed-width panels auto-size column allocation
+- [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
+- [x] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
+- [x] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
+- [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
+- [x] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
+- [x] casehubio/casehub-pages#746 — issue 746
+- [x] casehubio/casehub-pages#749 — Migrate playbook-split-view to pages-three-way-viewer
+- [x] casehubio/casehub-pages#750 — Adopt ViewerController in playbook controller
+
+## Deferred
+- [ ] Conditional WebSocket endpoint mechanism (S / Med) []
