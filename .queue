@@ -63,7 +63,6 @@ flyway-next-v: none
 - [x] casehubio/casehub-pages#671 — Grid hover bar action button tests
 - [x] casehubio/casehub-pages#744 — Auto-provide PlaybookConfig RestDispatcher GraphQLDispatcher as DefaultBean producers
 - [x] casehubio/casehub-pages#745 — Auto-provide push infrastructure beans SessionSender PushEndpoint JsonWriter ConnectionRegistry
-- [x] casehubio/casehub-pages#747 — Conditional WebSocket endpoint mechanism
 - [x] casehubio/casehub-pages#748 — Verify Optional Map ConfigProperty injection
 - [x] casehubio/casehub-pages#746 — issue 746
 - [x] casehubio/casehub-pages#749 — Migrate playbook-split-view to pages-three-way-viewer
